@@ -409,8 +409,8 @@ tr:hover td{background:var(--surface2);}
   <div class="sidebar-logo">Aloj<span>App</span></div>
   <div class="nav-section">
     <div class="nav-label">Principal</div>
-    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
-    <div class="nav-item" id="nav-calendario" onclick="showPage('calendario')"><span class="icon">📅</span> Calendario</div>
+    <div class="nav-item" id="nav-dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item active" id="nav-calendario" onclick="showPage('calendario')"><span class="icon">📅</span> Calendario</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Gestión</div>
@@ -452,8 +452,8 @@ tr:hover td{background:var(--surface2);}
   </div>
 
   <div class="content">
-    <div id="page-dashboard" class="page active"><div id="dashboard-content"></div></div>
-    <div id="page-calendario" class="page">
+    <div id="page-dashboard" class="page"><div id="dashboard-content"></div></div>
+    <div id="page-calendario" class="page active">
       <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="renderCalendar()">
           <option value="">Todos los alojamientos</option>
@@ -1124,10 +1124,10 @@ function initApp() {
   applyPermissions();
   updateSelectOptions();
 
-  // Default page
-  const firstPerm = currentUser.isAdmin ? 'dashboard' :
-    hasPerm('dashboard') ? 'dashboard' :
+  // Default page — Calendario como pantalla inicial
+  const firstPerm = currentUser.isAdmin ? 'calendario' :
     hasPerm('calendario') ? 'calendario' :
+    hasPerm('dashboard') ? 'dashboard' :
     hasPerm('res-ver') ? 'reservas' : 'huespedes';
   showPage(firstPerm);
 }
