@@ -9,167 +9,139 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
-<!-- ═══════════════════════════════════════════════════════
-     ⚙️  CONFIGURACIÓN — Reemplazá estos valores
-     ═══════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ⚙️  CONFIGURACIÓN — Completá estos valores con los tuyos
+     ═══════════════════════════════════════════════════════════════
+     Ver INSTRUCCIONES_FIREBASE.md para obtener estos datos
+     ═══════════════════════════════════════════════════════════════ -->
 <script>
-  const APP_CONFIG = {
-    // 👇 Pegá tu Client ID de Google OAuth aquí
-    GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
+const APP_CONFIG = {
+  // Google OAuth Client ID
+  GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
-    // Cuenta administradora (no cambiar)
-    ADMIN_EMAIL: 'lapausa.santarosa@gmail.com',
+  // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
+  FIREBASE: {
+    apiKey: "AIzaSyBe0h2TWO5oBS4WxeJVoC37PKbyz1jmJiU",
+    authDomain: "alojaapp-8ed45.firebaseapp.com",
+    projectId: "alojaapp-8ed45",
+    storageBucket: "alojaapp-8ed45.firebasestorage.app",
+    messagingSenderId: "763636738474",
+    appId: "1:763636738474:web:661dd264664b468c2ae3d3",
+    measurementId: "G-FXSL9DLTDC"
+  },
 
-    // ID del calendario de Google (normalmente es el mismo email del admin)
-    CALENDAR_ID: 'lapausa.santarosa@gmail.com',
-  };
+  // Admin y calendario (no cambiar)
+  ADMIN_EMAIL:  'lapausa.santarosa@gmail.com',
+  CALENDAR_ID:  'lapausa.santarosa@gmail.com',
+};
 </script>
 
 <style>
-:root {
-  --bg:#0f0f1a; --surface:#1a1a2e; --surface2:#22223b; --surface3:#2d2d4e;
-  --border:#3a3a5c; --text:#e8e8f0; --text2:#9898b8;
-  --accent:#7c5cbf; --accent2:#a78bfa; --accent3:#34d399;
-  --danger:#f87171; --warning:#fbbf24; --info:#60a5fa;
-  --radius:12px; --shadow:0 4px 24px rgba(0,0,0,.4);
-  --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+:root{
+  --bg:#0f0f1a;--surface:#1a1a2e;--surface2:#22223b;--surface3:#2d2d4e;
+  --border:#3a3a5c;--text:#e8e8f0;--text2:#9898b8;
+  --accent:#7c5cbf;--accent2:#a78bfa;--accent3:#34d399;
+  --danger:#f87171;--warning:#fbbf24;--info:#60a5fa;
+  --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.4);
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{font-size:15px;}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden;}
-::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
-/* ── LOGIN SCREEN ── */
-#login-screen {
-  display:none; position:fixed; inset:0; z-index:9000;
-  background:var(--bg);
-  align-items:center; justify-content:center;
-  flex-direction:column;
+/* ── LOADING ── */
+#app-loading{
+  display:flex;position:fixed;inset:0;z-index:9999;
+  background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;
 }
+.loading-logo{font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--accent2);}
+.loading-logo span{color:var(--accent3);}
+.loading-bar{width:200px;height:3px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.loading-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;animation:loadPulse 1.4s ease-in-out infinite;}
+@keyframes loadPulse{0%{width:0%;margin-left:0;}50%{width:60%;margin-left:20%;}100%{width:0%;margin-left:100%;}}
+.loading-msg{font-size:.82rem;color:var(--text2);}
+
+/* ── LOGIN ── */
+#login-screen{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;}
 #login-screen.visible{display:flex;}
-.login-card{
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:20px; padding:48px 40px; text-align:center;
-  width:90%; max-width:420px; box-shadow:var(--shadow);
-  animation:fadeUp .4s ease;
-}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:48px 40px;text-align:center;width:90%;max-width:420px;box-shadow:var(--shadow);animation:fadeUp .4s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 .login-logo{font-family:var(--font-head);font-size:2.2rem;font-weight:800;color:var(--accent2);margin-bottom:6px;}
 .login-logo span{color:var(--accent3);}
-.login-sub{color:var(--text2);font-size:.9rem;margin-bottom:32px;}
-.google-btn{
-  display:inline-flex;align-items:center;gap:12px;
-  background:#fff;color:#3c4043;border:none;border-radius:10px;
-  padding:13px 24px;font-size:.95rem;font-weight:600;cursor:pointer;
-  font-family:var(--font-body);transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.3);
-  width:100%;justify-content:center;
-}
+.login-sub{color:var(--text2);font-size:.9rem;margin-bottom:32px;line-height:1.5;}
+.google-btn{display:inline-flex;align-items:center;gap:12px;background:#fff;color:#3c4043;border:none;border-radius:10px;padding:13px 24px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.3);width:100%;justify-content:center;}
 .google-btn:hover{box-shadow:0 4px 16px rgba(0,0,0,.4);transform:translateY(-1px);}
+.google-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
 .google-btn img{width:22px;height:22px;}
 .login-footer{margin-top:20px;font-size:.75rem;color:var(--text2);}
 
-/* ── DENIED SCREEN ── */
-#denied-screen{
-  display:none;position:fixed;inset:0;z-index:9000;
-  background:var(--bg);align-items:center;justify-content:center;
-}
+/* ── DENIED ── */
+#denied-screen{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg);align-items:center;justify-content:center;}
 #denied-screen.visible{display:flex;}
-.denied-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:20px;padding:48px 40px;text-align:center;
-  width:90%;max-width:420px;
-}
+.denied-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:48px 40px;text-align:center;width:90%;max-width:420px;}
 .denied-icon{font-size:3rem;margin-bottom:12px;}
 .denied-title{font-family:var(--font-head);font-size:1.4rem;font-weight:700;margin-bottom:8px;}
 .denied-msg{color:var(--text2);font-size:.9rem;margin-bottom:24px;line-height:1.6;}
-.denied-email{
-  background:var(--surface2);border-radius:8px;padding:10px 16px;
-  font-size:.85rem;color:var(--accent2);margin-bottom:20px;
-  word-break:break-all;
-}
+.denied-email{background:var(--surface2);border-radius:8px;padding:10px 16px;font-size:.85rem;color:var(--accent2);margin-bottom:20px;word-break:break-all;}
 
 /* ── SIDEBAR ── */
-#sidebar{
-  width:240px;min-height:100vh;background:var(--surface);
-  border-right:1px solid var(--border);display:flex;flex-direction:column;
-  position:fixed;left:0;top:0;z-index:100;transition:transform .3s ease;
-}
-.sidebar-logo{
-  padding:24px 20px 16px;font-family:var(--font-head);font-size:1.4rem;
-  font-weight:800;color:var(--accent2);border-bottom:1px solid var(--border);letter-spacing:-.5px;
-}
+#sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;transition:transform .3s ease;}
+.sidebar-logo{padding:24px 20px 16px;font-family:var(--font-head);font-size:1.4rem;font-weight:800;color:var(--accent2);border-bottom:1px solid var(--border);letter-spacing:-.5px;}
 .sidebar-logo span{color:var(--accent3);}
 .nav-section{padding:12px 0;border-bottom:1px solid var(--border);}
 .nav-label{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--text2);padding:4px 20px 8px;font-weight:600;}
-.nav-item{
-  display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;
-  color:var(--text2);font-size:.9rem;transition:all .2s;border-left:3px solid transparent;
-}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--text2);font-size:.9rem;transition:all .2s;border-left:3px solid transparent;}
 .nav-item:hover{color:var(--text);background:var(--surface2);}
 .nav-item.active{color:var(--accent2);background:rgba(124,92,191,.15);border-left-color:var(--accent2);}
 .nav-item .icon{font-size:1.1rem;width:20px;text-align:center;}
-.nav-item.hidden-item{display:none;}
-
-/* User info in sidebar */
-.sidebar-user{
-  margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;
-}
-.sidebar-user img{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);}
+.sidebar-user{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-user img,.sidebar-user-av{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);object-fit:cover;}
+.sidebar-user-av{background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#fff;}
 .sidebar-user-info{flex:1;min-width:0;}
 .sidebar-user-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sidebar-user-role{font-size:.68rem;color:var(--text2);}
-.logout-btn{
-  background:none;border:none;color:var(--text2);cursor:pointer;
-  font-size:1rem;padding:4px;border-radius:6px;transition:color .2s;flex-shrink:0;
-}
+.logout-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem;padding:4px;border-radius:6px;transition:color .2s;flex-shrink:0;}
 .logout-btn:hover{color:var(--danger);}
+
+/* ── SYNC BADGE ── */
+.sync-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;border:1px solid;}
+.sync-ok{background:rgba(52,211,153,.12);color:var(--accent3);border-color:rgba(52,211,153,.3);}
+.sync-err{background:rgba(248,113,113,.12);color:var(--danger);border-color:rgba(248,113,113,.3);}
+.sync-ing{background:rgba(96,165,250,.12);color:var(--info);border-color:rgba(96,165,250,.3);}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.spinning{animation:spin 1s linear infinite;}
 
 /* ── MAIN ── */
 #main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
-.topbar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50;
-}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
 .topbar-title{font-family:var(--font-head);font-size:1.3rem;font-weight:700;}
 .topbar-actions{display:flex;gap:10px;align-items:center;}
 .content{padding:28px;flex:1;}
 
-/* ── GCAL STATUS BADGE ── */
-.gcal-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;
-  background:rgba(52,211,153,.15);color:var(--accent3);border:1px solid rgba(52,211,153,.3);
-}
-.gcal-badge.error{background:rgba(248,113,113,.15);color:var(--danger);border-color:rgba(248,113,113,.3);}
-.gcal-badge.syncing{background:rgba(96,165,250,.15);color:var(--info);border-color:rgba(96,165,250,.3);}
-.gcal-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
-
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font-body);font-size:.88rem;font-weight:500;transition:all .2s;}
-.btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{background:#9370d8;transform:translateY(-1px);}
-.btn-success{background:var(--accent3);color:#111;} .btn-success:hover{filter:brightness(1.1);}
-.btn-danger{background:var(--danger);color:#fff;} .btn-danger:hover{filter:brightness(1.1);}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);} .btn-ghost:hover{color:var(--text);border-color:var(--text2);}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:#9370d8;transform:translateY(-1px);}
+.btn-success{background:var(--accent3);color:#111;}.btn-success:hover{filter:brightness(1.1);}
+.btn-danger{background:var(--danger);color:#fff;}.btn-danger:hover{filter:brightness(1.1);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}.btn-ghost:hover{color:var(--text);border-color:var(--text2);}
 .btn-sm{padding:5px 12px;font-size:.8rem;}
 .btn-info{background:var(--info);color:#111;}
-.btn-warning{background:var(--warning);color:#111;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
 
 /* ── CARDS ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 .card-title{font-family:var(--font-head);font-size:1rem;font-weight:700;}
-
-/* ── GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
 
 /* ── STATS ── */
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-color,var(--accent2));}
-.stat-value{font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--accent-color,var(--accent2));}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--accent2));}
+.stat-value{font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--ac,var(--accent2));}
 .stat-label{color:var(--text2);font-size:.82rem;margin-top:4px;}
 .stat-sub{font-size:.78rem;color:var(--accent3);margin-top:6px;}
 
@@ -212,7 +184,7 @@ tr:hover td{background:var(--surface2);}
 .color-dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0;}
 
 /* ── PAGES ── */
-.page{display:none;} .page.active{display:block;}
+.page{display:none;}.page.active{display:block;}
 
 /* ── CALENDAR ── */
 #calendar-container{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;}
@@ -222,7 +194,7 @@ tr:hover td{background:var(--surface2);}
 .cal-month-title{font-family:var(--font-head);font-size:1.3rem;font-weight:700;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
 .cal-day-head{padding:10px 0;text-align:center;font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:600;}
-.cal-day{min-height:110px;padding:8px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background .2s;}
+.cal-day{min-height:110px;padding:8px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .2s;}
 .cal-day:hover{background:var(--surface2);}
 .cal-day.other-month .cal-day-num{color:var(--surface3);}
 .cal-day.today .cal-day-num{background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
@@ -233,7 +205,7 @@ tr:hover td{background:var(--surface2);}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text2);}
 .legend-color{width:12px;height:12px;border-radius:3px;}
 
-/* ── ALOJAMIENTO CARD ── */
+/* ── ALOJ CARD ── */
 .aloj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
 .aloj-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
 .aloj-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--aloj-color,#888);}
@@ -241,61 +213,62 @@ tr:hover td{background:var(--surface2);}
 .aloj-card-meta{font-size:.82rem;color:var(--text2);display:flex;flex-direction:column;gap:3px;}
 .aloj-card-actions{display:flex;gap:8px;margin-top:14px;}
 
-/* ── USERS (ADMIN) ── */
-.user-row{
-  display:flex;align-items:center;gap:14px;padding:14px 0;
-  border-bottom:1px solid var(--border);
-}
-.user-row:last-child{border-bottom:none;}
-.user-avatar{
-  width:40px;height:40px;border-radius:50%;
-  background:var(--surface3);display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;flex-shrink:0;overflow:hidden;
-}
-.user-avatar img{width:100%;height:100%;object-fit:cover;}
-.user-info{flex:1;min-width:0;}
-.user-name{font-weight:600;font-size:.9rem;}
-.user-email{font-size:.78rem;color:var(--text2);}
-.user-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
-.perm-tag{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:600;cursor:pointer;
-  transition:all .2s;border:1px solid transparent;
-}
-.perm-tag.active-perm{background:rgba(52,211,153,.2);color:var(--accent3);border-color:rgba(52,211,153,.3);}
-.perm-tag.inactive-perm{background:var(--surface3);color:var(--text2);}
-
-/* ── PERMISOS MODAL ── */
-.perm-block{background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:10px;}
-.perm-block-title{font-weight:600;font-size:.85rem;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.perm-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
-.perm-item label{font-size:.85rem;color:var(--text2);cursor:pointer;}
-.toggle{position:relative;width:38px;height:20px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{
-  position:absolute;inset:0;background:var(--surface3);border-radius:20px;cursor:pointer;transition:.3s;
-}
-.toggle-slider:before{
-  content:'';position:absolute;width:16px;height:16px;border-radius:50%;
-  background:#fff;left:2px;top:2px;transition:.3s;
-}
-.toggle input:checked + .toggle-slider{background:var(--accent);}
-.toggle input:checked + .toggle-slider:before{transform:translateX(18px);}
-
-/* ── RESPONSIVE ── */
-#menu-toggle{display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:6px;}
-#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
-#sidebar-overlay.open{display:block;}
-
 /* ── COLOR PICKER ── */
 .color-picker-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
 .color-option{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .2s,transform .2s;}
 .color-option.selected{border-color:#fff;transform:scale(1.15);}
 
-/* ── EMPTY STATE ── */
+/* ── TOGGLE ── */
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--surface3);border-radius:20px;cursor:pointer;transition:.3s;}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;left:2px;top:2px;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:var(--accent);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);}
+
+/* ── USERS ── */
+.user-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
+.user-row:last-child{border-bottom:none;}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;overflow:hidden;}
+.user-avatar img{width:100%;height:100%;object-fit:cover;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-weight:600;font-size:.9rem;}
+.user-email{font-size:.78rem;color:var(--text2);}
+.user-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.invite-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.invite-actions{display:flex;gap:6px;flex-shrink:0;}
+.perm-block{background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:10px;}
+.perm-block-title{font-weight:600;font-size:.85rem;margin-bottom:10px;}
+.perm-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
+.perm-item label{font-size:.85rem;color:var(--text2);cursor:pointer;}
+
+/* ── CHARTS ── */
+.chart-bar-container{margin-top:8px;}
+.chart-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.chart-bar-label{font-size:.8rem;color:var(--text2);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chart-bar-track{flex:1;height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;}
+.chart-bar-fill{height:100%;border-radius:5px;}
+.chart-bar-val{font-size:.78rem;color:var(--text2);width:70px;text-align:right;}
+.monthly-chart{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:16px;}
+.monthly-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.monthly-bar-fill{width:100%;border-radius:4px 4px 0 0;min-height:4px;}
+.monthly-bar-label,.monthly-bar-val{font-size:.65rem;color:var(--text2);}
+
+/* ── MISC ── */
 .empty-state{text-align:center;padding:60px 20px;color:var(--text2);}
 .empty-state .empty-icon{font-size:3rem;margin-bottom:12px;}
 .empty-state h3{font-family:var(--font-head);margin-bottom:6px;color:var(--text);}
+.search-box{position:relative;margin-bottom:16px;}
+.search-box input{padding-left:36px!important;}
+.search-box .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.9rem;}
+.filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-row .form-control{width:auto;flex:1;min-width:120px;}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab-btn{padding:10px 20px;cursor:pointer;font-size:.88rem;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;font-family:var(--font-body);transition:all .2s;}
+.tab-btn.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.history-item{padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.history-item:last-child{border-bottom:none;}
 
 /* ── TOAST ── */
 #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
@@ -314,73 +287,40 @@ tr:hover td{background:var(--surface2);}
 .confirm-msg{color:var(--text2);font-size:.9rem;margin-bottom:20px;}
 .confirm-btns{display:flex;gap:10px;justify-content:center;}
 
-/* ── SEARCH ── */
-.search-box{position:relative;margin-bottom:16px;}
-.search-box input{padding-left:36px!important;}
-.search-box .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.9rem;}
+/* ── GCAL BADGE ── */
+.gcal-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;background:rgba(52,211,153,.15);color:var(--accent3);border:1px solid rgba(52,211,153,.3);}
+.gcal-badge.error{background:rgba(248,113,113,.15);color:var(--danger);border-color:rgba(248,113,113,.3);}
+.gcal-badge.syncing{background:rgba(96,165,250,.15);color:var(--info);border-color:rgba(96,165,250,.3);}
+.gcal-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
 
-/* ── FILTER ROW ── */
-.filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-.filter-row .form-control{width:auto;flex:1;min-width:120px;}
-
-/* ── CHARTS ── */
-.chart-bar-container{margin-top:8px;}
-.chart-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.chart-bar-label{font-size:.8rem;color:var(--text2);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.chart-bar-track{flex:1;height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;}
-.chart-bar-fill{height:100%;border-radius:5px;transition:width 1s ease;}
-.chart-bar-val{font-size:.78rem;color:var(--text2);width:50px;text-align:right;}
-.monthly-chart{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:16px;}
-.monthly-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.monthly-bar-fill{width:100%;border-radius:4px 4px 0 0;transition:height 1s ease;min-height:4px;}
-.monthly-bar-label{font-size:.65rem;color:var(--text2);}
-.monthly-bar-val{font-size:.65rem;color:var(--text2);}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
-.tab-btn{padding:10px 20px;cursor:pointer;font-size:.88rem;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;font-family:var(--font-body);transition:all .2s;}
-.tab-btn.active{color:var(--accent2);border-bottom-color:var(--accent2);}
-.tab-btn:hover{color:var(--text);}
-.tab-panel{display:none;} .tab-panel.active{display:block;}
-
-/* ── HISTORY ── */
-.history-item{padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-.history-item:last-child{border-bottom:none;}
-
-/* ── SYNC INDICATOR ── */
-.sync-spin{animation:spin 1s linear infinite;}
-@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}} 
-
-/* ── PENDING INVITE BOX ── */
-.invite-box{
-  background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
-  border-radius:10px;padding:12px 16px;margin-bottom:10px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-}
-.invite-email{font-size:.88rem;}
-.invite-actions{display:flex;gap:6px;flex-shrink:0;}
-
+/* ── RESPONSIVE ── */
+#menu-toggle{display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:6px;}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
+#sidebar-overlay.open{display:block;}
 @media(max-width:900px){
-  #sidebar{transform:translateX(-100%);} #sidebar.open{transform:translateX(0);}
-  #main{margin-left:0;} #menu-toggle{display:block;}
-  .grid-4{grid-template-columns:1fr 1fr;} .grid-3{grid-template-columns:1fr 1fr;}
-  .grid-2{grid-template-columns:1fr;} .form-row{grid-template-columns:1fr;}
-  .form-row-3{grid-template-columns:1fr;}
+  #sidebar{transform:translateX(-100%);}#sidebar.open{transform:translateX(0);}
+  #main{margin-left:0;}#menu-toggle{display:block;}
+  .grid-4{grid-template-columns:1fr 1fr;}.grid-3{grid-template-columns:1fr 1fr;}
+  .grid-2{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.form-row-3{grid-template-columns:1fr;}
 }
-@media(max-width:600px){
-  .grid-4{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;}
-  .content{padding:16px;}
-}
+@media(max-width:600px){.grid-4{grid-template-columns:1fr;}.grid-3{grid-template-columns:1fr;}.content{padding:16px;}}
 </style>
 </head>
 <body>
 
-<!-- ════════════════════ LOGIN SCREEN ════════════════════ -->
-<div id="login-screen" class="visible">
+<!-- LOADING -->
+<div id="app-loading">
+  <div class="loading-logo">Aloj<span>App</span></div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  <div class="loading-msg" id="loading-msg">Iniciando…</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
   <div class="login-card">
     <div class="login-logo">Aloj<span>App</span></div>
-    <div class="login-sub">Gestión de Alojamientos Temporarios</div>
-    <button class="google-btn" onclick="signInWithGoogle()">
+    <div class="login-sub">Gestión de Alojamientos Temporarios<br>Datos sincronizados en la nube ☁️</div>
+    <button class="google-btn" id="btn-google-login" onclick="signInWithGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
       Iniciar sesión con Google
     </button>
@@ -388,23 +328,20 @@ tr:hover td{background:var(--surface2);}
   </div>
 </div>
 
-<!-- ════════════════════ DENIED SCREEN ════════════════════ -->
+<!-- DENIED -->
 <div id="denied-screen">
   <div class="denied-card">
     <div class="denied-icon">🚫</div>
     <div class="denied-title">Acceso Denegado</div>
-    <div class="denied-msg">Tu cuenta no tiene autorización para acceder a esta aplicación. Contactá al administrador para solicitar acceso.</div>
+    <div class="denied-msg">Tu cuenta no está autorizada. El administrador debe aprobarte desde la sección Usuarios.</div>
     <div class="denied-email" id="denied-email-show"></div>
-    <button class="btn btn-ghost" onclick="signOut()" style="width:100%;justify-content:center;">
-      Cerrar sesión e intentar con otra cuenta
-    </button>
+    <button class="btn btn-ghost" onclick="signOut()" style="width:100%;justify-content:center;">Cerrar sesión</button>
   </div>
 </div>
 
-<!-- ════════════════════ SIDEBAR OVERLAY ════════════════════ -->
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo">Aloj<span>App</span></div>
   <div class="nav-section">
@@ -428,39 +365,33 @@ tr:hover td{background:var(--surface2);}
     <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
-    <div class="user-avatar" id="sidebar-avatar">👤</div>
+    <div id="sidebar-avatar" class="sidebar-user-av">?</div>
     <div class="sidebar-user-info">
-      <div class="sidebar-user-name" id="sidebar-name">Cargando...</div>
+      <div class="sidebar-user-name" id="sidebar-name">…</div>
       <div class="sidebar-user-role" id="sidebar-role">—</div>
     </div>
     <button class="logout-btn" onclick="signOut()" title="Cerrar sesión">⏻</button>
   </div>
 </nav>
 
-<!-- ════════════════════ MAIN ════════════════════ -->
-<div id="main">
+<!-- MAIN -->
+<div id="main" style="display:none;">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
       <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
-      <span class="topbar-title" id="page-title">Dashboard</span>
+      <span class="topbar-title" id="page-title">Calendario</span>
     </div>
     <div class="topbar-actions" id="topbar-actions">
-      <div id="gcal-status" class="gcal-badge" style="display:none;">
-        <span class="gcal-dot"></span> Cal sincronizado
-      </div>
+      <div id="gcal-status" class="gcal-badge" style="display:none;"><span class="gcal-dot"></span> Cal sincronizado</div>
+      <div id="db-status" class="sync-badge sync-ok" style="display:none;"><span class="sync-dot"></span> <span id="db-status-txt">En línea</span></div>
     </div>
   </div>
-
   <div class="content">
     <div id="page-dashboard" class="page"><div id="dashboard-content"></div></div>
     <div id="page-calendario" class="page active">
       <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="renderCalendar()">
-          <option value="">Todos los alojamientos</option>
-        </select>
-        <button class="btn btn-ghost btn-sm" onclick="syncAllToCalendar()" id="btn-sync-cal">
-          🔄 Sincronizar con Google Cal
-        </button>
+        <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="renderCalendar()"><option value="">Todos los alojamientos</option></select>
+        <button class="btn btn-ghost btn-sm" onclick="syncAllToCalendar()" id="btn-sync-cal">🔄 Sincronizar con Google Cal</button>
       </div>
       <div id="calendar-container">
         <div class="cal-header">
@@ -478,18 +409,15 @@ tr:hover td{background:var(--surface2);}
       <div class="filter-row">
         <select class="form-control" id="res-filter-aloj" onchange="renderReservas()"><option value="">Todos los alojamientos</option></select>
         <select class="form-control" id="res-filter-estado" onchange="renderReservas()">
-          <option value="">Todos los estados</option>
-          <option value="confirmada">Confirmada</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="cancelada">Cancelada</option>
+          <option value="">Todos los estados</option><option value="confirmada">Confirmada</option>
+          <option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option>
         </select>
         <input type="month" class="form-control" id="res-filter-mes" onchange="renderReservas()" style="width:auto;">
       </div>
       <div id="reservas-list"></div>
     </div>
     <div id="page-huespedes" class="page">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
+      <div class="search-box"><span class="search-icon">🔍</span>
         <input type="text" class="form-control" id="huesped-search" placeholder="Buscar por nombre, teléfono o DNI..." oninput="renderHuespedes()">
       </div>
       <div id="huespedes-list"></div>
@@ -499,101 +427,72 @@ tr:hover td{background:var(--surface2);}
   </div>
 </div>
 
-<!-- ════════════════════ MODALS ════════════════════ -->
-
+<!-- ══ MODALS ══ -->
 <!-- ALOJAMIENTO -->
 <div class="modal-overlay" id="modal-aloj">
   <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-aloj-title">Nuevo Alojamiento</span>
-      <button class="close-btn" onclick="closeModal('modal-aloj')">✕</button>
-    </div>
+    <div class="modal-header"><span class="modal-title" id="modal-aloj-title">Alojamiento</span><button class="close-btn" onclick="closeModal('modal-aloj')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="aloj-id">
-      <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-control" id="aloj-nombre" placeholder="Ej: Depto 2A - Mar del Plata"></div>
+      <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-control" id="aloj-nombre"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Máx. huéspedes *</label><input type="number" class="form-control" id="aloj-max" min="1" max="20" value="4"></div>
         <div class="form-group"><label class="form-label">Color</label><div class="color-picker-grid" id="color-picker"></div></div>
       </div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="aloj-obs"></textarea></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-aloj')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveAlojamiento()">💾 Guardar</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aloj')">Cancelar</button><button class="btn btn-primary" onclick="saveAlojamiento()">💾 Guardar</button></div>
   </div>
 </div>
 
 <!-- RESERVA -->
 <div class="modal-overlay" id="modal-reserva">
   <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-res-title">Nueva Reserva</span>
-      <button class="close-btn" onclick="closeModal('modal-reserva')">✕</button>
-    </div>
+    <div class="modal-header"><span class="modal-title" id="modal-res-title">Reserva</span><button class="close-btn" onclick="closeModal('modal-reserva')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="res-id">
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Alojamiento *</label>
+        <div class="form-group"><label class="form-label">Alojamiento *</label>
           <select class="form-control" id="res-aloj" onchange="updateResAlojInfo()"><option value="">-- Seleccionar --</option></select>
           <small id="res-aloj-info" style="color:var(--text2);font-size:.78rem;"></small>
         </div>
         <div class="form-group"><label class="form-label">Estado</label>
-          <select class="form-control" id="res-estado">
-            <option value="confirmada">Confirmada</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
+          <select class="form-control" id="res-estado"><option value="confirmada">Confirmada</option><option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option></select>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Fecha de entrada *</label><input type="date" class="form-control" id="res-entrada"></div>
-        <div class="form-group"><label class="form-label">Fecha de salida *</label><input type="date" class="form-control" id="res-salida"></div>
+        <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada"></div>
+        <div class="form-group"><label class="form-label">Fecha salida *</label><input type="date" class="form-control" id="res-salida"></div>
       </div>
-      <hr style="border-color:var(--border);margin:12px 0;">
-      <p style="font-size:.82rem;color:var(--text2);margin-bottom:12px;">DATOS DEL HUÉSPED PRINCIPAL</p>
+      <hr style="border-color:var(--border);margin:12px 0;"><p style="font-size:.82rem;color:var(--text2);margin-bottom:12px;">DATOS DEL HUÉSPED PRINCIPAL</p>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Nombre completo *</label><input type="text" class="form-control" id="res-nombre" placeholder="Apellido, Nombre"></div>
-        <div class="form-group"><label class="form-label">Teléfono *</label><input type="tel" class="form-control" id="res-tel" placeholder="+54 9 11 ..."></div>
+        <div class="form-group"><label class="form-label">Nombre completo *</label><input type="text" class="form-control" id="res-nombre"></div>
+        <div class="form-group"><label class="form-label">Teléfono *</label><input type="tel" class="form-control" id="res-tel"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">DNI *</label><input type="text" class="form-control" id="res-dni"></div>
-        <div class="form-group"><label class="form-label">Cantidad de personas *</label><input type="number" class="form-control" id="res-personas" min="1" value="1"></div>
+        <div class="form-group"><label class="form-label">Personas *</label><input type="number" class="form-control" id="res-personas" min="1" value="1"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Costo $</label><input type="number" class="form-control" id="res-costo" min="0"></div>
         <div class="form-group"><label class="form-label">Origen</label>
-          <select class="form-control" id="res-origen">
-            <option value="particular">Particular</option>
-            <option value="booking">Booking</option>
-            <option value="airbnb">Airbnb</option>
-            <option value="otros">Otros</option>
-          </select>
+          <select class="form-control" id="res-origen"><option value="particular">Particular</option><option value="booking">Booking</option><option value="airbnb">Airbnb</option><option value="otros">Otros</option></select>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">¿Viene con mascota?</label>
-          <select class="form-control" id="res-mascota"><option value="no">No</option><option value="si">Sí</option></select>
-        </div>
+        <div class="form-group"><label class="form-label">¿Con mascota?</label><select class="form-control" id="res-mascota"><option value="no">No</option><option value="si">Sí</option></select></div>
         <div class="form-group"></div>
       </div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="res-obs"></textarea></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-reserva')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveReserva()">💾 Guardar Reserva</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-reserva')">Cancelar</button><button class="btn btn-primary" onclick="saveReserva()">💾 Guardar Reserva</button></div>
   </div>
 </div>
 
 <!-- HUÉSPED -->
 <div class="modal-overlay" id="modal-huesped">
   <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-huesped-title">Huésped</span>
-      <button class="close-btn" onclick="closeModal('modal-huesped')">✕</button>
-    </div>
+    <div class="modal-header"><span class="modal-title" id="modal-huesped-title">Huésped</span><button class="close-btn" onclick="closeModal('modal-huesped')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="huesped-tel-id">
       <div class="tabs">
@@ -608,119 +507,82 @@ tr:hover td{background:var(--surface2);}
         <div class="form-row">
           <div class="form-group"><label class="form-label">DNI</label><input type="text" class="form-control" id="huesped-dni"></div>
           <div class="form-group"><label class="form-label">Evaluación</label>
-            <select class="form-control" id="huesped-eval">
-              <option value="bueno">⭐ Buen huésped</option>
-              <option value="regular">⚠️ Regular</option>
-              <option value="malo">❌ Mal huésped</option>
-            </select>
+            <select class="form-control" id="huesped-eval"><option value="bueno">⭐ Buen huésped</option><option value="regular">⚠️ Regular</option><option value="malo">❌ Mal huésped</option></select>
           </div>
         </div>
         <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="huesped-obs"></textarea></div>
       </div>
       <div class="tab-panel" id="tab-huesped-historial"><div id="huesped-historial-content"></div></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-huesped')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveHuesped()">💾 Guardar</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-huesped')">Cancelar</button><button class="btn btn-primary" onclick="saveHuesped()">💾 Guardar</button></div>
   </div>
 </div>
 
 <!-- GASTO -->
 <div class="modal-overlay" id="modal-gasto">
   <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-gasto-title">Agregar Gasto</span>
-      <button class="close-btn" onclick="closeModal('modal-gasto')">✕</button>
-    </div>
+    <div class="modal-header"><span class="modal-title" id="modal-gasto-title">Gasto</span><button class="close-btn" onclick="closeModal('modal-gasto')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="gasto-id">
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Alojamiento *</label>
-          <select class="form-control" id="gasto-aloj"><option value="">-- Seleccionar --</option><option value="general">General (todos)</option></select>
-        </div>
+        <div class="form-group"><label class="form-label">Alojamiento *</label><select class="form-control" id="gasto-aloj"><option value="">-- Seleccionar --</option><option value="general">General (todos)</option></select></div>
         <div class="form-group"><label class="form-label">Fecha *</label><input type="date" class="form-control" id="gasto-fecha"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Concepto *</label><input type="text" class="form-control" id="gasto-concepto"></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-control" id="gasto-cat">
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="limpieza">Limpieza</option>
-            <option value="servicios">Servicios</option>
-            <option value="impuestos">Impuestos</option>
-            <option value="reparaciones">Reparaciones</option>
-            <option value="otros">Otros</option>
-          </select>
+          <select class="form-control" id="gasto-cat"><option value="mantenimiento">Mantenimiento</option><option value="limpieza">Limpieza</option><option value="servicios">Servicios</option><option value="impuestos">Impuestos</option><option value="reparaciones">Reparaciones</option><option value="otros">Otros</option></select>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Monto $ *</label><input type="number" class="form-control" id="gasto-monto" min="0"></div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="gasto-obs" rows="2"></textarea></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-gasto')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveGasto()">💾 Guardar</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-gasto')">Cancelar</button><button class="btn btn-primary" onclick="saveGasto()">💾 Guardar</button></div>
   </div>
 </div>
 
-<!-- PERMISOS USUARIO -->
+<!-- PERMISOS -->
 <div class="modal-overlay" id="modal-permisos">
   <div class="modal" style="max-width:500px;">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-permisos-title">Permisos de Usuario</span>
-      <button class="close-btn" onclick="closeModal('modal-permisos')">✕</button>
-    </div>
+    <div class="modal-header"><span class="modal-title" id="modal-permisos-title">Permisos</span><button class="close-btn" onclick="closeModal('modal-permisos')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="perm-email-id">
       <div id="perm-user-info" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px;background:var(--surface2);border-radius:10px;">
         <div id="perm-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;"></div>
         <div><div id="perm-name" style="font-weight:600;"></div><div id="perm-email-show" style="font-size:.8rem;color:var(--text2);"></div></div>
       </div>
-      <div class="perm-block">
-        <div class="perm-block-title">📊 Dashboard & Calendario</div>
+      <div class="perm-block"><div class="perm-block-title">📊 Dashboard & Calendario</div>
         <div class="perm-item"><label for="p-dashboard">Ver Dashboard</label><label class="toggle"><input type="checkbox" id="p-dashboard"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-calendario">Ver Calendario</label><label class="toggle"><input type="checkbox" id="p-calendario"><span class="toggle-slider"></span></label></div>
       </div>
-      <div class="perm-block">
-        <div class="perm-block-title">🏠 Alojamientos</div>
-        <div class="perm-item"><label for="p-aloj-ver">Ver alojamientos</label><label class="toggle"><input type="checkbox" id="p-aloj-ver"><span class="toggle-slider"></span></label></div>
+      <div class="perm-block"><div class="perm-block-title">🏠 Alojamientos</div>
+        <div class="perm-item"><label for="p-aloj-ver">Ver</label><label class="toggle"><input type="checkbox" id="p-aloj-ver"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-aloj-edit">Crear / Editar</label><label class="toggle"><input type="checkbox" id="p-aloj-edit"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-aloj-del">Eliminar</label><label class="toggle"><input type="checkbox" id="p-aloj-del"><span class="toggle-slider"></span></label></div>
       </div>
-      <div class="perm-block">
-        <div class="perm-block-title">📋 Reservas</div>
-        <div class="perm-item"><label for="p-res-ver">Ver reservas</label><label class="toggle"><input type="checkbox" id="p-res-ver"><span class="toggle-slider"></span></label></div>
+      <div class="perm-block"><div class="perm-block-title">📋 Reservas</div>
+        <div class="perm-item"><label for="p-res-ver">Ver</label><label class="toggle"><input type="checkbox" id="p-res-ver"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-res-edit">Crear / Editar</label><label class="toggle"><input type="checkbox" id="p-res-edit"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-res-del">Eliminar</label><label class="toggle"><input type="checkbox" id="p-res-del"><span class="toggle-slider"></span></label></div>
       </div>
-      <div class="perm-block">
-        <div class="perm-block-title">👥 Huéspedes</div>
-        <div class="perm-item"><label for="p-hues-ver">Ver huéspedes</label><label class="toggle"><input type="checkbox" id="p-hues-ver"><span class="toggle-slider"></span></label></div>
+      <div class="perm-block"><div class="perm-block-title">👥 Huéspedes</div>
+        <div class="perm-item"><label for="p-hues-ver">Ver</label><label class="toggle"><input type="checkbox" id="p-hues-ver"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-hues-edit">Crear / Editar</label><label class="toggle"><input type="checkbox" id="p-hues-edit"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-hues-del">Eliminar</label><label class="toggle"><input type="checkbox" id="p-hues-del"><span class="toggle-slider"></span></label></div>
       </div>
-      <div class="perm-block">
-        <div class="perm-block-title">💰 Finanzas</div>
-        <div class="perm-item"><label for="p-fin-ver">Ver ingresos y gastos</label><label class="toggle"><input type="checkbox" id="p-fin-ver"><span class="toggle-slider"></span></label></div>
+      <div class="perm-block"><div class="perm-block-title">💰 Finanzas</div>
+        <div class="perm-item"><label for="p-fin-ver">Ver</label><label class="toggle"><input type="checkbox" id="p-fin-ver"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-fin-edit">Agregar / Editar gastos</label><label class="toggle"><input type="checkbox" id="p-fin-edit"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-fin-export">Exportar a Sheets</label><label class="toggle"><input type="checkbox" id="p-fin-export"><span class="toggle-slider"></span></label></div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-permisos')">Cancelar</button>
-      <button class="btn btn-primary" onclick="savePermisos()">💾 Guardar Permisos</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-permisos')">Cancelar</button><button class="btn btn-primary" onclick="savePermisos()">💾 Guardar Permisos</button></div>
   </div>
 </div>
 
 <!-- RESERVA DETAIL -->
 <div class="modal-overlay" id="modal-res-detail">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">Detalle de Reserva</span>
-      <button class="close-btn" onclick="closeModal('modal-res-detail')">✕</button>
-    </div>
+  <div class="modal"><div class="modal-header"><span class="modal-title">Detalle de Reserva</span><button class="close-btn" onclick="closeModal('modal-res-detail')">✕</button></div>
     <div class="modal-body" id="res-detail-body"></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-res-detail')">Cerrar</button></div>
   </div>
@@ -730,7 +592,7 @@ tr:hover td{background:var(--surface2);}
 <div id="confirm-overlay">
   <div class="confirm-box">
     <div class="confirm-icon">⚠️</div>
-    <div class="confirm-title" id="confirm-title">¿Confirmar acción?</div>
+    <div class="confirm-title" id="confirm-title">¿Confirmar?</div>
     <div class="confirm-msg" id="confirm-msg"></div>
     <div class="confirm-btns">
       <button class="btn btn-ghost" onclick="confirmResolve(false)">Cancelar</button>
@@ -738,427 +600,362 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 </div>
-
 <div id="toast-container"></div>
 
-<!-- ════════════════════ GOOGLE APIS ════════════════════ -->
-<script src="https://accounts.google.com/gsi/client" async></script>
-<script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
+<!-- ══ FIREBASE SDK ══ -->
+<script type="module">
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+                                                   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc,
+         getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
+         onSnapshot, query, orderBy, serverTimestamp, writeBatch }
+                                                   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-<script>
-'use strict';
+// ══════════════════════════════════════════
+// INIT FIREBASE
+// ══════════════════════════════════════════
+const firebaseApp = initializeApp(APP_CONFIG.FIREBASE);
+const auth        = getAuth(firebaseApp);
+const db          = getFirestore(firebaseApp);
+const provider    = new GoogleAuthProvider();
 
-// ═══════════════════════════════════════
-// CONSTANTES
-// ═══════════════════════════════════════
 const ADMIN_EMAIL  = APP_CONFIG.ADMIN_EMAIL;
 const CALENDAR_ID  = APP_CONFIG.CALENDAR_ID;
 const CLIENT_ID    = APP_CONFIG.GOOGLE_CLIENT_ID;
-const SCOPES       = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
+const SCOPES       = 'https://www.googleapis.com/auth/calendar.events';
 const COLORS_LIST  = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f43f5e','#84cc16','#a855f7'];
 const MONTHS_ES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_ES      = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-// ═══════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════
-let currentUser    = null;   // { email, name, picture, isAdmin }
-let userPerms      = null;   // permisos del usuario actual
-let tokenClient    = null;
-let gapiReady      = false;
-let calendarReady  = false;
-
-let alojamientos   = [];
-let reservas       = [];
-let huespedes      = [];
-let gastos         = [];
-let usuariosDB     = [];     // { email, name, picture, approved, perms, addedAt }
-let pendingUsers   = [];     // emails que pidieron acceso
-
-let calDate        = new Date();
-let selectedColor  = COLORS_LIST[0];
-let confirmResolve;
-
-// ═══════════════════════════════════════
-// STORAGE
-// ═══════════════════════════════════════
-function getData(key)     { try { return JSON.parse(localStorage.getItem('alojapp_'+key)) || []; } catch(e) { return []; } }
-function setData(key, v)  { localStorage.setItem('alojapp_'+key, JSON.stringify(v)); }
-function getId()          { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
-
-function loadAll() {
-  alojamientos = getData('alojamientos');
-  reservas     = getData('reservas');
-  huespedes    = getData('huespedes');
-  gastos       = getData('gastos');
-  usuariosDB   = getData('usuarios');
-  pendingUsers = getData('pending_users');
-}
-function saveAll() {
-  setData('alojamientos', alojamientos);
-  setData('reservas',     reservas);
-  setData('huespedes',    huespedes);
-  setData('gastos',       gastos);
-  setData('usuarios',     usuariosDB);
-  setData('pending_users',pendingUsers);
-}
-
-// ═══════════════════════════════════════
-// PERMISOS helpers
-// ═══════════════════════════════════════
 const ADMIN_PERMS = {
-  dashboard:true, calendario:true,
+  dashboard:true,calendario:true,
   'aloj-ver':true,'aloj-edit':true,'aloj-del':true,
   'res-ver':true,'res-edit':true,'res-del':true,
   'hues-ver':true,'hues-edit':true,'hues-del':true,
-  'fin-ver':true,'fin-edit':true,'fin-export':true,
-  admin:true
+  'fin-ver':true,'fin-edit':true,'fin-export':true,admin:true
 };
 
-function hasPerm(perm) {
-  if (!currentUser) return false;
-  if (currentUser.isAdmin) return true;
-  return userPerms && userPerms[perm] === true;
+// ══════════════════════════════════════════
+// STATE — datos en memoria (cache local)
+// ══════════════════════════════════════════
+let currentUser   = null;
+let userPerms     = null;
+let alojamientos  = [];
+let reservas      = [];
+let huespedes     = [];
+let gastos        = [];
+let usuariosDB    = [];
+let pendingUsers  = [];
+let calDate       = new Date();
+let selectedColor = COLORS_LIST[0];
+let confirmResolve;
+let tokenClient   = null;
+let calendarReady = false;
+let gapiReady     = false;
+// Realtime listeners
+let unsubscribers = [];
+
+// ══════════════════════════════════════════
+// FIRESTORE HELPERS
+// ══════════════════════════════════════════
+function col(name)       { return collection(db, name); }
+function docRef(name,id) { return doc(db, name, id); }
+function getId()         { return doc(col('_')).id; } // genera ID único
+
+// Carga colección completa como array
+async function loadCol(name) {
+  const snap = await getDocs(col(name));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-function applyPermissions() {
-  // Nav visibility
-  const permsMap = {
-    'nav-dashboard':   'dashboard',
-    'nav-calendario':  'calendario',
-    'nav-alojamientos':'aloj-ver',
-    'nav-reservas':    'res-ver',
-    'nav-huespedes':   'hues-ver',
-    'nav-finanzas':    'fin-ver',
+// Guardar/actualizar documento (upsert)
+async function upsertDoc(colName, id, data) {
+  const ref = docRef(colName, id);
+  await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+// Eliminar documento
+async function delDoc(colName, id) {
+  await deleteDoc(docRef(colName, id));
+}
+
+// ══════════════════════════════════════════
+// REALTIME LISTENERS — actualiza UI al instante en todos los dispositivos
+// ══════════════════════════════════════════
+function startListeners() {
+  // Limpiar listeners anteriores
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+
+  const listen = (colName, arr, onUpdate) => {
+    const unsub = onSnapshot(col(colName), snap => {
+      arr.length = 0;
+      snap.docs.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      onUpdate();
+    }, err => console.warn('Listener error:', colName, err));
+    unsubscribers.push(unsub);
   };
-  Object.entries(permsMap).forEach(([id, perm]) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = hasPerm(perm) ? '' : 'none';
+
+  listen('alojamientos', alojamientos, () => {
+    updateSelectOptions();
+    renderCalFilterOptions();
+    if (document.getElementById('page-alojamientos').classList.contains('active')) renderAlojamientos();
+    if (document.getElementById('page-dashboard').classList.contains('active'))    renderDashboard();
+    if (document.getElementById('page-calendario').classList.contains('active'))   renderCalendar();
   });
-  const adminSection = document.getElementById('nav-admin-section');
-  if (adminSection) adminSection.style.display = currentUser?.isAdmin ? '' : 'none';
-
-  // Cal sync button
-  const syncBtn = document.getElementById('btn-sync-cal');
-  if (syncBtn) syncBtn.style.display = hasPerm('calendario') ? '' : 'none';
-}
-
-// ═══════════════════════════════════════
-// GOOGLE IDENTITY (Sign In)
-// ═══════════════════════════════════════
-function initGoogleSignIn() {
-  if (typeof google === 'undefined') { setTimeout(initGoogleSignIn, 300); return; }
-  google.accounts.id.initialize({
-    client_id: CLIENT_ID,
-    callback: handleCredentialResponse,
-    auto_select: false,
-    cancel_on_tap_outside: false
+  listen('reservas', reservas, () => {
+    if (document.getElementById('page-reservas').classList.contains('active'))   renderReservas();
+    if (document.getElementById('page-calendario').classList.contains('active'))  renderCalendar();
+    if (document.getElementById('page-dashboard').classList.contains('active'))   renderDashboard();
+    if (document.getElementById('page-finanzas').classList.contains('active'))    renderFinanzas();
   });
-  // Try silent sign-in first
-  const saved = localStorage.getItem('alojapp_session');
-  if (saved) {
-    try {
-      const session = JSON.parse(saved);
-      if (session && session.email) {
-        processLogin(session);
-        return;
-      }
-    } catch(e) {}
-  }
-  showLoginScreen();
+  listen('huespedes', huespedes, () => {
+    if (document.getElementById('page-huespedes').classList.contains('active'))  renderHuespedes();
+  });
+  listen('gastos', gastos, () => {
+    if (document.getElementById('page-finanzas').classList.contains('active'))   renderFinanzas();
+    if (document.getElementById('page-dashboard').classList.contains('active'))  renderDashboard();
+  });
+  listen('usuarios', usuariosDB, () => {
+    if (document.getElementById('page-usuarios').classList.contains('active'))   renderUsuarios();
+  });
+  listen('pending_users', pendingUsers, () => {
+    if (document.getElementById('page-usuarios').classList.contains('active'))   renderUsuarios();
+  });
+
+  setDbStatus('ok', '☁️ En línea');
 }
 
-function handleCredentialResponse(response) {
-  const payload = decodeJWT(response.credential);
-  if (!payload) { toast('Error al decodificar token', 'error'); return; }
-  const userInfo = {
-    email:   payload.email,
-    name:    payload.name,
-    picture: payload.picture,
-    sub:     payload.sub
-  };
-  localStorage.setItem('alojapp_session', JSON.stringify(userInfo));
-  processLogin(userInfo);
+function setDbStatus(state, msg) {
+  const el = document.getElementById('db-status');
+  const tx = document.getElementById('db-status-txt');
+  if (!el) return;
+  el.style.display = '';
+  el.className = 'sync-badge ' + (state==='ok'?'sync-ok':state==='err'?'sync-err':'sync-ing');
+  tx.textContent = msg;
 }
 
-function decodeJWT(token) {
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+function setLoading(msg) {
+  document.getElementById('app-loading').style.display = 'flex';
+  document.getElementById('loading-msg').textContent   = msg || 'Cargando…';
+}
+function hideLoading() {
+  document.getElementById('app-loading').style.display = 'none';
+}
+
+// Expose para onclick
+window.signInWithGoogle = async function() {
+  const btn = document.getElementById('btn-google-login');
+  btn.disabled = true;
   try {
-    const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    const json = decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-    return JSON.parse(json);
-  } catch(e) { return null; }
-}
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged tomará el control
+  } catch(e) {
+    toast('Error al iniciar sesión: ' + e.message, 'error');
+    btn.disabled = false;
+  }
+};
 
-function signInWithGoogle() {
-  if (typeof google === 'undefined') { toast('Google aún cargando, intentá de nuevo', 'info'); return; }
-  google.accounts.id.prompt((notification) => {
-    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-      // Fallback: render button manually in a popup flow
-      const loginBtn = document.querySelector('#login-screen .google-btn');
-      if (loginBtn) loginBtn.disabled = true;
-      google.accounts.id.renderButton(
-        document.createElement('div'),
-        { theme:'filled_blue', size:'large' }
-      );
-      // Re-enable
-      setTimeout(() => { if(loginBtn) loginBtn.disabled = false; }, 2000);
-      toast('Aceptá el popup de Google para continuar', 'info');
-    }
-  });
-}
+window.signOut = async function() {
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+  currentUser = null; userPerms = null;
+  await fbSignOut(auth);
+  document.getElementById('main').style.display    = 'none';
+  document.getElementById('sidebar').style.display = 'none';
+  showLoginScreen();
+};
 
-function processLogin(userInfo) {
-  loadAll();
-  const isAdmin = userInfo.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-  // Check if approved
+onAuthStateChanged(auth, async (fbUser) => {
+  if (!fbUser) {
+    hideLoading();
+    showLoginScreen();
+    return;
+  }
+  setLoading('Verificando acceso…');
+  await processLogin(fbUser);
+});
+
+async function processLogin(fbUser) {
+  const email    = fbUser.email;
+  const isAdmin  = email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const userInfo = { email, name: fbUser.displayName||email, picture: fbUser.photoURL||'', uid: fbUser.uid };
+
   if (!isAdmin) {
-    const userRecord = usuariosDB.find(u => u.email.toLowerCase() === userInfo.email.toLowerCase());
-    if (!userRecord || !userRecord.approved) {
-      // Register pending if not already there
-      if (!pendingUsers.find(p => p.email === userInfo.email)) {
-        pendingUsers.push({ email: userInfo.email, name: userInfo.name, picture: userInfo.picture, requestedAt: new Date().toISOString() });
-        setData('pending_users', pendingUsers);
-      }
+    // Leer permisos desde Firestore
+    const uDoc = await getDoc(docRef('usuarios', email));
+    if (!uDoc.exists() || !uDoc.data().approved) {
+      // Registrar pendiente
+      await upsertDoc('pending_users', email, { email, name: userInfo.name, picture: userInfo.picture, requestedAt: new Date().toISOString() });
+      hideLoading();
       showDeniedScreen(userInfo);
       return;
     }
-    userPerms = userRecord.perms || {};
+    userPerms = uDoc.data().perms || {};
   } else {
     userPerms = ADMIN_PERMS;
-    // Ensure admin is in usuariosDB
-    if (!usuariosDB.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase())) {
-      usuariosDB.push({ email: ADMIN_EMAIL, name: userInfo.name, picture: userInfo.picture, approved: true, perms: ADMIN_PERMS, isAdmin: true, addedAt: new Date().toISOString() });
-      setData('usuarios', usuariosDB);
-    }
+    // Asegurar que el admin existe en Firestore
+    await upsertDoc('usuarios', email, { email, name: userInfo.name, picture: userInfo.picture, approved: true, perms: ADMIN_PERMS, isAdmin: true });
   }
 
   currentUser = { ...userInfo, isAdmin };
+  hideLoading();
   hidLoginScreens();
   initApp();
+  startListeners();
 }
 
 function showLoginScreen() {
   document.getElementById('login-screen').classList.add('visible');
   document.getElementById('denied-screen').classList.remove('visible');
-  document.getElementById('main').style.display = 'none';
+  document.getElementById('main').style.display    = 'none';
   document.getElementById('sidebar').style.display = 'none';
+  const btn = document.getElementById('btn-google-login');
+  if (btn) btn.disabled = false;
 }
-
-function showDeniedScreen(userInfo) {
+function showDeniedScreen(u) {
   document.getElementById('login-screen').classList.remove('visible');
   document.getElementById('denied-screen').classList.add('visible');
-  document.getElementById('denied-email-show').textContent = userInfo.email;
-  document.getElementById('main').style.display = 'none';
+  document.getElementById('denied-email-show').textContent = u.email;
+  document.getElementById('main').style.display    = 'none';
   document.getElementById('sidebar').style.display = 'none';
 }
-
 function hidLoginScreens() {
   document.getElementById('login-screen').classList.remove('visible');
   document.getElementById('denied-screen').classList.remove('visible');
-  document.getElementById('main').style.display = '';
+  document.getElementById('main').style.display    = '';
   document.getElementById('sidebar').style.display = '';
 }
 
-function signOut() {
-  localStorage.removeItem('alojapp_session');
-  currentUser = null; userPerms = null;
-  if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
-  if (tokenClient) { /* revoke */ }
-  showLoginScreen();
-  document.getElementById('login-screen').classList.add('visible');
-}
-
-// ═══════════════════════════════════════
-// GOOGLE CALENDAR API
-// ═══════════════════════════════════════
-function gapiLoaded() {
-  gapi.load('client', initGapiClient);
-}
+// ══════════════════════════════════════════
+// GOOGLE CALENDAR
+// ══════════════════════════════════════════
+window.gapiLoaded = function() { gapi.load('client', initGapiClient); };
 
 async function initGapiClient() {
   try {
-    await gapi.client.init({
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-    });
+    await gapi.client.init({ discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'] });
     gapiReady = true;
     initTokenClient();
-  } catch(e) {
-    console.warn('GAPI init error:', e);
-  }
+  } catch(e) { console.warn('GAPI init:', e); }
 }
-
 function initTokenClient() {
-  if (typeof google === 'undefined' || !google.accounts) { setTimeout(initTokenClient, 500); return; }
+  if (typeof google === 'undefined') { setTimeout(initTokenClient,500); return; }
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      if (tokenResponse.error) {
-        updateCalStatus('error', 'Error de autorización');
-        return;
-      }
+    client_id: CLIENT_ID, scope: SCOPES,
+    callback: (r) => {
+      if (r.error) { updateCalStatus('error','Error de autorización'); return; }
       calendarReady = true;
-      updateCalStatus('ok', 'Cal sincronizado');
-      toast('Google Calendar conectado ✓', 'success');
+      updateCalStatus('ok','Cal sincronizado');
+      toast('Google Calendar conectado ✓','success');
     }
   });
 }
-
-function requestCalendarAccess() {
-  if (!gapiReady) { toast('API de Google no lista, intentá en unos segundos', 'info'); return; }
-  if (!tokenClient) { initTokenClient(); setTimeout(requestCalendarAccess, 1000); return; }
-  tokenClient.requestAccessToken({ prompt: 'consent' });
-}
-
-function updateCalStatus(state, msg) {
-  const el = document.getElementById('gcal-status');
-  if (!el) return;
-  el.style.display = '';
-  el.className = 'gcal-badge' + (state === 'error' ? ' error' : state === 'syncing' ? ' syncing' : '');
-  el.innerHTML = `<span class="gcal-dot${state==='syncing'?' sync-spin':''}"></span> ${msg}`;
-}
-
-async function syncAllToCalendar() {
-  if (!calendarReady) {
-    requestCalendarAccess();
-    return;
-  }
-  updateCalStatus('syncing', 'Sincronizando...');
-  const activeRes = reservas.filter(r => r.estado !== 'cancelada');
-  let ok = 0, err = 0;
-  for (const r of activeRes) {
-    const res = await syncReservaToCalendar(r);
-    if (res) ok++; else err++;
-  }
-  updateCalStatus('ok', 'Cal sincronizado');
-  toast(`Sincronización completada: ${ok} eventos${err ? `, ${err} errores` : ''}`, ok > 0 ? 'success' : 'info');
-}
-
+window.syncAllToCalendar = async function() {
+  if (!calendarReady) { if(tokenClient) tokenClient.requestAccessToken({prompt:'consent'}); else toast('Calendar no disponible','info'); return; }
+  updateCalStatus('syncing','Sincronizando…');
+  const active = reservas.filter(r=>r.estado!=='cancelada');
+  let ok=0,err=0;
+  for (const r of active) { const res=await syncReservaToCalendar(r); res?ok++:err++; }
+  updateCalStatus('ok','Cal sincronizado');
+  toast(`Sincronización: ${ok} eventos${err?', '+err+' errores':''}`, ok>0?'success':'info');
+};
 async function syncReservaToCalendar(r) {
-  if (!calendarReady || !gapiReady) return false;
-  const aloj = alojamientos.find(a => a.id === r.alojId);
-  const mascota = r.mascota === 'si' ? ' 🐾' : '';
-  const title = `${aloj?.nombre || 'Reserva'} — ${r.nombre} (${r.personas}p${mascota})`;
-  const description =
-    `Huésped: ${r.nombre}\n` +
-    `Tel: ${r.tel}\n` +
-    `DNI: ${r.dni || '—'}\n` +
-    `Personas: ${r.personas}${mascota}\n` +
-    `Costo: $${r.costo || 0}\n` +
-    `Origen: ${r.origen}\n` +
-    `Estado: ${r.estado}\n` +
-    (r.obs ? `Obs: ${r.obs}` : '');
-
+  if (!calendarReady||!gapiReady) return false;
+  const aloj = alojamientos.find(a=>a.id===r.alojId);
+  const title = `${aloj?.nombre||'Reserva'} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
   const event = {
-    summary: title,
-    description,
-    start: { date: r.entrada },
-    end:   { date: r.salida  },
+    summary:title,
+    description:`Huésped: ${r.nombre}\nTel: ${r.tel}\nDNI: ${r.dni||'—'}\nPersonas: ${r.personas}\nCosto: $${r.costo||0}\nOrigen: ${r.origen}\nEstado: ${r.estado}${r.obs?'\nObs: '+r.obs:''}`,
+    start:{date:r.entrada}, end:{date:r.salida},
     colorId: getGCalColorId(aloj?.color),
-    extendedProperties: { private: { alojappId: r.id } }
+    extendedProperties:{private:{alojappId:r.id}}
   };
-
   try {
     if (r.gcalEventId) {
-      await gapi.client.calendar.events.update({
-        calendarId: CALENDAR_ID,
-        eventId: r.gcalEventId,
-        resource: event
-      });
+      await gapi.client.calendar.events.update({calendarId:CALENDAR_ID,eventId:r.gcalEventId,resource:event});
     } else {
-      const resp = await gapi.client.calendar.events.insert({
-        calendarId: CALENDAR_ID,
-        resource: event
-      });
-      r.gcalEventId = resp.result.id;
-      setData('reservas', reservas);
+      const resp = await gapi.client.calendar.events.insert({calendarId:CALENDAR_ID,resource:event});
+      await updateDoc(docRef('reservas',r.id),{gcalEventId:resp.result.id});
     }
     return true;
-  } catch(e) {
-    console.warn('GCal sync error:', e);
-    return false;
-  }
+  } catch(e) { console.warn('GCal sync:',e); return false; }
 }
-
 async function deleteCalendarEvent(gcalEventId) {
-  if (!calendarReady || !gcalEventId) return;
-  try {
-    await gapi.client.calendar.events.delete({ calendarId: CALENDAR_ID, eventId: gcalEventId });
-  } catch(e) { console.warn('GCal delete error:', e); }
+  if (!calendarReady||!gcalEventId) return;
+  try { await gapi.client.calendar.events.delete({calendarId:CALENDAR_ID,eventId:gcalEventId}); } catch(e){}
 }
-
-// Map app hex colors to Google Calendar colorIds
 function getGCalColorId(hex) {
-  const map = {
-    '#ef4444':'11','#f97316':'6','#eab308':'5','#22c55e':'2',
-    '#06b6d4':'7','#3b82f6':'9','#8b5cf6':'1','#ec4899':'4',
-    '#14b8a6':'8','#f43f5e':'11','#84cc16':'2','#a855f7':'3'
-  };
-  return map[hex] || '1';
+  const m={'#ef4444':'11','#f97316':'6','#eab308':'5','#22c55e':'2','#06b6d4':'7','#3b82f6':'9','#8b5cf6':'1','#ec4899':'4','#14b8a6':'8','#f43f5e':'11','#84cc16':'2','#a855f7':'3'};
+  return m[hex]||'1';
+}
+function updateCalStatus(state,msg) {
+  const el=document.getElementById('gcal-status'); if(!el) return;
+  el.style.display='';
+  el.className='gcal-badge'+(state==='error'?' error':state==='syncing'?' syncing':'');
+  el.innerHTML=`<span class="gcal-dot${state==='syncing'?' spinning':''}"></span> ${msg}`;
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // APP INIT
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 function initApp() {
-  // Seed demo data
-  if (!alojamientos.length) {
-    alojamientos = [
-      { id:'a1', nombre:'Depto 2A - Centro',    maxHuespedes:4, color:'#3b82f6', obs:'Vista al mar' },
-      { id:'a2', nombre:'Cabaña El Bosque',      maxHuespedes:6, color:'#22c55e', obs:'Con parrilla' },
-      { id:'a3', nombre:'Suite Premium 5B',      maxHuespedes:2, color:'#8b5cf6', obs:'Solo adultos' },
-    ];
-    setData('alojamientos', alojamientos);
-  }
-
-  // Update sidebar user info
-  const avatar = document.getElementById('sidebar-avatar');
+  // Sidebar user info
+  const av = document.getElementById('sidebar-avatar');
   if (currentUser.picture) {
-    avatar.innerHTML = `<img src="${currentUser.picture}" alt="${currentUser.name}">`;
+    av.outerHTML = `<img id="sidebar-avatar" class="sidebar-user-av" src="${currentUser.picture}" alt="${currentUser.name}" style="border-radius:50%;border:2px solid var(--border);">`;
   } else {
-    avatar.textContent = currentUser.name?.[0]?.toUpperCase() || '?';
+    av.textContent = currentUser.name?.[0]?.toUpperCase()||'?';
   }
-  document.getElementById('sidebar-name').textContent = currentUser.name || currentUser.email;
+  document.getElementById('sidebar-name').textContent = currentUser.name||currentUser.email;
   document.getElementById('sidebar-role').textContent = currentUser.isAdmin ? '⭐ Administrador' : '👤 Usuario';
-
   applyPermissions();
   updateSelectOptions();
-
-  // Default page — Calendario como pantalla inicial
-  const firstPerm = currentUser.isAdmin ? 'calendario' :
-    hasPerm('calendario') ? 'calendario' :
-    hasPerm('dashboard') ? 'dashboard' :
-    hasPerm('res-ver') ? 'reservas' : 'huespedes';
-  showPage(firstPerm);
+  showPage('calendario');
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
+// PERMISOS
+// ══════════════════════════════════════════
+function hasPerm(p) {
+  if (!currentUser) return false;
+  if (currentUser.isAdmin) return true;
+  return userPerms?.[p]===true;
+}
+function applyPermissions() {
+  const map={'nav-dashboard':'dashboard','nav-calendario':'calendario','nav-alojamientos':'aloj-ver','nav-reservas':'res-ver','nav-huespedes':'hues-ver','nav-finanzas':'fin-ver'};
+  Object.entries(map).forEach(([id,p])=>{ const el=document.getElementById(id); if(el) el.style.display=hasPerm(p)?'':'none'; });
+  const adm=document.getElementById('nav-admin-section');
+  if(adm) adm.style.display=currentUser?.isAdmin?'':'none';
+}
+
+// ══════════════════════════════════════════
 // UTILS
-// ═══════════════════════════════════════
-function fmt(d) {
-  if (!d) return '';
-  return new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
-}
+// ══════════════════════════════════════════
+function fmt(d) { if(!d) return ''; return new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function fmtMoney(n) { return '$'+Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0}); }
 function getAloj(id)  { return alojamientos.find(a=>a.id===id)||null; }
-function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2+'T12:00:00')-new Date(d1+'T12:00:00'))/(864e5))); }
+function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2+'T12:00:00')-new Date(d1+'T12:00:00'))/864e5)); }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // TOAST & CONFIRM
-// ═══════════════════════════════════════
-function toast(msg, type='info') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span>${{success:'✅',error:'❌',info:'ℹ️'}[type]||'ℹ️'}</span><span>${msg}</span>`;
+// ══════════════════════════════════════════
+window.toast = function(msg, type='info') {
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${{success:'✅',error:'❌',info:'ℹ️'}[type]||'ℹ️'}</span><span>${msg}</span>`;
   document.getElementById('toast-container').appendChild(el);
-  setTimeout(()=>el.remove(), 3500);
-}
-
-function confirm(title, msg) {
+  setTimeout(()=>el.remove(),3500);
+};
+function confirm(title,msg) {
   return new Promise(res=>{
-    confirmResolve = res;
-    document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent   = msg;
+    confirmResolve=res;
+    document.getElementById('confirm-title').textContent=title;
+    document.getElementById('confirm-msg').textContent=msg;
     document.getElementById('confirm-overlay').classList.add('open');
   });
 }
@@ -1167,266 +964,233 @@ window.confirmResolve = function(v) {
   confirmResolve(v);
 };
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // MODAL & TABS
-// ═══════════════════════════════════════
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function switchTab(btn, panelId) {
-  const scope = btn.closest('.modal-body, .tab-container');
+// ══════════════════════════════════════════
+window.openModal  = id => document.getElementById(id).classList.add('open');
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+window.switchTab  = function(btn,panelId) {
+  const scope=btn.closest('.modal-body,.tab-container');
   scope.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   scope.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById(panelId).classList.add('active');
-}
+};
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // NAVIGATION
-// ═══════════════════════════════════════
-function showPage(page) {
+// ══════════════════════════════════════════
+window.showPage = function(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-
-  const titles = { dashboard:'Dashboard', calendario:'Calendario', alojamientos:'Alojamientos',
-    reservas:'Reservas', huespedes:'Huéspedes', finanzas:'Ingresos & Gastos', usuarios:'Gestión de Usuarios' };
-  document.getElementById('page-title').textContent = titles[page] || page;
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios'};
+  document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
+  const actions=document.getElementById('topbar-actions');
+  const gcalHTML=document.getElementById('gcal-status').outerHTML;
+  const dbHTML=document.getElementById('db-status').outerHTML;
+  actions.innerHTML=gcalHTML+dbHTML;
+  if(page==='alojamientos'){ if(hasPerm('aloj-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openAlojModal()">+ Alojamiento</button>`; renderAlojamientos(); }
+  else if(page==='reservas'){  if(hasPerm('res-edit'))  actions.innerHTML+=`<button class="btn btn-primary" onclick="openReservaModal()">+ Reserva</button>`;    updateSelectOptions(); renderReservas(); }
+  else if(page==='huespedes'){ if(hasPerm('hues-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;   renderHuespedes(); }
+  else if(page==='calendario'){renderCalendar();renderCalFilterOptions();}
+  else if(page==='dashboard') renderDashboard();
+  else if(page==='finanzas'){  if(hasPerm('fin-edit'))  actions.innerHTML+=`<button class="btn btn-primary" onclick="openGastoModal()">+ Gasto</button>`; renderFinanzas(); }
+  else if(page==='usuarios')   renderUsuarios();
+};
+window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
+window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
+window.calNav        = dir=>{ calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1); renderCalendar(); };
 
-  const actions = document.getElementById('topbar-actions');
-  // Keep gcal badge
-  const gcalBadge = document.getElementById('gcal-status').outerHTML;
-  actions.innerHTML = gcalBadge;
-
-  if (page==='alojamientos')  { if(hasPerm('aloj-edit')) actions.innerHTML += `<button class="btn btn-primary" onclick="openAlojModal()">+ Alojamiento</button>`; renderAlojamientos(); }
-  else if (page==='reservas') { if(hasPerm('res-edit'))  actions.innerHTML += `<button class="btn btn-primary" onclick="openReservaModal()">+ Reserva</button>`;    renderReservas(); updateSelectOptions(); }
-  else if (page==='huespedes'){ if(hasPerm('hues-edit')) actions.innerHTML += `<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;   renderHuespedes(); }
-  else if (page==='calendario'){ renderCalendar(); renderCalFilterOptions(); }
-  else if (page==='dashboard') { renderDashboard(); }
-  else if (page==='finanzas')  { if(hasPerm('fin-edit')) actions.innerHTML += `<button class="btn btn-primary" onclick="openGastoModal()">+ Gasto</button>`; renderFinanzas(); }
-  else if (page==='usuarios')  { renderUsuarios(); }
-}
-
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
-function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // COLOR PICKER
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 function renderColorPicker(current) {
-  selectedColor = current || COLORS_LIST[0];
-  document.getElementById('color-picker').innerHTML = COLORS_LIST.map(c =>
-    `<div class="color-option ${c===selectedColor?'selected':''}" style="background:${c}" onclick="selectColor('${c}',this)"></div>`
-  ).join('');
+  selectedColor=current||COLORS_LIST[0];
+  document.getElementById('color-picker').innerHTML=COLORS_LIST.map(c=>`<div class="color-option ${c===selectedColor?'selected':''}" style="background:${c}" onclick="selectColor('${c}',this)"></div>`).join('');
 }
-function selectColor(c, el) {
-  selectedColor = c;
+window.selectColor = function(c,el) {
+  selectedColor=c;
   document.querySelectorAll('.color-option').forEach(e=>e.classList.remove('selected'));
   el.classList.add('selected');
-}
+};
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // ALOJAMIENTOS
-// ═══════════════════════════════════════
-function openAlojModal(id=null) {
-  const a = id ? getAloj(id) : null;
-  document.getElementById('aloj-id').value    = id||'';
-  document.getElementById('aloj-nombre').value = a?.nombre||'';
-  document.getElementById('aloj-max').value    = a?.maxHuespedes||4;
-  document.getElementById('aloj-obs').value    = a?.obs||'';
-  document.getElementById('modal-aloj-title').textContent = id ? 'Editar Alojamiento' : 'Nuevo Alojamiento';
+// ══════════════════════════════════════════
+window.openAlojModal = function(id=null) {
+  const a=id?getAloj(id):null;
+  document.getElementById('aloj-id').value    =id||'';
+  document.getElementById('aloj-nombre').value=a?.nombre||'';
+  document.getElementById('aloj-max').value   =a?.maxHuespedes||4;
+  document.getElementById('aloj-obs').value   =a?.obs||'';
+  document.getElementById('modal-aloj-title').textContent=id?'Editar Alojamiento':'Nuevo Alojamiento';
   renderColorPicker(a?.color);
   openModal('modal-aloj');
-}
-
-function saveAlojamiento() {
-  const nombre = document.getElementById('aloj-nombre').value.trim();
-  const max    = parseInt(document.getElementById('aloj-max').value);
-  const obs    = document.getElementById('aloj-obs').value.trim();
-  const id     = document.getElementById('aloj-id').value;
-  if (!nombre) { toast('El nombre es requerido','error'); return; }
-  if (!max||max<1) { toast('Máximo inválido','error'); return; }
-  if (id) {
-    const idx = alojamientos.findIndex(a=>a.id===id);
-    alojamientos[idx] = {...alojamientos[idx], nombre, maxHuespedes:max, color:selectedColor, obs};
-    toast('Alojamiento actualizado','success');
-  } else {
-    alojamientos.push({id:getId(), nombre, maxHuespedes:max, color:selectedColor, obs});
-    toast('Alojamiento creado','success');
-  }
-  saveAll(); closeModal('modal-aloj'); renderAlojamientos();
-}
-
-async function deleteAlojamiento(id) {
-  if (!hasPerm('aloj-del')) { toast('Sin permiso para eliminar','error'); return; }
-  const ok = await confirm('Eliminar alojamiento','¿Seguro? Se eliminarán también todas las reservas asociadas.');
-  if (!ok) return;
-  // Delete calendar events
-  for (const r of reservas.filter(r=>r.alojId===id && r.gcalEventId)) {
-    await deleteCalendarEvent(r.gcalEventId);
-  }
-  alojamientos = alojamientos.filter(a=>a.id!==id);
-  reservas     = reservas.filter(r=>r.alojId!==id);
-  saveAll(); toast('Alojamiento eliminado','success'); renderAlojamientos();
-}
-
+};
+window.saveAlojamiento = async function() {
+  const nombre=document.getElementById('aloj-nombre').value.trim();
+  const max=parseInt(document.getElementById('aloj-max').value);
+  const obs=document.getElementById('aloj-obs').value.trim();
+  const id=document.getElementById('aloj-id').value||getId();
+  if(!nombre){toast('El nombre es requerido','error');return;}
+  if(!max||max<1){toast('Máximo inválido','error');return;}
+  setDbStatus('ing','Guardando…');
+  await upsertDoc('alojamientos',id,{nombre,maxHuespedes:max,color:selectedColor,obs});
+  setDbStatus('ok','☁️ En línea');
+  toast('Alojamiento guardado','success');
+  closeModal('modal-aloj');
+};
+window.deleteAlojamiento = async function(id) {
+  if(!hasPerm('aloj-del')){toast('Sin permiso','error');return;}
+  const ok=await confirm('Eliminar alojamiento','¿Seguro? Se eliminarán también todas las reservas asociadas.');
+  if(!ok) return;
+  setDbStatus('ing','Eliminando…');
+  const batch=writeBatch(db);
+  reservas.filter(r=>r.alojId===id).forEach(r=>{
+    batch.delete(docRef('reservas',r.id));
+    if(r.gcalEventId) deleteCalendarEvent(r.gcalEventId);
+  });
+  batch.delete(docRef('alojamientos',id));
+  await batch.commit();
+  setDbStatus('ok','☁️ En línea');
+  toast('Alojamiento eliminado','success');
+};
 function renderAlojamientos() {
-  const el = document.getElementById('aloj-list');
-  if (!alojamientos.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🏠</div><h3>Sin alojamientos</h3><p>Agrega tu primer alojamiento</p></div>`; return;
-  }
-  el.innerHTML = `<div class="grid-3">${alojamientos.map(a=>{
-    const resCount = reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
+  const el=document.getElementById('aloj-list');
+  if(!alojamientos.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏠</div><h3>Sin alojamientos</h3><p>Agrega tu primer alojamiento</p></div>`;return;}
+  el.innerHTML=`<div class="grid-3">${alojamientos.map(a=>{
+    const rc=reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
     return `<div class="aloj-card" style="--aloj-color:${a.color}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <div class="color-dot" style="background:${a.color}"></div>
-        <div class="aloj-card-name">${a.nombre}</div>
-      </div>
-      <div class="aloj-card-meta">
-        <span>👥 Máx. ${a.maxHuespedes} personas</span>
-        <span>📋 ${resCount} reserva(s) activa(s)</span>
-        ${a.obs?`<span>📝 ${a.obs}</span>`:''}
-      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><div class="color-dot" style="background:${a.color}"></div><div class="aloj-card-name">${a.nombre}</div></div>
+      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}</div>
       <div class="aloj-card-actions">
-        ${hasPerm('aloj-edit') ? `<button class="btn btn-ghost btn-sm" onclick="openAlojModal('${a.id}')">✏️ Editar</button>` : ''}
-        ${hasPerm('aloj-del')  ? `<button class="btn btn-danger btn-sm" onclick="deleteAlojamiento('${a.id}')">🗑️</button>` : ''}
-      </div>
-    </div>`;}).join('')}</div>`;
+        ${hasPerm('aloj-edit')?`<button class="btn btn-ghost btn-sm" onclick="openAlojModal('${a.id}')">✏️ Editar</button>`:''}
+        ${hasPerm('aloj-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteAlojamiento('${a.id}')">🗑️</button>`:''}
+      </div></div>`;}).join('')}</div>`;
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // SELECT OPTIONS
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 function updateSelectOptions() {
   ['res-aloj','res-filter-aloj','gasto-aloj'].forEach(id=>{
-    const el = document.getElementById(id); if (!el) return;
-    const cur = el.value;
-    const isFilter = id.includes('filter');
-    const isGasto  = id.includes('gasto');
-    el.innerHTML = `<option value="">${isFilter?'Todos los alojamientos':isGasto?'-- Seleccionar --':'-- Seleccionar --'}</option>`;
-    if (isGasto) el.innerHTML += `<option value="general">General (todos)</option>`;
-    alojamientos.forEach(a => el.innerHTML += `<option value="${a.id}">${a.nombre}</option>`);
-    el.value = cur;
+    const el=document.getElementById(id);if(!el)return;
+    const cur=el.value;
+    const isFilter=id.includes('filter'),isGasto=id.includes('gasto');
+    el.innerHTML=`<option value="">${isFilter?'Todos los alojamientos':'-- Seleccionar --'}</option>`;
+    if(isGasto) el.innerHTML+=`<option value="general">General (todos)</option>`;
+    alojamientos.forEach(a=>el.innerHTML+=`<option value="${a.id}">${a.nombre}</option>`);
+    el.value=cur;
   });
 }
+window.updateResAlojInfo = function() {
+  const a=getAloj(document.getElementById('res-aloj').value);
+  document.getElementById('res-aloj-info').textContent=a?`Máx. ${a.maxHuespedes} huéspedes`:'';
+};
 
-function updateResAlojInfo() {
-  const a = getAloj(document.getElementById('res-aloj').value);
-  document.getElementById('res-aloj-info').textContent = a ? `Máx. ${a.maxHuespedes} huéspedes` : '';
-}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // RESERVAS
-// ═══════════════════════════════════════
-function openReservaModal(id=null) {
+// ══════════════════════════════════════════
+window.openReservaModal = function(id=null) {
   updateSelectOptions();
-  const r = id ? reservas.find(r=>r.id===id) : null;
-  document.getElementById('res-id').value       = id||'';
-  document.getElementById('res-aloj').value     = r?.alojId||'';
-  document.getElementById('res-estado').value   = r?.estado||'confirmada';
-  document.getElementById('res-entrada').value  = r?.entrada||'';
-  document.getElementById('res-salida').value   = r?.salida||'';
-  document.getElementById('res-nombre').value   = r?.nombre||'';
-  document.getElementById('res-tel').value      = r?.tel||'';
-  document.getElementById('res-dni').value      = r?.dni||'';
-  document.getElementById('res-personas').value = r?.personas||1;
-  document.getElementById('res-costo').value    = r?.costo||'';
-  document.getElementById('res-origen').value   = r?.origen||'particular';
-  document.getElementById('res-mascota').value  = r?.mascota||'no';
-  document.getElementById('res-obs').value      = r?.obs||'';
-  document.getElementById('modal-res-title').textContent = id ? 'Editar Reserva' : 'Nueva Reserva';
+  const r=id?reservas.find(r=>r.id===id):null;
+  document.getElementById('res-id').value      =id||'';
+  document.getElementById('res-aloj').value    =r?.alojId||'';
+  document.getElementById('res-estado').value  =r?.estado||'confirmada';
+  document.getElementById('res-entrada').value =r?.entrada||'';
+  document.getElementById('res-salida').value  =r?.salida||'';
+  document.getElementById('res-nombre').value  =r?.nombre||'';
+  document.getElementById('res-tel').value     =r?.tel||'';
+  document.getElementById('res-dni').value     =r?.dni||'';
+  document.getElementById('res-personas').value=r?.personas||1;
+  document.getElementById('res-costo').value   =r?.costo||'';
+  document.getElementById('res-origen').value  =r?.origen||'particular';
+  document.getElementById('res-mascota').value =r?.mascota||'no';
+  document.getElementById('res-obs').value     =r?.obs||'';
+  document.getElementById('modal-res-title').textContent=id?'Editar Reserva':'Nueva Reserva';
   updateResAlojInfo();
   openModal('modal-reserva');
-}
-
-function checkConflictos(alojId, entrada, salida, excludeId=null) {
+};
+function checkConflictos(alojId,entrada,salida,excludeId=null) {
   return reservas.filter(r=>{
-    if (r.alojId!==alojId||r.estado==='cancelada') return false;
-    if (excludeId && r.id===excludeId) return false;
-    return !(salida<=r.entrada || entrada>=r.salida);
+    if(r.alojId!==alojId||r.estado==='cancelada') return false;
+    if(excludeId&&r.id===excludeId) return false;
+    return !(salida<=r.entrada||entrada>=r.salida);
   });
 }
-
-async function saveReserva() {
-  const id       = document.getElementById('res-id').value;
-  const alojId   = document.getElementById('res-aloj').value;
-  const estado   = document.getElementById('res-estado').value;
-  const entrada  = document.getElementById('res-entrada').value;
-  const salida   = document.getElementById('res-salida').value;
-  const nombre   = document.getElementById('res-nombre').value.trim();
-  const tel      = document.getElementById('res-tel').value.trim();
-  const dni      = document.getElementById('res-dni').value.trim();
-  const personas = parseInt(document.getElementById('res-personas').value)||1;
-  const costo    = parseFloat(document.getElementById('res-costo').value)||0;
-  const origen   = document.getElementById('res-origen').value;
-  const mascota  = document.getElementById('res-mascota').value;
-  const obs      = document.getElementById('res-obs').value.trim();
-
-  if (!alojId||!entrada||!salida||!nombre||!tel) { toast('Completá los campos obligatorios (*)','error'); return; }
-  if (entrada>=salida) { toast('La salida debe ser posterior a la entrada','error'); return; }
-  const aloj = getAloj(alojId);
-  if (personas>aloj.maxHuespedes) { toast(`Máx. ${aloj.maxHuespedes} huéspedes para ${aloj.nombre}`,'error'); return; }
-  if (estado!=='cancelada') {
-    const conf = checkConflictos(alojId,entrada,salida,id||null);
-    if (conf.length) { toast(`Conflicto de fechas con reserva de ${conf[0].nombre}`,'error'); return; }
+window.saveReserva = async function() {
+  const id      =document.getElementById('res-id').value;
+  const alojId  =document.getElementById('res-aloj').value;
+  const estado  =document.getElementById('res-estado').value;
+  const entrada =document.getElementById('res-entrada').value;
+  const salida  =document.getElementById('res-salida').value;
+  const nombre  =document.getElementById('res-nombre').value.trim();
+  const tel     =document.getElementById('res-tel').value.trim();
+  const dni     =document.getElementById('res-dni').value.trim();
+  const personas=parseInt(document.getElementById('res-personas').value)||1;
+  const costo   =parseFloat(document.getElementById('res-costo').value)||0;
+  const origen  =document.getElementById('res-origen').value;
+  const mascota =document.getElementById('res-mascota').value;
+  const obs     =document.getElementById('res-obs').value.trim();
+  if(!alojId||!entrada||!salida||!nombre||!tel){toast('Completá los campos obligatorios (*)','error');return;}
+  if(entrada>=salida){toast('La salida debe ser posterior a la entrada','error');return;}
+  const aloj=getAloj(alojId);
+  if(personas>aloj.maxHuespedes){toast(`Máx. ${aloj.maxHuespedes} huéspedes para ${aloj.nombre}`,'error');return;}
+  if(estado!=='cancelada'){
+    const conf=checkConflictos(alojId,entrada,salida,id||null);
+    if(conf.length){toast(`Conflicto de fechas con reserva de ${conf[0].nombre}`,'error');return;}
   }
-
-  const existingGcalId = id ? reservas.find(r=>r.id===id)?.gcalEventId : null;
-  const resData = { id:id||getId(), alojId, estado, entrada, salida, nombre, tel, dni, personas, costo, origen, mascota, obs, gcalEventId:existingGcalId||null, createdAt:id?reservas.find(r=>r.id===id)?.createdAt:new Date().toISOString() };
-
-  if (id) { const idx=reservas.findIndex(r=>r.id===id); reservas[idx]=resData; toast('Reserva actualizada','success'); }
-  else    { reservas.push(resData); toast('Reserva creada','success'); }
-
-  upsertHuesped({nombre,tel,dni});
-  saveAll();
+  const docId=id||getId();
+  const existing=id?reservas.find(r=>r.id===id):null;
+  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
+  setDbStatus('ing','Guardando…');
+  await upsertDoc('reservas',docId,data);
+  setDbStatus('ok','☁️ En línea');
+  toast(id?'Reserva actualizada':'Reserva creada','success');
+  // Upsert huésped
+  await upsertHuespedCloud({nombre,tel,dni});
   closeModal('modal-reserva');
-  renderReservas();
-
-  // Sync to Google Calendar
-  if (calendarReady && estado!=='cancelada') {
-    updateCalStatus('syncing','Sincronizando...');
-    const saved = reservas.find(r=>r.id===resData.id);
-    const ok = await syncReservaToCalendar(saved);
-    updateCalStatus(ok?'ok':'error', ok?'Cal sincronizado':'Error al sincronizar');
-    if (ok) setData('reservas',reservas);
-  } else if (calendarReady && estado==='cancelada' && existingGcalId) {
-    await deleteCalendarEvent(existingGcalId);
-    const r = reservas.find(r=>r.id===resData.id);
-    if (r) { r.gcalEventId=null; setData('reservas',reservas); }
+  // Sync Calendar
+  const saved={id:docId,...data};
+  if(calendarReady&&estado!=='cancelada'){
+    updateCalStatus('syncing','Sincronizando…');
+    const ok=await syncReservaToCalendar(saved);
+    updateCalStatus(ok?'ok':'error',ok?'Cal sincronizado':'Error al sincronizar');
+  } else if(calendarReady&&estado==='cancelada'&&existing?.gcalEventId){
+    await deleteCalendarEvent(existing.gcalEventId);
+    await updateDoc(docRef('reservas',docId),{gcalEventId:null});
   }
+};
+async function upsertHuespedCloud({nombre,tel,dni}) {
+  if(!tel) return;
+  const exists=huespedes.find(h=>h.id===tel||h.tel===tel);
+  if(!exists) await upsertDoc('huespedes',tel,{tel,nombre,dni,eval:'bueno',obs:''});
 }
-
-function upsertHuesped({nombre,tel,dni}) {
-  if (!tel) return;
-  if (!huespedes.find(h=>h.tel===tel)) {
-    huespedes.push({tel,nombre,dni,eval:'bueno',obs:''});
-    setData('huespedes',huespedes);
-  }
-}
-
-async function deleteReserva(id) {
-  if (!hasPerm('res-del')) { toast('Sin permiso para eliminar','error'); return; }
-  const ok = await confirm('Eliminar reserva','¿Eliminar esta reserva permanentemente?');
-  if (!ok) return;
-  const r = reservas.find(r=>r.id===id);
-  if (r?.gcalEventId && calendarReady) await deleteCalendarEvent(r.gcalEventId);
-  reservas = reservas.filter(r=>r.id!==id);
-  saveAll(); toast('Reserva eliminada','success'); renderReservas();
-}
-
-function showReservaDetail(id) {
-  const r = reservas.find(r=>r.id===id); if (!r) return;
-  const a = getAloj(r.alojId);
-  const estadoBadge = {confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
-  const origenIcon  = {particular:'👤',booking:'🌐',airbnb:'🏠',otros:'📌'}[r.origen]||'📌';
-  document.getElementById('res-detail-body').innerHTML = `
+window.deleteReserva = async function(id) {
+  if(!hasPerm('res-del')){toast('Sin permiso','error');return;}
+  const ok=await confirm('Eliminar reserva','¿Eliminar esta reserva permanentemente?');
+  if(!ok) return;
+  const r=reservas.find(r=>r.id===id);
+  if(r?.gcalEventId&&calendarReady) await deleteCalendarEvent(r.gcalEventId);
+  setDbStatus('ing','Eliminando…');
+  await delDoc('reservas',id);
+  setDbStatus('ok','☁️ En línea');
+  toast('Reserva eliminada','success');
+};
+window.showReservaDetail = function(id) {
+  const r=reservas.find(r=>r.id===id);if(!r) return;
+  const a=getAloj(r.alojId);
+  const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+  const oi={particular:'👤',booking:'🌐',airbnb:'🏠',otros:'📌'}[r.origen]||'📌';
+  document.getElementById('res-detail-body').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
       <div class="color-dot" style="background:${a?.color||'#888'}"></div>
       <strong style="font-size:1.05rem;">${a?.nombre||'—'}</strong>
-      <span class="badge ${estadoBadge}">${r.estado}</span>
-      ${r.gcalEventId?`<span class="gcal-badge btn-sm"><span class="gcal-dot"></span> En GCal</span>`:''}
+      <span class="badge ${eb}">${r.estado}</span>
+      ${r.gcalEventId?`<span class="gcal-badge btn-sm"><span class="gcal-dot"></span>En GCal</span>`:''}
     </div>
     <div class="grid-2" style="gap:12px;margin-bottom:16px;">
       <div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
@@ -1440,594 +1204,405 @@ function showReservaDetail(id) {
       <div><span style="color:var(--text2);">Teléfono:</span> ${r.tel}</div>
       <div><span style="color:var(--text2);">DNI:</span> ${r.dni||'—'}</div>
       <div><span style="color:var(--text2);">Personas:</span> 👥 ${r.personas}</div>
-      <div><span style="color:var(--text2);">Origen:</span> ${origenIcon} ${r.origen}</div>
+      <div><span style="color:var(--text2);">Origen:</span> ${oi} ${r.origen}</div>
       <div><span style="color:var(--text2);">Mascota:</span> ${r.mascota==='si'?'🐾 Sí':'No'}</div>
     </div>
-    ${r.obs?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 ${r.obs}</div>`:''}
-  `;
+    ${r.obs?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 ${r.obs}</div>`:''}`;
   openModal('modal-res-detail');
-}
-
+};
 function renderReservas() {
-  const filterAloj   = document.getElementById('res-filter-aloj')?.value||'';
-  const filterEstado = document.getElementById('res-filter-estado')?.value||'';
-  const filterMes    = document.getElementById('res-filter-mes')?.value||'';
+  const fa=document.getElementById('res-filter-aloj')?.value||'';
+  const fe=document.getElementById('res-filter-estado')?.value||'';
+  const fm=document.getElementById('res-filter-mes')?.value||'';
   updateSelectOptions();
-  let list = [...reservas].sort((a,b)=>a.entrada>b.entrada?1:-1);
-  if (filterAloj)   list = list.filter(r=>r.alojId===filterAloj);
-  if (filterEstado) list = list.filter(r=>r.estado===filterEstado);
-  if (filterMes)    list = list.filter(r=>r.entrada.startsWith(filterMes)||r.salida.startsWith(filterMes));
-  const el = document.getElementById('reservas-list');
-  if (!list.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reservas</h3><p>No hay reservas con los filtros seleccionados</p></div>`; return;
-  }
-  el.innerHTML = `<div class="card"><div class="table-wrap"><table>
+  let list=[...reservas].sort((a,b)=>a.entrada>b.entrada?1:-1);
+  if(fa) list=list.filter(r=>r.alojId===fa);
+  if(fe) list=list.filter(r=>r.estado===fe);
+  if(fm) list=list.filter(r=>r.entrada?.startsWith(fm)||r.salida?.startsWith(fm));
+  const el=document.getElementById('reservas-list');
+  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reservas</h3><p>No hay reservas con los filtros seleccionados</p></div>`;return;}
+  el.innerHTML=`<div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Alojamiento</th><th>Huésped</th><th>Entrada</th><th>Salida</th><th>Pers.</th><th>Origen</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr></thead>
     <tbody>${list.map(r=>{
       const a=getAloj(r.alojId);
-      const estadoBadge={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+      const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
       return `<tr>
-        <td><div style="display:flex;align-items:center;gap:7px;">
-          <div class="color-dot" style="background:${a?.color||'#888'}"></div>
-          <span style="font-size:.83rem;">${a?.nombre||'?'}</span>
-        </div></td>
+        <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a?.color||'#888'}"></div><span style="font-size:.83rem;">${a?.nombre||'?'}</span></div></td>
         <td><div style="font-weight:500;">${r.nombre}</div><div style="font-size:.75rem;color:var(--text2);">${r.tel}</div></td>
         <td>${fmt(r.entrada)}</td><td>${fmt(r.salida)}</td>
         <td>👥${r.personas}${r.mascota==='si'?' 🐾':''}</td>
         <td><span class="badge badge-purple">${r.origen}</span></td>
         <td style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</td>
-        <td><span class="badge ${estadoBadge}">${r.estado}</span></td>
+        <td><span class="badge ${eb}">${r.estado}</span></td>
         <td><div style="display:flex;gap:5px;">
           <button class="btn btn-ghost btn-sm" onclick="showReservaDetail('${r.id}')">👁️</button>
           ${hasPerm('res-edit')?`<button class="btn btn-ghost btn-sm" onclick="openReservaModal('${r.id}')">✏️</button>`:''}
           ${hasPerm('res-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteReserva('${r.id}')">🗑️</button>`:''}
-        </div></td>
-      </tr>`;}).join('')}
+        </div></td></tr>`;}).join('')}
     </tbody></table></div></div>`;
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // HUÉSPEDES
-// ═══════════════════════════════════════
-function openHuespedModal(tel=null) {
-  const h = tel ? huespedes.find(h=>h.tel===tel) : null;
-  document.getElementById('huesped-tel-id').value   = tel||'';
-  document.getElementById('huesped-nombre').value   = h?.nombre||'';
-  document.getElementById('huesped-tel').value      = h?.tel||'';
-  document.getElementById('huesped-tel').readOnly   = !!tel;
-  document.getElementById('huesped-dni').value      = h?.dni||'';
-  document.getElementById('huesped-eval').value     = h?.eval||'bueno';
-  document.getElementById('huesped-obs').value      = h?.obs||'';
-  document.getElementById('modal-huesped-title').textContent = tel ? h?.nombre||'Huésped' : 'Nuevo Huésped';
-  const histRes = reservas.filter(r=>r.tel===tel).sort((a,b)=>b.entrada>a.entrada?1:-1);
-  document.getElementById('huesped-historial-content').innerHTML = histRes.length ?
-    histRes.map(r=>{
-      const a=getAloj(r.alojId);
-      return `<div class="history-item">
-        <div><div style="font-weight:500;font-size:.88rem;">${a?.nombre||'?'}</div>
-        <div style="font-size:.78rem;color:var(--text2);">${fmt(r.entrada)} → ${fmt(r.salida)} • 👥${r.personas}${r.mascota==='si'?' 🐾':''}</div></div>
-        <div style="text-align:right;"><div style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</div>
-        <span class="badge ${r.estado==='confirmada'?'badge-green':'badge-yellow'}">${r.estado}</span></div>
-      </div>`;}).join('') :
-    `<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>`;
+// ══════════════════════════════════════════
+window.openHuespedModal = function(tel=null) {
+  const h=tel?huespedes.find(h=>h.id===tel||h.tel===tel):null;
+  document.getElementById('huesped-tel-id').value  =tel||'';
+  document.getElementById('huesped-nombre').value  =h?.nombre||'';
+  document.getElementById('huesped-tel').value     =h?.tel||tel||'';
+  document.getElementById('huesped-tel').readOnly  =!!tel;
+  document.getElementById('huesped-dni').value     =h?.dni||'';
+  document.getElementById('huesped-eval').value    =h?.eval||'bueno';
+  document.getElementById('huesped-obs').value     =h?.obs||'';
+  document.getElementById('modal-huesped-title').textContent=tel?h?.nombre||'Huésped':'Nuevo Huésped';
+  const histRes=reservas.filter(r=>r.tel===tel).sort((a,b)=>b.entrada>a.entrada?1:-1);
+  document.getElementById('huesped-historial-content').innerHTML=histRes.length?
+    histRes.map(r=>{const a=getAloj(r.alojId);return`<div class="history-item">
+      <div><div style="font-weight:500;font-size:.88rem;">${a?.nombre||'?'}</div>
+      <div style="font-size:.78rem;color:var(--text2);">${fmt(r.entrada)} → ${fmt(r.salida)} • 👥${r.personas}${r.mascota==='si'?' 🐾':''}</div></div>
+      <div style="text-align:right;"><div style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</div>
+      <span class="badge ${r.estado==='confirmada'?'badge-green':'badge-yellow'}">${r.estado}</span></div>
+    </div>`;}).join(''):`<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>`;
   document.querySelectorAll('#modal-huesped .tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#modal-huesped .tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector('#modal-huesped .tab-btn').classList.add('active');
   document.getElementById('tab-huesped-datos').classList.add('active');
   openModal('modal-huesped');
-}
-
-function saveHuesped() {
-  const telId  = document.getElementById('huesped-tel-id').value;
-  const nombre = document.getElementById('huesped-nombre').value.trim();
-  const tel    = document.getElementById('huesped-tel').value.trim();
-  const dni    = document.getElementById('huesped-dni').value.trim();
-  const ev     = document.getElementById('huesped-eval').value;
-  const obs    = document.getElementById('huesped-obs').value.trim();
-  if (!nombre||!tel) { toast('Nombre y teléfono requeridos','error'); return; }
-  if (telId) {
-    const idx = huespedes.findIndex(h=>h.tel===telId);
-    if (idx>=0) huespedes[idx]={...huespedes[idx],nombre,dni,eval:ev,obs};
-  } else {
-    if (huespedes.find(h=>h.tel===tel)) { toast('Ya existe un huésped con ese teléfono','error'); return; }
-    huespedes.push({tel,nombre,dni,eval:ev,obs});
-  }
-  setData('huespedes',huespedes);
+};
+window.saveHuesped = async function() {
+  const telId =document.getElementById('huesped-tel-id').value;
+  const nombre=document.getElementById('huesped-nombre').value.trim();
+  const tel   =document.getElementById('huesped-tel').value.trim();
+  const dni   =document.getElementById('huesped-dni').value.trim();
+  const ev    =document.getElementById('huesped-eval').value;
+  const obs   =document.getElementById('huesped-obs').value.trim();
+  if(!nombre||!tel){toast('Nombre y teléfono requeridos','error');return;}
+  const docId=telId||tel;
+  if(!telId&&huespedes.find(h=>h.id===tel||h.tel===tel)){toast('Ya existe un huésped con ese teléfono','error');return;}
+  setDbStatus('ing','Guardando…');
+  await upsertDoc('huespedes',docId,{tel,nombre,dni,eval:ev,obs});
+  setDbStatus('ok','☁️ En línea');
   toast('Huésped guardado','success');
-  closeModal('modal-huesped'); renderHuespedes();
-}
-
-async function deleteHuesped(tel) {
-  if (!hasPerm('hues-del')) { toast('Sin permiso para eliminar','error'); return; }
-  const ok = await confirm('Eliminar huésped','¿Eliminar este huésped?');
-  if (!ok) return;
-  huespedes = huespedes.filter(h=>h.tel!==tel);
-  setData('huespedes',huespedes); toast('Huésped eliminado','success'); renderHuespedes();
-}
-
+  closeModal('modal-huesped');
+};
+window.deleteHuesped = async function(tel) {
+  if(!hasPerm('hues-del')){toast('Sin permiso','error');return;}
+  const ok=await confirm('Eliminar huésped','¿Eliminar este huésped?');
+  if(!ok) return;
+  await delDoc('huespedes',tel);
+  toast('Huésped eliminado','success');
+};
 function renderHuespedes() {
-  const search = document.getElementById('huesped-search')?.value.toLowerCase()||'';
-  let list = huespedes;
-  if (search) list = list.filter(h=>h.nombre?.toLowerCase().includes(search)||h.tel?.includes(search)||h.dni?.includes(search));
-  const el = document.getElementById('huespedes-list');
-  if (!list.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin huéspedes</h3><p>Se crean automáticamente con las reservas</p></div>`; return;
-  }
-  el.innerHTML = `<div class="card"><div class="table-wrap"><table>
+  const search=document.getElementById('huesped-search')?.value.toLowerCase()||'';
+  let list=huespedes;
+  if(search) list=list.filter(h=>h.nombre?.toLowerCase().includes(search)||h.tel?.includes(search)||h.dni?.includes(search));
+  const el=document.getElementById('huespedes-list');
+  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin huéspedes</h3><p>Se crean automáticamente con las reservas</p></div>`;return;}
+  el.innerHTML=`<div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Nombre</th><th>Teléfono</th><th>DNI</th><th>Evaluación</th><th>Reservas</th><th>Acciones</th></tr></thead>
     <tbody>${list.map(h=>{
-      const resCount=reservas.filter(r=>r.tel===h.tel&&r.estado!=='cancelada').length;
-      const evalData={bueno:{badge:'badge-green',icon:'⭐'},regular:{badge:'badge-yellow',icon:'⚠️'},malo:{badge:'badge-red',icon:'❌'}}[h.eval||'bueno'];
-      return `<tr>
-        <td><strong>${h.nombre}</strong></td><td>${h.tel}</td><td>${h.dni||'—'}</td>
-        <td><span class="badge ${evalData.badge}">${evalData.icon} ${h.eval||'bueno'}</span></td>
-        <td>${resCount} estancias</td>
+      const tel=h.tel||h.id;
+      const rc=reservas.filter(r=>r.tel===tel&&r.estado!=='cancelada').length;
+      const ed={bueno:{b:'badge-green',i:'⭐'},regular:{b:'badge-yellow',i:'⚠️'},malo:{b:'badge-red',i:'❌'}}[h.eval||'bueno'];
+      return `<tr><td><strong>${h.nombre}</strong></td><td>${tel}</td><td>${h.dni||'—'}</td>
+        <td><span class="badge ${ed.b}">${ed.i} ${h.eval||'bueno'}</span></td>
+        <td>${rc} estancias</td>
         <td><div style="display:flex;gap:5px;">
-          ${hasPerm('hues-edit')?`<button class="btn btn-ghost btn-sm" onclick="openHuespedModal('${h.tel}')">✏️</button>`:''}
-          ${hasPerm('hues-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteHuesped('${h.tel}')">🗑️</button>`:''}
-        </div></td>
-      </tr>`;}).join('')}
+          ${hasPerm('hues-edit')?`<button class="btn btn-ghost btn-sm" onclick="openHuespedModal('${tel}')">✏️</button>`:''}
+          ${hasPerm('hues-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteHuesped('${tel}')">🗑️</button>`:''}
+        </div></td></tr>`;}).join('')}
     </tbody></table></div></div>`;
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // CALENDARIO
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 function renderCalFilterOptions() {
-  const el = document.getElementById('cal-filter-aloj'); if (!el) return;
-  const cur = el.value;
-  el.innerHTML = `<option value="">Todos los alojamientos</option>`;
+  const el=document.getElementById('cal-filter-aloj');if(!el)return;
+  const cur=el.value;
+  el.innerHTML=`<option value="">Todos los alojamientos</option>`;
   alojamientos.forEach(a=>el.innerHTML+=`<option value="${a.id}">${a.nombre}</option>`);
-  el.value = cur;
+  el.value=cur;
 }
-
-function calNav(dir) { calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1); renderCalendar(); }
-
 function renderCalendar() {
-  const year=calDate.getFullYear(), month=calDate.getMonth();
-  document.getElementById('cal-title').textContent = `${MONTHS_ES[month]} ${year}`;
-  const filterAloj = document.getElementById('cal-filter-aloj')?.value||'';
-  const today=new Date(); today.setHours(0,0,0,0);
-  document.getElementById('cal-days-head').innerHTML = DAYS_ES.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
-
+  const year=calDate.getFullYear(),month=calDate.getMonth();
+  document.getElementById('cal-title').textContent=`${MONTHS_ES[month]} ${year}`;
+  const fa=document.getElementById('cal-filter-aloj')?.value||'';
+  const today=new Date();today.setHours(0,0,0,0);
+  document.getElementById('cal-days-head').innerHTML=DAYS_ES.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
   const firstDay=new Date(year,month,1).getDay();
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const prevDays=new Date(year,month,0).getDate();
+  const daysInM=new Date(year,month+1,0).getDate();
+  const prevD=new Date(year,month,0).getDate();
   let cells=[];
-  for(let i=firstDay-1;i>=0;i--) cells.push({day:prevDays-i,cur:false,date:`${year}-${String(month).padStart(2,'0')}-${String(prevDays-i).padStart(2,'0')}`});
-  for(let d=1;d<=daysInMonth;d++) cells.push({day:d,cur:true,date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
-  let next=1; while(cells.length%7!==0) cells.push({day:next++,cur:false,date:`${year}-${String(month+2).padStart(2,'0')}-${String(next-1).padStart(2,'0')}`});
-
-  let filteredRes=reservas.filter(r=>r.estado!=='cancelada');
-  if (filterAloj) filteredRes=filteredRes.filter(r=>r.alojId===filterAloj);
-
-  document.getElementById('cal-grid').innerHTML = cells.map(({day,cur,date})=>{
+  for(let i=firstDay-1;i>=0;i--) cells.push({day:prevD-i,cur:false,date:`${year}-${String(month).padStart(2,'0')}-${String(prevD-i).padStart(2,'0')}`});
+  for(let d=1;d<=daysInM;d++) cells.push({day:d,cur:true,date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  let nx=1;while(cells.length%7!==0) cells.push({day:nx++,cur:false,date:`${year}-${String(month+2).padStart(2,'0')}-${String(nx-1).padStart(2,'0')}`});
+  let fRes=reservas.filter(r=>r.estado!=='cancelada');
+  if(fa) fRes=fRes.filter(r=>r.alojId===fa);
+  document.getElementById('cal-grid').innerHTML=cells.map(({day,cur,date})=>{
     const isToday=cur&&new Date(date+'T12:00:00').toDateString()===today.toDateString();
     let events='';
-    filteredRes.forEach(r=>{
-      if (date>=r.entrada&&date<r.salida) {
+    fRes.forEach(r=>{
+      if(date>=r.entrada&&date<r.salida){
         const a=getAloj(r.alojId);
-        const isFirst=date===r.entrada;
         events+=`<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre}">
-          ${isFirst?`🔑 ${r.nombre.split(' ')[0]}`:'·'} ${r.personas}p${r.mascota==='si'?' 🐾':''}
+          ${date===r.entrada?`🔑 ${r.nombre.split(' ')[0]}`:'·'} ${r.personas}p${r.mascota==='si'?' 🐾':''}
         </div>`;
       }
     });
-    return `<div class="cal-day ${!cur?'other-month':''} ${isToday?'today':''}">
-      <div class="cal-day-num">${day}</div>${events}</div>`;
+    return `<div class="cal-day ${!cur?'other-month':''} ${isToday?'today':''}"><div class="cal-day-num">${day}</div>${events}</div>`;
   }).join('');
-
-  const alojToShow = filterAloj ? alojamientos.filter(a=>a.id===filterAloj) : alojamientos;
-  document.getElementById('cal-legend').innerHTML = alojToShow.map(a=>
-    `<div class="legend-item"><div class="legend-color" style="background:${a.color}"></div><span>${a.nombre}</span></div>`
-  ).join('');
+  const alojShow=fa?alojamientos.filter(a=>a.id===fa):alojamientos;
+  document.getElementById('cal-legend').innerHTML=alojShow.map(a=>`<div class="legend-item"><div class="legend-color" style="background:${a.color}"></div><span>${a.nombre}</span></div>`).join('');
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // DASHBOARD
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 function renderDashboard() {
   const now=new Date();
-  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const thisM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const todayStr=now.toISOString().split('T')[0];
   const activeRes=reservas.filter(r=>r.estado!=='cancelada');
-  const thisMonthRes=activeRes.filter(r=>r.entrada.startsWith(thisMonth)||r.salida.startsWith(thisMonth));
-  const ingresosMes=thisMonthRes.reduce((s,r)=>s+(r.costo||0),0);
-  const totalIngresos=activeRes.reduce((s,r)=>s+(r.costo||0),0);
-  const hoyOcupados=activeRes.filter(r=>todayStr>=r.entrada&&todayStr<r.salida).length;
-  const ocup=alojamientos.map(a=>{
-    let dias=0; activeRes.filter(r=>r.alojId===a.id).forEach(r=>{dias+=daysBetween(r.entrada,r.salida);});
-    return{nombre:a.nombre,color:a.color,pct:Math.min(100,Math.round(dias/365*100))};
-  }).sort((a,b)=>b.pct-a.pct);
+  const ingMes=activeRes.filter(r=>r.entrada?.startsWith(thisM)||r.salida?.startsWith(thisM)).reduce((s,r)=>s+(r.costo||0),0);
+  const ingTotal=activeRes.reduce((s,r)=>s+(r.costo||0),0);
+  const hoyOc=activeRes.filter(r=>todayStr>=r.entrada&&todayStr<r.salida).length;
+  const ocup=alojamientos.map(a=>{let d=0;activeRes.filter(r=>r.alojId===a.id).forEach(r=>d+=daysBetween(r.entrada,r.salida));return{...a,pct:Math.min(100,Math.round(d/365*100))};}).sort((a,b)=>b.pct-a.pct);
   const monthly=[];
-  for(let i=5;i>=0;i--){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const total=activeRes.filter(r=>r.entrada.startsWith(key)||r.salida.startsWith(key)).reduce((s,r)=>s+(r.costo||0),0);
-    monthly.push({label:MONTHS_ES[d.getMonth()].substring(0,3),total});
-  }
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;const t=activeRes.filter(r=>r.entrada?.startsWith(key)||r.salida?.startsWith(key)).reduce((s,r)=>s+(r.costo||0),0);monthly.push({label:MONTHS_ES[d.getMonth()].substring(0,3),total:t});}
   const maxM=Math.max(...monthly.map(m=>m.total),1);
-  const topAloj=alojamientos.map(a=>{
-    const ing=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);
-    return{...a,ing};
-  }).sort((a,b)=>b.ing-a.ing);
+  const topAloj=alojamientos.map(a=>({...a,ing:activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0)})).sort((a,b)=>b.ing-a.ing);
   const maxI=Math.max(...topAloj.map(a=>a.ing),1);
-
-  document.getElementById('dashboard-content').innerHTML = `
+  document.getElementById('dashboard-content').innerHTML=`
   <div class="grid-4" style="margin-bottom:24px;">
-    <div class="stat-card" style="--accent-color:#3b82f6"><div class="stat-value">${alojamientos.length}</div><div class="stat-label">Alojamientos</div></div>
-    <div class="stat-card" style="--accent-color:#22c55e"><div class="stat-value">${activeRes.length}</div><div class="stat-label">Reservas activas</div><div class="stat-sub">${hoyOcupados} ocupados hoy</div></div>
-    <div class="stat-card" style="--accent-color:#f97316"><div class="stat-value">${fmtMoney(ingresosMes)}</div><div class="stat-label">Ingresos este mes</div></div>
-    <div class="stat-card" style="--accent-color:#8b5cf6"><div class="stat-value">${fmtMoney(totalIngresos)}</div><div class="stat-label">Ingresos totales</div></div>
+    <div class="stat-card" style="--ac:#3b82f6"><div class="stat-value">${alojamientos.length}</div><div class="stat-label">Alojamientos</div></div>
+    <div class="stat-card" style="--ac:#22c55e"><div class="stat-value">${activeRes.length}</div><div class="stat-label">Reservas activas</div><div class="stat-sub">${hoyOc} ocupados hoy</div></div>
+    <div class="stat-card" style="--ac:#f97316"><div class="stat-value">${fmtMoney(ingMes)}</div><div class="stat-label">Ingresos este mes</div></div>
+    <div class="stat-card" style="--ac:#8b5cf6"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Ingresos totales</div></div>
   </div>
   <div class="grid-2" style="margin-bottom:24px;">
-    <div class="card"><div class="card-header"><span class="card-title">% Ocupación</span></div>
-      ${ocup.length?`<div class="chart-bar-container">${ocup.map(o=>`
-        <div class="chart-bar-row">
-          <div class="chart-bar-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${o.color};margin-right:5px;"></span>${o.nombre}</div>
-          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${o.pct}%;background:${o.color};"></div></div>
-          <div class="chart-bar-val">${o.pct}%</div>
-        </div>`).join('')}</div>`:'<div style="color:var(--text2);text-align:center;padding:20px;">Sin datos</div>'}
+    <div class="card"><div class="card-header"><span class="card-title">% Ocupación por Alojamiento</span></div>
+      <div class="chart-bar-container">${ocup.map(o=>`<div class="chart-bar-row"><div class="chart-bar-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${o.color};margin-right:5px;"></span>${o.nombre}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${o.pct}%;background:${o.color};"></div></div><div class="chart-bar-val">${o.pct}%</div></div>`).join('')||'<div style="color:var(--text2);padding:12px;">Sin datos</div>'}</div>
     </div>
     <div class="card"><div class="card-header"><span class="card-title">Ingresos por Alojamiento</span></div>
-      <div class="chart-bar-container">${topAloj.map(a=>`
-        <div class="chart-bar-row">
-          <div class="chart-bar-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${a.color};margin-right:5px;"></span>${a.nombre}</div>
-          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(a.ing/maxI*100)}%;background:${a.color};"></div></div>
-          <div class="chart-bar-val" style="width:70px;">${fmtMoney(a.ing)}</div>
-        </div>`).join('')}
-      </div>
+      <div class="chart-bar-container">${topAloj.map(a=>`<div class="chart-bar-row"><div class="chart-bar-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${a.color};margin-right:5px;"></span>${a.nombre}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(a.ing/maxI*100)}%;background:${a.color};"></div></div><div class="chart-bar-val">${fmtMoney(a.ing)}</div></div>`).join('')||'<div style="color:var(--text2);padding:12px;">Sin datos</div>'}</div>
     </div>
   </div>
-  <div class="card" style="margin-bottom:24px;">
-    <div class="card-header"><span class="card-title">Ingresos Últimos 6 Meses</span></div>
-    <div class="monthly-chart">${monthly.map(m=>`
-      <div class="monthly-bar">
-        <div class="monthly-bar-val">${m.total?fmtMoney(m.total):''}</div>
-        <div class="monthly-bar-fill" style="height:${Math.round(m.total/maxM*90)}px;background:linear-gradient(to top,var(--accent),var(--accent2));"></div>
-        <div class="monthly-bar-label">${m.label}</div>
-      </div>`).join('')}
-    </div>
+  <div class="card" style="margin-bottom:24px;"><div class="card-header"><span class="card-title">Ingresos Últimos 6 Meses</span></div>
+    <div class="monthly-chart">${monthly.map(m=>`<div class="monthly-bar"><div class="monthly-bar-val">${m.total?fmtMoney(m.total):''}</div><div class="monthly-bar-fill" style="height:${Math.round(m.total/maxM*90)}px;background:linear-gradient(to top,var(--accent),var(--accent2));"></div><div class="monthly-bar-label">${m.label}</div></div>`).join('')}</div>
   </div>
   <div class="grid-2">
     <div class="card"><div class="card-header"><span class="card-title">Próximas Llegadas</span></div>
-      ${(()=>{
-        const prox=activeRes.filter(r=>r.entrada>=todayStr).sort((a,b)=>a.entrada>b.entrada?1:-1).slice(0,5);
-        if(!prox.length) return '<div style="color:var(--text2);padding:12px;">Sin próximas llegadas</div>';
-        return prox.map(r=>{const a=getAloj(r.alojId);return `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div class="color-dot" style="background:${a?.color||'#888'}"></div>
-            <div style="flex:1;min-width:0;"><div style="font-weight:500;font-size:.88rem;">${r.nombre}</div>
-              <div style="font-size:.75rem;color:var(--text2);">${a?.nombre||'?'} • ${fmt(r.entrada)}</div></div>
-            <div style="font-size:.78rem;">👥${r.personas}${r.mascota==='si'?' 🐾':''}</div>
-          </div>`;}).join('');})()}
+      ${(()=>{const p=activeRes.filter(r=>r.entrada>=todayStr).sort((a,b)=>a.entrada>b.entrada?1:-1).slice(0,5);if(!p.length)return'<div style="color:var(--text2);padding:12px;">Sin próximas llegadas</div>';return p.map(r=>{const a=getAloj(r.alojId);return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);"><div class="color-dot" style="background:${a?.color||'#888'}"></div><div style="flex:1;min-width:0;"><div style="font-weight:500;font-size:.88rem;">${r.nombre}</div><div style="font-size:.75rem;color:var(--text2);">${a?.nombre||'?'} • ${fmt(r.entrada)}</div></div><div style="font-size:.78rem;">👥${r.personas}${r.mascota==='si'?' 🐾':''}</div></div>`;}).join('');})()}
     </div>
     <div class="card"><div class="card-header"><span class="card-title">Origen de Reservas</span></div>
-      ${(()=>{
-        const ors=['particular','booking','airbnb','otros'];
-        const total=activeRes.length||1;
-        const cs=['#3b82f6','#ef4444','#f97316','#14b8a6'];
-        return `<div class="chart-bar-container">${ors.map((o,i)=>{
-          const c=activeRes.filter(r=>r.origen===o).length;
-          return `<div class="chart-bar-row">
-            <div class="chart-bar-label">${o}</div>
-            <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(c/total*100)}%;background:${cs[i]};"></div></div>
-            <div class="chart-bar-val">${c} (${Math.round(c/total*100)}%)</div>
-          </div>`;}).join('')}</div>`;})()}
+      <div class="chart-bar-container">${['particular','booking','airbnb','otros'].map((o,i)=>{const c=activeRes.filter(r=>r.origen===o).length;const t=activeRes.length||1;const cs=['#3b82f6','#ef4444','#f97316','#14b8a6'];return`<div class="chart-bar-row"><div class="chart-bar-label">${o}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(c/t*100)}%;background:${cs[i]};"></div></div><div class="chart-bar-val">${c} (${Math.round(c/t*100)}%)</div></div>`;}).join('')}</div>
     </div>
   </div>`;
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // FINANZAS
-// ═══════════════════════════════════════
-function openGastoModal(id=null) {
+// ══════════════════════════════════════════
+window.openGastoModal = function(id=null) {
   updateSelectOptions();
-  const g = id ? gastos.find(g=>g.id===id) : null;
-  document.getElementById('gasto-id').value      = id||'';
-  document.getElementById('gasto-aloj').value    = g?.alojId||'';
-  document.getElementById('gasto-fecha').value   = g?.fecha||(new Date().toISOString().split('T')[0]);
-  document.getElementById('gasto-concepto').value= g?.concepto||'';
-  document.getElementById('gasto-cat').value     = g?.cat||'mantenimiento';
-  document.getElementById('gasto-monto').value   = g?.monto||'';
-  document.getElementById('gasto-obs').value     = g?.obs||'';
-  document.getElementById('modal-gasto-title').textContent = id ? 'Editar Gasto' : 'Agregar Gasto';
+  const g=id?gastos.find(g=>g.id===id):null;
+  document.getElementById('gasto-id').value      =id||'';
+  document.getElementById('gasto-aloj').value    =g?.alojId||'';
+  document.getElementById('gasto-fecha').value   =g?.fecha||(new Date().toISOString().split('T')[0]);
+  document.getElementById('gasto-concepto').value=g?.concepto||'';
+  document.getElementById('gasto-cat').value     =g?.cat||'mantenimiento';
+  document.getElementById('gasto-monto').value   =g?.monto||'';
+  document.getElementById('gasto-obs').value     =g?.obs||'';
+  document.getElementById('modal-gasto-title').textContent=id?'Editar Gasto':'Agregar Gasto';
   openModal('modal-gasto');
-}
-
-function saveGasto() {
-  const id       = document.getElementById('gasto-id').value;
-  const alojId   = document.getElementById('gasto-aloj').value;
-  const fecha    = document.getElementById('gasto-fecha').value;
-  const concepto = document.getElementById('gasto-concepto').value.trim();
-  const cat      = document.getElementById('gasto-cat').value;
-  const monto    = parseFloat(document.getElementById('gasto-monto').value)||0;
-  const obs      = document.getElementById('gasto-obs').value.trim();
-  if (!fecha||!concepto||monto<=0) { toast('Completá fecha, concepto y monto','error'); return; }
-  if (id) { const idx=gastos.findIndex(g=>g.id===id); gastos[idx]={...gastos[idx],alojId,fecha,concepto,cat,monto,obs}; toast('Gasto actualizado','success'); }
-  else    { gastos.push({id:getId(),alojId,fecha,concepto,cat,monto,obs}); toast('Gasto registrado','success'); }
-  setData('gastos',gastos); closeModal('modal-gasto'); renderFinanzas();
-}
-
-async function deleteGasto(id) {
-  if (!hasPerm('fin-edit')) { toast('Sin permiso','error'); return; }
-  const ok = await confirm('Eliminar gasto','¿Eliminar este gasto?');
-  if (!ok) return;
-  gastos=gastos.filter(g=>g.id!==id); setData('gastos',gastos);
-  toast('Gasto eliminado','success'); renderFinanzas();
-}
-
+};
+window.saveGasto = async function() {
+  const id     =document.getElementById('gasto-id').value;
+  const alojId =document.getElementById('gasto-aloj').value;
+  const fecha  =document.getElementById('gasto-fecha').value;
+  const concepto=document.getElementById('gasto-concepto').value.trim();
+  const cat    =document.getElementById('gasto-cat').value;
+  const monto  =parseFloat(document.getElementById('gasto-monto').value)||0;
+  const obs    =document.getElementById('gasto-obs').value.trim();
+  if(!fecha||!concepto||monto<=0){toast('Completá fecha, concepto y monto','error');return;}
+  const docId=id||getId();
+  setDbStatus('ing','Guardando…');
+  await upsertDoc('gastos',docId,{alojId,fecha,concepto,cat,monto,obs});
+  setDbStatus('ok','☁️ En línea');
+  toast('Gasto guardado','success');
+  closeModal('modal-gasto');
+};
+window.deleteGasto = async function(id) {
+  if(!hasPerm('fin-edit')){toast('Sin permiso','error');return;}
+  const ok=await confirm('Eliminar gasto','¿Eliminar este gasto?');
+  if(!ok) return;
+  await delDoc('gastos',id);
+  toast('Gasto eliminado','success');
+};
 function renderFinanzas() {
   const activeRes=reservas.filter(r=>r.estado!=='cancelada');
-  const totalIngresos=activeRes.reduce((s,r)=>s+(r.costo||0),0);
-  const totalGastos  =gastos.reduce((s,g)=>s+(g.monto||0),0);
-  const ganancia=totalIngresos-totalGastos;
-  const byAloj=alojamientos.map(a=>({
-    ...a,
-    ing:activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0),
-    gas:gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0)
-  })).map(a=>({...a,gan:a.ing-a.gas}));
-  const filterAlojId = document.getElementById('fin-filter-aloj')?.value||'';
-  const filterMes    = document.getElementById('fin-filter-mes')?.value||'';
-  let filtGastos=[...gastos].sort((a,b)=>b.fecha>a.fecha?1:-1);
-  if (filterAlojId) filtGastos=filtGastos.filter(g=>g.alojId===filterAlojId||g.alojId==='general');
-  if (filterMes)    filtGastos=filtGastos.filter(g=>g.fecha.startsWith(filterMes));
-
-  document.getElementById('finanzas-content').innerHTML = `
+  const ingTotal=activeRes.reduce((s,r)=>s+(r.costo||0),0);
+  const gasTotal=gastos.reduce((s,g)=>s+(g.monto||0),0);
+  const gan=ingTotal-gasTotal;
+  const byAloj=alojamientos.map(a=>({...a,ing:activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0),gas:gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0)})).map(a=>({...a,gan:a.ing-a.gas}));
+  const fa=document.getElementById('fin-filter-aloj')?.value||'';
+  const fm=document.getElementById('fin-filter-mes')?.value||'';
+  let fg=[...gastos].sort((a,b)=>b.fecha>a.fecha?1:-1);
+  if(fa) fg=fg.filter(g=>g.alojId===fa||g.alojId==='general');
+  if(fm) fg=fg.filter(g=>g.fecha?.startsWith(fm));
+  document.getElementById('finanzas-content').innerHTML=`
   <div class="grid-3" style="margin-bottom:24px;">
-    <div class="stat-card" style="--accent-color:var(--accent3)"><div class="stat-value">${fmtMoney(totalIngresos)}</div><div class="stat-label">Total Ingresos</div></div>
-    <div class="stat-card" style="--accent-color:var(--danger)"><div class="stat-value">${fmtMoney(totalGastos)}</div><div class="stat-label">Total Gastos</div></div>
-    <div class="stat-card" style="--accent-color:${ganancia>=0?'var(--accent2)':'var(--danger)'}"><div class="stat-value" style="color:${ganancia>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(ganancia)}</div><div class="stat-label">Ganancia Neta</div></div>
+    <div class="stat-card" style="--ac:var(--accent3)"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Total Ingresos</div></div>
+    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(gasTotal)}</div><div class="stat-label">Total Gastos</div></div>
+    <div class="stat-card" style="--ac:${gan>=0?'var(--accent2)':'var(--danger)'}"><div class="stat-value" style="color:${gan>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(gan)}</div><div class="stat-label">Ganancia Neta</div></div>
   </div>
   <div class="card" style="margin-bottom:24px;"><div class="card-header"><span class="card-title">Resumen por Alojamiento</span></div>
     <div class="table-wrap"><table><thead><tr><th>Alojamiento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th></tr></thead>
-    <tbody>${byAloj.map(a=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td>
-      <td style="color:var(--accent3);">${fmtMoney(a.ing)}</td>
-      <td style="color:var(--danger);">${fmtMoney(a.gas)}</td>
-      <td style="font-weight:600;color:${a.gan>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(a.gan)}</td>
-    </tr>`).join('')}</tbody></table></div>
+    <tbody>${byAloj.map(a=>`<tr><td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td><td style="color:var(--accent3);">${fmtMoney(a.ing)}</td><td style="color:var(--danger);">${fmtMoney(a.gas)}</td><td style="font-weight:600;color:${a.gan>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(a.gan)}</td></tr>`).join('')}</tbody></table></div>
   </div>
   <div class="card"><div class="card-header"><span class="card-title">Gastos Registrados</span></div>
     <div class="filter-row">
-      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;">
-        <option value="">Todos los alojamientos</option><option value="general">General</option>
-        ${alojamientos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')}
-      </select>
+      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;"><option value="">Todos</option><option value="general">General</option>${alojamientos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')}</select>
       <input type="month" class="form-control" id="fin-filter-mes" onchange="renderFinanzas()" style="width:auto;">
     </div>
-    ${filtGastos.length?`<div class="table-wrap"><table>
-      <thead><tr><th>Fecha</th><th>Alojamiento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
-      <tbody>${filtGastos.map(g=>{
-        const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
-        return `<tr>
-          <td>${fmt(g.fecha)}</td>
-          <td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td>
-          <td>${g.concepto}</td><td><span class="badge badge-blue">${g.cat}</span></td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td>
-          <td><div style="display:flex;gap:5px;">
-            ${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button>`:''}
-            ${hasPerm('fin-edit')?`<button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}
-          </div></td>
-        </tr>`;}).join('')}</tbody></table></div>`:
-      `<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos registrados</div>`}
+    ${fg.length?`<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Alojamiento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
+    <tbody>${fg.map(g=>{const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};return`<tr><td>${fmt(g.fecha)}</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td><td>${g.concepto}</td><td><span class="badge badge-blue">${g.cat}</span></td><td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td><td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td></tr>`;}).join('')}</tbody></table></div>`:`<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos registrados</div>`}
   </div>`;
-  if (filterAlojId) document.getElementById('fin-filter-aloj').value=filterAlojId;
-  if (filterMes)    document.getElementById('fin-filter-mes').value=filterMes;
+  if(fa) document.getElementById('fin-filter-aloj').value=fa;
+  if(fm) document.getElementById('fin-filter-mes').value=fm;
 }
 
-// ═══════════════════════════════════════
-// USUARIOS (solo admin)
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
+// USUARIOS
+// ══════════════════════════════════════════
 function renderUsuarios() {
-  if (!currentUser?.isAdmin) { document.getElementById('usuarios-content').innerHTML='<div class="empty-state"><div class="empty-icon">🔒</div><h3>Sin acceso</h3></div>'; return; }
-
-  const pending = pendingUsers.filter(p => !usuariosDB.find(u=>u.email===p.email&&u.approved));
-  const approved = usuariosDB.filter(u=>u.email.toLowerCase()!==ADMIN_EMAIL.toLowerCase());
-
-  document.getElementById('usuarios-content').innerHTML = `
+  if(!currentUser?.isAdmin){document.getElementById('usuarios-content').innerHTML='<div class="empty-state"><div class="empty-icon">🔒</div><h3>Sin acceso</h3></div>';return;}
+  const pending=pendingUsers.filter(p=>!usuariosDB.find(u=>u.id===p.id&&u.approved));
+  const approved=usuariosDB.filter(u=>u.id?.toLowerCase()!==ADMIN_EMAIL.toLowerCase()&&u.email?.toLowerCase()!==ADMIN_EMAIL.toLowerCase());
+  document.getElementById('usuarios-content').innerHTML=`
   ${pending.length?`<div class="card" style="margin-bottom:20px;border-color:rgba(251,191,36,.3);">
     <div class="card-header"><span class="card-title">⏳ Solicitudes Pendientes (${pending.length})</span></div>
-    ${pending.map(p=>`
-      <div class="invite-box">
-        <div>
-          <div style="font-weight:600;font-size:.9rem;">${p.name||p.email}</div>
-          <div class="invite-email" style="color:var(--text2);font-size:.8rem;">${p.email}</div>
-        </div>
-        <div class="invite-actions">
-          <button class="btn btn-success btn-sm" onclick="approveUser('${p.email}','${(p.name||'').replace(/'/g,"\\'")}','${p.picture||''}')">✓ Aprobar</button>
-          <button class="btn btn-danger btn-sm" onclick="rejectUser('${p.email}')">✕</button>
-        </div>
-      </div>`).join('')}
+    ${pending.map(p=>`<div class="invite-box">
+      <div><div style="font-weight:600;font-size:.9rem;">${p.name||p.email||p.id}</div><div style="font-size:.8rem;color:var(--text2);">${p.email||p.id}</div></div>
+      <div class="invite-actions">
+        <button class="btn btn-success btn-sm" onclick="approveUser('${p.id||p.email}','${(p.name||'').replace(/'/g,"\\'")}','${p.picture||''}')">✓ Aprobar</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectUser('${p.id||p.email}')">✕</button>
+      </div></div>`).join('')}
   </div>`:''}
-
   <div class="card">
-    <div class="card-header">
-      <span class="card-title">👥 Usuarios Autorizados</span>
-      <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Agregar usuario</button>
-    </div>
-    ${approved.length?approved.map(u=>`
-      <div class="user-row">
-        <div class="user-avatar">${u.picture?`<img src="${u.picture}" alt="${u.name}">`:(u.name?.[0]?.toUpperCase()||'?')}</div>
-        <div class="user-info">
-          <div class="user-name">${u.name||u.email}</div>
-          <div class="user-email">${u.email}</div>
-        </div>
-        <div class="user-actions">
-          <button class="btn btn-ghost btn-sm" onclick="openPermisosModal('${u.email}')">🔑 Permisos</button>
-          <button class="btn btn-danger btn-sm" onclick="removeUser('${u.email}')">🗑️</button>
-        </div>
-      </div>`).join(''):`<div style="color:var(--text2);padding:20px;text-align:center;">No hay otros usuarios autorizados</div>`}
+    <div class="card-header"><span class="card-title">👥 Usuarios Autorizados</span><button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Agregar</button></div>
+    ${approved.length?approved.map(u=>`<div class="user-row">
+      <div class="user-avatar">${u.picture?`<img src="${u.picture}" alt="">`:u.name?.[0]?.toUpperCase()||'?'}</div>
+      <div class="user-info"><div class="user-name">${u.name||u.id}</div><div class="user-email">${u.email||u.id}</div></div>
+      <div class="user-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openPermisosModal('${u.id||u.email}')">🔑 Permisos</button>
+        <button class="btn btn-danger btn-sm" onclick="removeUser('${u.id||u.email}')">🗑️</button>
+      </div></div>`).join(''):`<div style="color:var(--text2);padding:20px;text-align:center;">No hay otros usuarios autorizados</div>`}
   </div>
-
-  <div class="card" style="margin-top:20px;border-color:rgba(167,139,250,.2);">
-    <div class="card-header"><span class="card-title">⭐ Administrador</span></div>
-    <div class="user-row">
-      <div class="user-avatar" style="background:var(--accent);">${currentUser.picture?`<img src="${currentUser.picture}" alt="">`:currentUser.name?.[0]?.toUpperCase()}</div>
-      <div class="user-info">
-        <div class="user-name">${currentUser.name}</div>
-        <div class="user-email">${ADMIN_EMAIL} <span class="badge badge-purple" style="margin-left:6px;">Admin</span></div>
-      </div>
-      <div><span class="badge badge-green">Acceso total</span></div>
-    </div>
-  </div>
-
   <div class="card" style="margin-top:20px;">
     <div class="card-header"><span class="card-title">🔗 Compartir acceso</span></div>
-    <p style="color:var(--text2);font-size:.88rem;margin-bottom:12px;">Compartí este link con las personas que quieras que soliciten acceso:</p>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <p style="color:var(--text2);font-size:.88rem;margin-bottom:12px;">Compartí este link para que otros soliciten acceso:</p>
+    <div style="display:flex;gap:8px;">
       <input type="text" class="form-control" id="share-link-input" value="${window.location.href}" readonly>
       <button class="btn btn-ghost" onclick="copyShareLink()">📋 Copiar</button>
     </div>
   </div>`;
 }
-
-function copyShareLink() {
-  const input = document.getElementById('share-link-input');
-  input.select(); document.execCommand('copy');
-  toast('Link copiado al portapapeles','success');
-}
-
-function approveUser(email, name, picture) {
-  // Remove from pending
-  pendingUsers = pendingUsers.filter(p=>p.email!==email);
-  // Add to approved with basic perms
-  const existing = usuariosDB.find(u=>u.email===email);
-  if (!existing) {
-    const defaultPerms = { dashboard:true, calendario:true, 'res-ver':true, 'res-edit':true, 'aloj-ver':true, 'hues-ver':true };
-    usuariosDB.push({ email, name, picture, approved:true, perms:defaultPerms, addedAt:new Date().toISOString() });
-  } else {
-    existing.approved = true;
-  }
-  saveAll(); toast(`${name||email} aprobado ✓`,'success'); renderUsuarios();
-}
-
-function rejectUser(email) {
-  pendingUsers = pendingUsers.filter(p=>p.email!==email);
-  setData('pending_users', pendingUsers);
-  toast('Solicitud rechazada','info'); renderUsuarios();
-}
-
-async function removeUser(email) {
-  const ok = await confirm('Eliminar usuario','¿Revocar el acceso a este usuario?');
-  if (!ok) return;
-  usuariosDB = usuariosDB.filter(u=>u.email!==email);
-  setData('usuarios',usuariosDB);
-  toast('Usuario eliminado','success'); renderUsuarios();
-}
-
-function openAddUserModal() {
-  const email = prompt('Ingresá el email de Google del nuevo usuario:');
-  if (!email || !email.includes('@')) { if(email!==null) toast('Email inválido','error'); return; }
-  if (usuariosDB.find(u=>u.email.toLowerCase()===email.toLowerCase())) { toast('Ya existe este usuario','info'); return; }
-  const defaultPerms = { dashboard:true, calendario:true, 'res-ver':true, 'res-edit':true, 'aloj-ver':true, 'hues-ver':true };
-  usuariosDB.push({ email, name:email, picture:'', approved:true, perms:defaultPerms, addedAt:new Date().toISOString() });
-  setData('usuarios',usuariosDB);
-  toast(`${email} agregado. Abrí los permisos para configurarlos.`,'success');
-  renderUsuarios();
-  // Auto-open permisos
-  setTimeout(()=>openPermisosModal(email), 400);
-}
-
-function openPermisosModal(email) {
-  const u = usuariosDB.find(u=>u.email===email); if(!u) return;
-  document.getElementById('perm-email-id').value = email;
-  document.getElementById('perm-avatar').innerHTML = u.picture?`<img src="${u.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">`:u.name?.[0]?.toUpperCase()||'?';
-  document.getElementById('perm-name').textContent = u.name||email;
-  document.getElementById('perm-email-show').textContent = email;
-  document.getElementById('modal-permisos-title').textContent = `Permisos — ${u.name||email}`;
-  const p = u.perms||{};
-  const permIds = ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'];
-  permIds.forEach(id=>{ const el=document.getElementById('p-'+id); if(el) el.checked=!!p[id]; });
+window.copyShareLink = function() {
+  const i=document.getElementById('share-link-input');i.select();document.execCommand('copy');toast('Link copiado','success');
+};
+window.approveUser = async function(email,name,picture) {
+  const defaultPerms={dashboard:true,calendario:true,'res-ver':true,'res-edit':true,'aloj-ver':true,'hues-ver':true};
+  await upsertDoc('usuarios',email,{email,name,picture,approved:true,perms:defaultPerms});
+  await delDoc('pending_users',email);
+  toast(`${name||email} aprobado ✓`,'success');
+};
+window.rejectUser = async function(email) {
+  await delDoc('pending_users',email);
+  toast('Solicitud rechazada','info');
+};
+window.removeUser = async function(email) {
+  const ok=await confirm('Eliminar usuario','¿Revocar el acceso a este usuario?');
+  if(!ok) return;
+  await delDoc('usuarios',email);
+  toast('Usuario eliminado','success');
+};
+window.openAddUserModal = function() {
+  const email=prompt('Email de Google del nuevo usuario:');
+  if(!email||!email.includes('@')){if(email!==null)toast('Email inválido','error');return;}
+  const defaultPerms={dashboard:true,calendario:true,'res-ver':true,'res-edit':true,'aloj-ver':true,'hues-ver':true};
+  upsertDoc('usuarios',email,{email,name:email,picture:'',approved:true,perms:defaultPerms}).then(()=>{
+    toast(`${email} agregado`,'success');
+    setTimeout(()=>openPermisosModal(email),400);
+  });
+};
+window.openPermisosModal = function(email) {
+  const u=usuariosDB.find(u=>u.id===email||u.email===email);if(!u) return;
+  document.getElementById('perm-email-id').value=email;
+  document.getElementById('perm-avatar').innerHTML=u.picture?`<img src="${u.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">`:u.name?.[0]?.toUpperCase()||'?';
+  document.getElementById('perm-name').textContent=u.name||email;
+  document.getElementById('perm-email-show').textContent=email;
+  document.getElementById('modal-permisos-title').textContent=`Permisos — ${u.name||email}`;
+  const p=u.perms||{};
+  ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'].forEach(id=>{const el=document.getElementById('p-'+id);if(el)el.checked=!!p[id];});
   openModal('modal-permisos');
-}
+};
+window.savePermisos = async function() {
+  const email=document.getElementById('perm-email-id').value;
+  const newPerms={};
+  ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'].forEach(id=>{const el=document.getElementById('p-'+id);if(el)newPerms[id]=el.checked;});
+  await upsertDoc('usuarios',email,{perms:newPerms});
+  toast('Permisos guardados','success');
+  closeModal('modal-permisos');
+};
 
-function savePermisos() {
-  const email = document.getElementById('perm-email-id').value;
-  const u = usuariosDB.find(u=>u.email===email); if(!u) return;
-  const permIds = ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'];
-  const newPerms = {};
-  permIds.forEach(id=>{ const el=document.getElementById('p-'+id); if(el) newPerms[id]=el.checked; });
-  u.perms = newPerms;
-  setData('usuarios',usuariosDB);
-  toast('Permisos guardados','success'); closeModal('modal-permisos'); renderUsuarios();
-}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════
 // EXPORTAR
-// ═══════════════════════════════════════
-function exportToSheets() {
-  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar','error'); return; }
+// ══════════════════════════════════════════
+window.exportToSheets = function() {
+  if(!hasPerm('fin-export')){toast('Sin permiso para exportar','error');return;}
   const activeRes=reservas.filter(r=>r.estado!=='cancelada');
   let csv='RESERVAS\n';
   csv+='Alojamiento,Huésped,Teléfono,DNI,Entrada,Salida,Noches,Personas,Costo,Origen,Mascota,Estado\n';
-  activeRes.forEach(r=>{
-    const a=getAloj(r.alojId);
-    csv+=`"${a?.nombre||'?'}","${r.nombre}","${r.tel}","${r.dni||''}","${r.entrada}","${r.salida}",${daysBetween(r.entrada,r.salida)},${r.personas},${r.costo||0},"${r.origen}","${r.mascota}","${r.estado}"\n`;
-  });
-  csv+='\nGASTOS\n';
-  csv+='Fecha,Alojamiento,Concepto,Categoría,Monto\n';
-  gastos.forEach(g=>{
-    const a=g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};
-    csv+=`"${g.fecha}","${a.nombre}","${g.concepto}","${g.cat}",${g.monto}\n`;
-  });
-  csv+='\nRESUMEN POR ALOJAMIENTO\n';
-  csv+='Alojamiento,Ingresos,Gastos,Ganancia\n';
-  alojamientos.forEach(a=>{
-    const ing=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);
-    const gas=gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0);
-    csv+=`"${a.nombre}",${ing},${gas},${ing-gas}\n`;
-  });
+  activeRes.forEach(r=>{const a=getAloj(r.alojId);csv+=`"${a?.nombre||'?'}","${r.nombre}","${r.tel}","${r.dni||''}","${r.entrada}","${r.salida}",${daysBetween(r.entrada,r.salida)},${r.personas},${r.costo||0},"${r.origen}","${r.mascota}","${r.estado}"\n`;});
+  csv+='\nGASTOS\nFecha,Alojamiento,Concepto,Categoría,Monto\n';
+  gastos.forEach(g=>{const a=g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};csv+=`"${g.fecha}","${a.nombre}","${g.concepto}","${g.cat}",${g.monto}\n`;});
+  csv+='\nRESUMEN\nAlojamiento,Ingresos,Gastos,Ganancia\n';
+  alojamientos.forEach(a=>{const i=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);const g=gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0);csv+=`"${a.nombre}",${i},${g},${i-g}\n`;});
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`AlojApp_Export_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  const a=document.createElement('a');a.href=url;a.download=`AlojApp_${new Date().toISOString().split('T')[0]}.csv`;a.click();
   URL.revokeObjectURL(url);
-  setTimeout(()=>{ window.open('https://sheets.new','_blank'); toast('CSV descargado. Importalo con Archivo → Importar en Google Sheets','info'); },500);
+  setTimeout(()=>{window.open('https://sheets.new','_blank');toast('CSV descargado. Importalo con Archivo → Importar en Google Sheets','info');},500);
+};
+
+// ── Exponer renderFinanzas para onchange en HTML dinámico
+window.renderFinanzas = renderFinanzas;
+window.renderReservas = renderReservas;
+
+// ══════════════════════════════════════════
+// CHECK CONFIG
+// ══════════════════════════════════════════
+if (APP_CONFIG.FIREBASE.apiKey === 'TU_API_KEY') {
+  document.getElementById('app-loading').innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--danger);border-radius:16px;padding:32px;max-width:480px;width:90%;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:12px;">⚙️</div>
+      <div style="font-family:var(--font-head);font-size:1.2rem;font-weight:700;color:var(--danger);margin-bottom:12px;">Configuración pendiente</div>
+      <p style="color:var(--text2);font-size:.88rem;line-height:1.7;text-align:left;">
+        Editá el archivo <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">index.html</code> y completá la sección <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">APP_CONFIG</code> con:<br><br>
+        • <strong>GOOGLE_CLIENT_ID</strong> — de Google Cloud Console<br>
+        • <strong>FIREBASE</strong> — de Firebase Console → Configuración del proyecto<br><br>
+        Seguí el archivo <strong>INSTRUCCIONES_FIREBASE.md</strong> para el paso a paso.
+      </p>
+    </div>`;
 }
 
-// ═══════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════
-window.addEventListener('load', () => {
-  document.getElementById('main').style.display = 'none';
-  document.getElementById('sidebar').style.display = 'none';
-  if (APP_CONFIG.GOOGLE_CLIENT_ID === 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com') {
-    document.getElementById('login-screen').innerHTML = `
-      <div class="login-card">
-        <div class="login-logo">Aloj<span>App</span></div>
-        <div style="background:rgba(248,113,113,.1);border:1px solid var(--danger);border-radius:10px;padding:16px;margin-bottom:20px;text-align:left;">
-          <strong style="color:var(--danger);">⚙️ Configuración requerida</strong>
-          <p style="font-size:.82rem;color:var(--text2);margin-top:6px;line-height:1.6;">
-            Reemplazá <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;">TU_CLIENT_ID_AQUI</code> en la sección <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;">APP_CONFIG</code> del archivo HTML con tu Google Client ID.<br><br>
-            Seguí las instrucciones del archivo <strong>INSTRUCCIONES.md</strong> para obtenerlo.
-          </p>
-        </div>
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="bypassLogin()">
-          🚀 Entrar en modo demo (sin Google)
-        </button>
-      </div>`;
-    document.getElementById('login-screen').classList.add('visible');
-  } else {
-    initGoogleSignIn();
-  }
-});
-
-// Demo bypass (solo cuando no hay Client ID configurado)
-function bypassLogin() {
-  currentUser = { email: ADMIN_EMAIL, name:'Admin Demo', picture:'', isAdmin:true };
-  userPerms = ADMIN_PERMS;
-  loadAll();
-  if (!alojamientos.length) {
-    alojamientos=[
-      {id:'a1',nombre:'Depto 2A - Centro',maxHuespedes:4,color:'#3b82f6',obs:'Vista al mar'},
-      {id:'a2',nombre:'Cabaña El Bosque',maxHuespedes:6,color:'#22c55e',obs:'Con parrilla'},
-      {id:'a3',nombre:'Suite Premium 5B',maxHuespedes:2,color:'#8b5cf6',obs:'Solo adultos'},
-    ];
-    setData('alojamientos',alojamientos);
-  }
-  hidLoginScreens();
-  initApp();
-}
 </script>
+
+<!-- Google APIs para Calendar -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
+
 </body>
 </html>
