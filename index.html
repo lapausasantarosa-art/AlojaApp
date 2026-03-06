@@ -16,7 +16,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 const APP_CONFIG = {
-  // Google OAuth Client ID
+ // Google OAuth Client ID
   GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
   // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
@@ -834,35 +834,95 @@ function hidLoginScreens() {
 // ══════════════════════════════════════════
 // GOOGLE CALENDAR
 // ══════════════════════════════════════════
-window.gapiLoaded = function() { gapi.load('client', initGapiClient); };
+// ── GOOGLE CALENDAR — inicialización robusta ──
+// Esperamos que AMBAS librerías (gapi + gsi) estén listas antes de continuar
+let gapiLoadedFlag = false;
+let gsiLoadedFlag  = false;
 
-async function initGapiClient() {
-  try {
-    await gapi.client.init({ discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'] });
-    gapiReady = true;
-    initTokenClient();
-  } catch(e) { console.warn('GAPI init:', e); }
-}
-function initTokenClient() {
-  if (typeof google === 'undefined') { setTimeout(initTokenClient,500); return; }
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES,
-    callback: (r) => {
-      if (r.error) { updateCalStatus('error','Error de autorización'); return; }
-      calendarReady = true;
-      updateCalStatus('ok','Cal sincronizado');
-      toast('Google Calendar conectado ✓','success');
-    }
+window.gapiLoaded = function() {
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({ discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'] });
+      gapiReady = true;
+      gapiLoadedFlag = true;
+      tryInitTokenClient();
+    } catch(e) { console.warn('GAPI init error:', e); }
   });
+};
+
+// Esta función se llama cuando gsi/client termina de cargar
+window.gsiLoaded = function() {
+  gsiLoadedFlag = true;
+  tryInitTokenClient();
+};
+
+function tryInitTokenClient() {
+  // Solo inicializar cuando AMBAS librerías están listas
+  if (!gapiLoadedFlag || !gsiLoadedFlag) return;
+  if (tokenClient) return; // ya inicializado
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: async (r) => {
+        if (r.error) {
+          updateCalStatus('error', 'Error de autorización');
+          toast('Error al conectar Google Calendar: ' + r.error, 'error');
+          return;
+        }
+        calendarReady = true;
+        updateCalStatus('ok', 'Cal sincronizado');
+        toast('Google Calendar conectado ✓', 'success');
+        // Si había una sincronización pendiente, ejecutarla ahora
+        if (window._pendingCalSync) {
+          window._pendingCalSync = false;
+          await doSyncAll();
+        }
+      }
+    });
+  } catch(e) {
+    console.warn('TokenClient init error:', e);
+  }
 }
+
 window.syncAllToCalendar = async function() {
-  if (!calendarReady) { if(tokenClient) tokenClient.requestAccessToken({prompt:'consent'}); else toast('Calendar no disponible','info'); return; }
-  updateCalStatus('syncing','Sincronizando…');
-  const active = reservas.filter(r=>r.estado!=='cancelada');
-  let ok=0,err=0;
-  for (const r of active) { const res=await syncReservaToCalendar(r); res?ok++:err++; }
-  updateCalStatus('ok','Cal sincronizado');
-  toast(`Sincronización: ${ok} eventos${err?', '+err+' errores':''}`, ok>0?'success':'info');
+  // Si el token ya está activo, sincronizar directo
+  if (calendarReady) { await doSyncAll(); return; }
+
+  // Si tokenClient está listo, pedir autorización
+  if (tokenClient) {
+    window._pendingCalSync = true;
+    updateCalStatus('syncing', 'Autorizando…');
+    tokenClient.requestAccessToken({ prompt: '' }); // '' = no forzar re-consent si ya autorizó
+    return;
+  }
+
+  // tokenClient no está listo — esperar hasta 8 segundos
+  updateCalStatus('syncing', 'Iniciando Calendar…');
+  toast('Iniciando conexión con Google Calendar…', 'info');
+  let intentos = 0;
+  const esperar = setInterval(() => {
+    intentos++;
+    if (tokenClient) {
+      clearInterval(esperar);
+      window._pendingCalSync = true;
+      tokenClient.requestAccessToken({ prompt: '' });
+    } else if (intentos >= 16) { // 8 segundos
+      clearInterval(esperar);
+      updateCalStatus('error', 'Error al cargar');
+      toast('No se pudo cargar Google Calendar. Recargá la página e intentá de nuevo.', 'error');
+    }
+  }, 500);
+};
+
+async function doSyncAll() {
+  updateCalStatus('syncing', 'Sincronizando…');
+  const active = reservas.filter(r => r.estado !== 'cancelada');
+  if (!active.length) { toast('No hay reservas activas para sincronizar', 'info'); updateCalStatus('ok','Cal sincronizado'); return; }
+  let ok = 0, err = 0;
+  for (const r of active) { const res = await syncReservaToCalendar(r); res ? ok++ : err++; }
+  updateCalStatus('ok', 'Cal sincronizado');
+  toast(`Sincronización: ${ok} evento(s)${err ? ', ' + err + ' error(es)' : ''}`, ok > 0 ? 'success' : 'info');
 };
 async function syncReservaToCalendar(r) {
   if (!calendarReady||!gapiReady) return false;
@@ -1601,7 +1661,7 @@ if (APP_CONFIG.FIREBASE.apiKey === 'TU_API_KEY') {
 </script>
 
 <!-- Google APIs para Calendar -->
-<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://accounts.google.com/gsi/client" async onload="gsiLoaded()"></script>
 <script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
 
 </body>
