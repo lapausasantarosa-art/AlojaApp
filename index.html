@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1a1a2e">
+<meta name="theme-color" content="#ffffff">
 <meta name="description" content="Gestión de Alojamientos Temporarios">
 <title>AlojApp — Gestión de Alojamientos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 const APP_CONFIG = {
-   // Google OAuth Client ID
+ // Google OAuth Client ID
   GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
   // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
@@ -400,11 +400,21 @@ tr:hover td{background:#f9f7ff;}
   .nav-item{padding:13px 20px;font-size:.95rem;}
 }
 
-/* Pantallas muy pequeñas */
-@media(max-width:380px){
-  .login-card{padding:32px 20px;}
-  .stat-value{font-size:1.3rem;}
+/* ── RESERVA CARDS (móvil) ── */
+.res-card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 14px 14px 18px;margin-bottom:10px;
+  position:relative;overflow:hidden;box-shadow:var(--shadow);
 }
+.res-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--rc,#888);}
+.res-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.res-card-aloj{font-weight:700;font-size:.92rem;color:var(--text);}
+.res-card-huesped{font-size:.88rem;color:var(--text2);margin-bottom:6px;}
+.res-card-fechas{display:flex;gap:12px;font-size:.82rem;color:var(--text2);margin-bottom:8px;flex-wrap:wrap;}
+.res-card-fechas span{display:flex;align-items:center;gap:4px;}
+.res-card-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.res-card-acciones{display:flex;gap:6px;}
+.res-card-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -1382,26 +1392,72 @@ function renderReservas() {
   if(fm) list=list.filter(r=>r.entrada?.startsWith(fm)||r.salida?.startsWith(fm));
   const el=document.getElementById('reservas-list');
   if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reservas</h3><p>No hay reservas con los filtros seleccionados</p></div>`;return;}
-  el.innerHTML=`<div class="card"><div class="table-wrap"><table>
-    <thead><tr><th>Alojamiento</th><th>Huésped</th><th>Entrada</th><th>Salida</th><th>Pers.</th><th>Origen</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr></thead>
-    <tbody>${list.map(r=>{
-      const a=getAloj(r.alojId);
-      const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
-      return `<tr>
-        <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a?.color||'#888'}"></div><span style="font-size:.83rem;">${a?.nombre||'?'}</span></div></td>
-        <td><div style="font-weight:500;">${r.nombre}</div><div style="font-size:.75rem;color:var(--text2);">${r.tel}</div></td>
-        <td>${fmt(r.entrada)}</td><td>${fmt(r.salida)}</td>
-        <td>👥${r.personas}${r.mascota==='si'?' 🐾':''}</td>
-        <td><span class="badge badge-purple">${r.origen}</span></td>
-        <td style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</td>
-        <td><span class="badge ${eb}">${r.estado}</span></td>
-        <td><div style="display:flex;gap:5px;">
-          <button class="btn btn-ghost btn-sm" onclick="showReservaDetail('${r.id}')">👁️</button>
-          ${hasPerm('res-edit')?`<button class="btn btn-ghost btn-sm" onclick="openReservaModal('${r.id}')">✏️</button>`:''}
-          ${hasPerm('res-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteReserva('${r.id}')">🗑️</button>`:''}
-        </div></td></tr>`;}).join('')}
-    </tbody></table></div></div>`;
+
+  const isMobile = window.innerWidth <= 700;
+
+  if (isMobile) {
+    // ── VISTA TARJETAS para celular ──
+    el.innerHTML = list.map(r => {
+      const a = getAloj(r.alojId);
+      const eb = {confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+      const noches = daysBetween(r.entrada, r.salida);
+      return `<div class="res-card" style="--rc:${a?.color||'#888'}">
+        <div class="res-card-top">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <div class="color-dot" style="background:${a?.color||'#888'}"></div>
+              <span class="res-card-aloj">${a?.nombre||'?'}</span>
+            </div>
+            <div class="res-card-huesped">👤 ${r.nombre} · 📞 ${r.tel}</div>
+          </div>
+          <span class="badge ${eb}">${r.estado}</span>
+        </div>
+        <div class="res-card-fechas">
+          <span>🟢 Entrada: <strong>${fmt(r.entrada)}</strong></span>
+          <span>🔴 Salida: <strong>${fmt(r.salida)}</strong></span>
+          <span>🌙 ${noches} noche${noches!==1?'s':''}</span>
+        </div>
+        <div class="res-card-footer">
+          <div class="res-card-info">
+            <span style="font-size:.82rem;">👥 ${r.personas}p${r.mascota==='si'?' 🐾':''}</span>
+            <span style="font-size:.82rem;color:var(--accent3);font-weight:700;">${fmtMoney(r.costo)}</span>
+            <span class="badge badge-purple" style="font-size:.72rem;">${r.origen}</span>
+          </div>
+          <div class="res-card-acciones">
+            <button class="btn btn-ghost btn-sm" onclick="showReservaDetail('${r.id}')">👁️</button>
+            ${hasPerm('res-edit')?`<button class="btn btn-ghost btn-sm" onclick="openReservaModal('${r.id}')">✏️</button>`:''}
+            ${hasPerm('res-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteReserva('${r.id}')">🗑️</button>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    // ── VISTA TABLA para escritorio ──
+    el.innerHTML=`<div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Alojamiento</th><th>Huésped</th><th>Entrada</th><th>Salida</th><th>Pers.</th><th>Origen</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>${list.map(r=>{
+        const a=getAloj(r.alojId);
+        const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+        return `<tr>
+          <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a?.color||'#888'}"></div><span style="font-size:.83rem;">${a?.nombre||'?'}</span></div></td>
+          <td><div style="font-weight:500;">${r.nombre}</div><div style="font-size:.75rem;color:var(--text2);">${r.tel}</div></td>
+          <td>${fmt(r.entrada)}</td><td>${fmt(r.salida)}</td>
+          <td>👥${r.personas}${r.mascota==='si'?' 🐾':''}</td>
+          <td><span class="badge badge-purple">${r.origen}</span></td>
+          <td style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</td>
+          <td><span class="badge ${eb}">${r.estado}</span></td>
+          <td><div style="display:flex;gap:5px;">
+            <button class="btn btn-ghost btn-sm" onclick="showReservaDetail('${r.id}')">👁️</button>
+            ${hasPerm('res-edit')?`<button class="btn btn-ghost btn-sm" onclick="openReservaModal('${r.id}')">✏️</button>`:''}
+            ${hasPerm('res-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteReserva('${r.id}')">🗑️</button>`:''}
+          </div></td></tr>`;}).join('')}
+      </tbody></table></div></div>`;
+  }
 }
+// Re-renderizar al rotar/redimensionar pantalla
+window.addEventListener('resize', () => {
+  if (document.getElementById('page-reservas')?.classList.contains('active')) renderReservas();
+});
 
 // ══════════════════════════════════════════
 // HUÉSPEDES
