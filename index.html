@@ -16,7 +16,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 const APP_CONFIG = {
- // Google OAuth Client ID
+   // Google OAuth Client ID
   GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
   // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
@@ -503,6 +503,7 @@ tr:hover td{background:#f9f7ff;}
       <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="renderCalendar()"><option value="">Todos los alojamientos</option></select>
         <button class="btn btn-ghost btn-sm" onclick="syncAllToCalendar()" id="btn-sync-cal">🔄 Sincronizar con Google Cal</button>
+        <div style="margin-left:auto;" id="cal-btn-nueva"></div>
       </div>
       <div id="calendar-container">
         <div class="cal-header">
@@ -581,7 +582,7 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">Teléfono *</label><input type="tel" class="form-control" id="res-tel"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">DNI *</label><input type="text" class="form-control" id="res-dni"></div>
+        <div class="form-group"><label class="form-label">DNI</label><input type="text" class="form-control" id="res-dni"></div>
         <div class="form-group"><label class="form-label">Personas *</label><input type="number" class="form-control" id="res-personas" min="1" value="1"></div>
       </div>
       <div class="form-row">
@@ -1086,6 +1087,11 @@ function initApp() {
   document.getElementById('sidebar-role').textContent = currentUser.isAdmin ? '⭐ Administrador' : '👤 Usuario';
   applyPermissions();
   updateSelectOptions();
+  // Botón Nueva Reserva en calendario (si tiene permiso)
+  const calBtn = document.getElementById('cal-btn-nueva');
+  if (calBtn && hasPerm('res-edit')) {
+    calBtn.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openReservaModal()">+ Nueva Reserva</button>`;
+  }
   showPage('calendario');
 }
 
@@ -1168,7 +1174,7 @@ window.showPage = function(page) {
   else if(page==='huespedes'){ if(hasPerm('hues-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;   renderHuespedes(); }
   else if(page==='calendario'){renderCalendar();renderCalFilterOptions();}
   else if(page==='dashboard') renderDashboard();
-  else if(page==='finanzas'){  if(hasPerm('fin-edit'))  actions.innerHTML+=`<button class="btn btn-primary" onclick="openGastoModal()">+ Gasto</button>`; renderFinanzas(); }
+  else if(page==='finanzas'){ renderFinanzas(); }
   else if(page==='usuarios')   renderUsuarios();
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
@@ -1658,36 +1664,96 @@ window.deleteGasto = async function(id) {
   toast('Gasto eliminado','success');
 };
 function renderFinanzas() {
-  const activeRes=reservas.filter(r=>r.estado!=='cancelada');
-  const ingTotal=activeRes.reduce((s,r)=>s+(r.costo||0),0);
-  const gasTotal=gastos.reduce((s,g)=>s+(g.monto||0),0);
-  const gan=ingTotal-gasTotal;
-  const byAloj=alojamientos.map(a=>({...a,ing:activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0),gas:gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0)})).map(a=>({...a,gan:a.ing-a.gas}));
-  const fa=document.getElementById('fin-filter-aloj')?.value||'';
-  const fm=document.getElementById('fin-filter-mes')?.value||'';
-  let fg=[...gastos].sort((a,b)=>b.fecha>a.fecha?1:-1);
-  if(fa) fg=fg.filter(g=>g.alojId===fa||g.alojId==='general');
-  if(fm) fg=fg.filter(g=>g.fecha?.startsWith(fm));
-  document.getElementById('finanzas-content').innerHTML=`
-  <div class="grid-3" style="margin-bottom:24px;">
-    <div class="stat-card" style="--ac:var(--accent3)"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Total Ingresos</div></div>
-    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(gasTotal)}</div><div class="stat-label">Total Gastos</div></div>
-    <div class="stat-card" style="--ac:${gan>=0?'var(--accent2)':'var(--danger)'}"><div class="stat-value" style="color:${gan>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(gan)}</div><div class="stat-label">Ganancia Neta</div></div>
-  </div>
-  <div class="card" style="margin-bottom:24px;"><div class="card-header"><span class="card-title">Resumen por Alojamiento</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Alojamiento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th></tr></thead>
-    <tbody>${byAloj.map(a=>`<tr><td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td><td style="color:var(--accent3);">${fmtMoney(a.ing)}</td><td style="color:var(--danger);">${fmtMoney(a.gas)}</td><td style="font-weight:600;color:${a.gan>=0?'var(--accent2)':'var(--danger)'};">${fmtMoney(a.gan)}</td></tr>`).join('')}</tbody></table></div>
-  </div>
-  <div class="card"><div class="card-header"><span class="card-title">Gastos Registrados</span></div>
-    <div class="filter-row">
-      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;"><option value="">Todos</option><option value="general">General</option>${alojamientos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')}</select>
+  const fa = document.getElementById('fin-filter-aloj')?.value || '';
+  const fm = document.getElementById('fin-filter-mes')?.value  || '';
+
+  let activeRes = reservas.filter(r => r.estado !== 'cancelada');
+  let activeGas = [...gastos];
+
+  // Filtro por departamento
+  if (fa) {
+    activeRes = activeRes.filter(r => r.alojId === fa);
+    activeGas = activeGas.filter(g => g.alojId === fa || g.alojId === 'general');
+  }
+  // Filtro por mes
+  if (fm) {
+    activeRes = activeRes.filter(r => r.entrada?.startsWith(fm) || r.salida?.startsWith(fm));
+    activeGas = activeGas.filter(g => g.fecha?.startsWith(fm));
+  }
+
+  const ingTotal = activeRes.reduce((s,r) => s+(r.costo||0), 0);
+  const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
+  const gan = ingTotal - gasTotal;
+
+  // Resumen por alojamiento (siempre muestra todos, sin filtro de mes para el resumen)
+  const allActiveRes = reservas.filter(r => r.estado !== 'cancelada');
+  const byAloj = alojamientos.map(a => ({
+    ...a,
+    ing: allActiveRes.filter(r => r.alojId === a.id).reduce((s,r) => s+(r.costo||0), 0),
+    gas: gastos.filter(g => g.alojId === a.id).reduce((s,g) => s+(g.monto||0), 0)
+  })).map(a => ({...a, gan: a.ing - a.gas}));
+
+  const fg = [...activeGas].sort((a,b) => b.fecha > a.fecha ? 1 : -1);
+  const alojLabel = fa ? (alojamientos.find(a=>a.id===fa)?.nombre || 'General') : 'Todos';
+
+  document.getElementById('finanzas-content').innerHTML = `
+  <div class="card" style="margin-bottom:20px;">
+    <div class="filter-row" style="margin-bottom:0;">
+      <div style="font-size:.82rem;color:var(--text2);font-weight:500;align-self:center;white-space:nowrap;">Filtrar por:</div>
+      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;">
+        <option value="">Todos los departamentos</option>
+        ${alojamientos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')}
+      </select>
       <input type="month" class="form-control" id="fin-filter-mes" onchange="renderFinanzas()" style="width:auto;">
+      ${fa||fm ? `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('fin-filter-aloj').value='';document.getElementById('fin-filter-mes').value='';renderFinanzas()">✕ Limpiar</button>` : ''}
     </div>
-    ${fg.length?`<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Alojamiento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
-    <tbody>${fg.map(g=>{const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};return`<tr><td>${fmt(g.fecha)}</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td><td>${g.concepto}</td><td><span class="badge badge-blue">${g.cat}</span></td><td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td><td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td></tr>`;}).join('')}</tbody></table></div>`:`<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos registrados</div>`}
+    ${fa||fm ? `<div style="margin-top:10px;font-size:.8rem;color:var(--text2);">Mostrando: <strong style="color:var(--text);">${alojLabel}${fm?' · '+fm:''}</strong></div>` : ''}
+  </div>
+
+  <div class="grid-3" style="margin-bottom:20px;">
+    <div class="stat-card" style="--ac:var(--accent3)"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Ingresos${fa?' ('+alojLabel+')':''}</div></div>
+    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(gasTotal)}</div><div class="stat-label">Gastos${fa?' ('+alojLabel+')':''}</div></div>
+    <div class="stat-card" style="--ac:${gan>=0?'#059669':'var(--danger)'}">
+      <div class="stat-value" style="color:${gan>=0?'#059669':'var(--danger)'};">${fmtMoney(gan)}</div>
+      <div class="stat-label">Ganancia Neta${fa?' ('+alojLabel+')':''}</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">Resumen por Departamento</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th></tr></thead>
+      <tbody>${byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
+        <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre}</strong>${fa===a.id?' <span class="badge badge-purple" style="font-size:.65rem;">filtrado</span>':''}</div></td>
+        <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
+        <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}</td>
+        <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Gastos Registrados${fa?' — '+alojLabel:''}</span>
+      ${hasPerm('fin-edit')?`<button class="btn btn-primary btn-sm" onclick="openGastoModal()">+ Gasto</button>`:''}
+    </div>
+    ${fg.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Departamento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
+      <tbody>${fg.map(g=>{
+        const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
+        return`<tr><td>${fmt(g.fecha)}</td>
+          <td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td>
+          <td>${g.concepto}</td>
+          <td><span class="badge badge-blue">${g.cat}</span></td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td>
+          <td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td>
+        </tr>`;}).join('')}
+      </tbody></table></div>`
+    : `<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos${fa?' para '+alojLabel:''}</div>`}
   </div>`;
-  if(fa) document.getElementById('fin-filter-aloj').value=fa;
-  if(fm) document.getElementById('fin-filter-mes').value=fm;
+
+  if (fa) document.getElementById('fin-filter-aloj').value = fa;
+  if (fm) document.getElementById('fin-filter-mes').value  = fm;
 }
 
 // ══════════════════════════════════════════
