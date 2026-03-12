@@ -16,7 +16,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 const APP_CONFIG = {
-   // Google OAuth Client ID
+    // Google OAuth Client ID
   GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
   // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
@@ -696,7 +696,13 @@ tr:hover td{background:#f9f7ff;}
 <div class="modal-overlay" id="modal-res-detail">
   <div class="modal"><div class="modal-header"><span class="modal-title">Detalle de Reserva</span><button class="close-btn" onclick="closeModal('modal-res-detail')">✕</button></div>
     <div class="modal-body" id="res-detail-body"></div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-res-detail')">Cerrar</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-res-detail')">Cerrar</button>
+      <button class="btn btn-success" id="btn-whatsapp-detail" onclick="abrirWhatsApp()" style="background:#25d366;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.532 5.852L.057 23.5l5.799-1.452A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 01-4.932-1.341l-.354-.21-3.664.917.977-3.558-.23-.366A9.716 9.716 0 012.25 12C2.25 6.59 6.59 2.25 12 2.25S21.75 6.59 21.75 12 17.41 21.75 12 21.75z"/></svg>
+        WhatsApp
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1362,6 +1368,20 @@ window.showReservaDetail = function(id) {
   const a=getAloj(r.alojId);
   const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
   const oi={particular:'👤',booking:'🌐',airbnb:'🏠',otros:'📌'}[r.origen]||'📌';
+  const noches=daysBetween(r.entrada,r.salida);
+
+  // Guardar tel para el botón de WhatsApp
+  window._waReserva = {
+    tel: r.tel,
+    nombre: r.nombre,
+    aloj: a?.nombre||'el alojamiento',
+    entrada: fmt(r.entrada),
+    salida: fmt(r.salida),
+    noches,
+    personas: r.personas,
+    costo: r.costo
+  };
+
   document.getElementById('res-detail-body').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
       <div class="color-dot" style="background:${a?.color||'#888'}"></div>
@@ -1372,7 +1392,7 @@ window.showReservaDetail = function(id) {
     <div class="grid-2" style="gap:12px;margin-bottom:16px;">
       <div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${daysBetween(r.entrada,r.salida)}</div></div>
+      <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${noches}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}</div></div>
     </div>
     <hr style="border-color:var(--border);margin-bottom:14px;">
@@ -1386,6 +1406,32 @@ window.showReservaDetail = function(id) {
     </div>
     ${r.obs?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 ${r.obs}</div>`:''}`;
   openModal('modal-res-detail');
+};
+
+window.abrirWhatsApp = function() {
+  const w = window._waReserva;
+  if (!w?.tel) { toast('Sin número de teléfono','error'); return; }
+
+  // Limpiar número: sacar espacios, guiones, paréntesis
+  // Si empieza con 0, asumir Argentina (+54) y quitar el 0
+  let tel = w.tel.replace(/[\s\-\(\)\.]/g,'');
+  if (tel.startsWith('0')) tel = '54' + tel.substring(1);
+  else if (!tel.startsWith('54') && tel.length <= 12) tel = '54' + tel;
+
+  const msg =
+`¡Hola ${w.nombre}! 👋
+Te confirmamos tu reserva en *${w.aloj}*:
+
+📅 Entrada: *${w.entrada}*
+📅 Salida: *${w.salida}*
+🌙 ${w.noches} noche${w.noches!==1?'s':''}
+👥 ${w.personas} persona${w.personas!==1?'s':''}
+${w.costo?`💰 Costo: *${fmtMoney(w.costo)}*`:''}
+
+Cualquier consulta estamos a tu disposición. ¡Te esperamos!`;
+
+  const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
 };
 function renderReservas() {
   const fa=document.getElementById('res-filter-aloj')?.value||'';
