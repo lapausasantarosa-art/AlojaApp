@@ -225,15 +225,15 @@ tr:hover td{background:#f9f7ff;}
 .cal-nav-btn{background:#fff;border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;padding:6px 16px;font-size:1rem;transition:all .2s;box-shadow:var(--shadow);}
 .cal-nav-btn:hover{background:var(--surface3);border-color:#bbb;}
 .cal-month-title{font-family:var(--font-head);font-size:1.2rem;font-weight:700;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-day-head{padding:8px 0;text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:600;background:var(--surface2);}
-.cal-day{min-height:90px;padding:6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .15s;background:#fff;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));width:100%;}
+.cal-day-head{padding:8px 0;text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:600;background:var(--surface2);overflow:hidden;}
+.cal-day{min-height:90px;padding:6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .15s;background:#fff;overflow:hidden;min-width:0;}
 .cal-day:hover{background:#f9f7ff;}
 .cal-day.other-month{background:var(--surface2);}
 .cal-day.other-month .cal-day-num{color:#ccc;}
 .cal-day.today .cal-day-num{background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
-.cal-day-num{font-size:.8rem;font-weight:600;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-bottom:3px;color:var(--text);}
-.cal-event{border-radius:4px;padding:2px 6px;font-size:.68rem;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:500;transition:opacity .2s;}
+.cal-day-num{font-size:.8rem;font-weight:600;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-bottom:3px;color:var(--text);flex-shrink:0;}
+.cal-event{border-radius:4px;padding:2px 5px;font-size:.68rem;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:500;transition:opacity .2s;display:block;max-width:100%;}
 .cal-event:hover{opacity:.82;}
 .legend{display:flex;flex-wrap:wrap;gap:10px;padding:12px 18px;border-top:1px solid var(--border);background:var(--surface2);}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text2);}
@@ -359,13 +359,18 @@ tr:hover td{background:#f9f7ff;}
   .topbar-actions .gcal-badge,
   .topbar-actions .sync-badge{display:none;} /* ocultar badges en topbar en mobile */
 
-  /* Calendario compacto en móvil */
-  .cal-day{min-height:60px;padding:4px 3px;}
-  .cal-day-num{font-size:.72rem;}
-  .cal-event{font-size:.6rem;padding:1px 4px;}
-  .cal-day-head{font-size:.6rem;padding:6px 0;}
+  /* Calendario compacto en móvil — columnas uniformes */
+  #calendar-container{border-radius:8px;}
   .cal-header{padding:10px 12px;}
-  .cal-month-title{font-size:1rem;}
+  .cal-month-title{font-size:.95rem;}
+  .cal-day-head{font-size:.58rem;padding:5px 0;letter-spacing:0;}
+  .cal-day{min-height:52px;padding:3px 2px;}
+  .cal-day-num{font-size:.7rem;width:20px;height:20px;margin-bottom:2px;}
+  .cal-day.today .cal-day-num{width:20px;height:20px;}
+  /* Eventos en móvil: solo punto de color para ahorrar espacio */
+  .cal-event{font-size:0;padding:0;height:6px;border-radius:3px;margin-bottom:2px;white-space:normal;}
+  .cal-event::before{content:'';display:none;}
+  .legend{gap:8px;padding:10px 12px;font-size:.72rem;}
 
   /* Cards y stats */
   .stat-value{font-size:1.5rem;}
@@ -614,7 +619,7 @@ tr:hover td{background:#f9f7ff;}
       <div class="tab-panel active" id="tab-huesped-datos">
         <div class="form-row">
           <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-control" id="huesped-nombre"></div>
-          <div class="form-group"><label class="form-label">Teléfono (clave) *</label><input type="tel" class="form-control" id="huesped-tel"></div>
+          <div class="form-group"><label class="form-label" id="huesped-tel-label">Teléfono (clave) *</label><input type="tel" inputmode="numeric" pattern="[0-9]*" class="form-control" id="huesped-tel"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">DNI</label><input type="text" class="form-control" id="huesped-dni"></div>
@@ -1526,11 +1531,38 @@ window.openHuespedModal = function(tel=null) {
   document.getElementById('huesped-tel-id').value  =tel||'';
   document.getElementById('huesped-nombre').value  =h?.nombre||'';
   document.getElementById('huesped-tel').value     =h?.tel||tel||'';
-  document.getElementById('huesped-tel').readOnly  =!!tel;
   document.getElementById('huesped-dni').value     =h?.dni||'';
   document.getElementById('huesped-eval').value    =h?.eval||'bueno';
   document.getElementById('huesped-obs').value     =h?.obs||'';
   document.getElementById('modal-huesped-title').textContent=tel?h?.nombre||'Huésped':'Nuevo Huésped';
+
+  // Teléfono: editable solo si es admin O huésped nuevo
+  const telInput   = document.getElementById('huesped-tel');
+  const telLabel   = document.getElementById('huesped-tel-label');
+  const esNuevo    = !tel;
+  const puedeEditar = esNuevo || currentUser?.isAdmin;
+
+  // Limpiar listener anterior para no acumularlos
+  telInput.oninput = null;
+
+  if (puedeEditar) {
+    telInput.readOnly         = false;
+    telInput.disabled         = false;
+    telInput.style.background = '';
+    telInput.style.cursor     = '';
+    telInput.title            = '';
+    telInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g,''); };
+    telLabel.innerHTML = 'Teléfono (clave) *';
+  } else {
+    telInput.readOnly         = true;
+    telInput.disabled         = false;
+    telInput.style.background = 'var(--surface2)';
+    telInput.style.cursor     = 'not-allowed';
+    telInput.title            = 'Solo el administrador puede modificar el teléfono';
+    telInput.oninput          = null;
+    telLabel.innerHTML        = 'Teléfono (clave) 🔒';
+  }
+
   const histRes=reservas.filter(r=>r.tel===tel).sort((a,b)=>b.entrada>a.entrada?1:-1);
   document.getElementById('huesped-historial-content').innerHTML=histRes.length?
     histRes.map(r=>{const a=getAloj(r.alojId);return`<div class="history-item">
@@ -1553,10 +1585,12 @@ window.saveHuesped = async function() {
   const ev    =document.getElementById('huesped-eval').value;
   const obs   =document.getElementById('huesped-obs').value.trim();
   if(!nombre||!tel){toast('Nombre y teléfono requeridos','error');return;}
-  const docId=telId||tel;
+  if(!/^[0-9]+$/.test(tel)){toast('El teléfono solo puede contener números','error');return;}
+  const docId    = telId||tel;
+  const telFinal = (telId && !currentUser?.isAdmin) ? telId : tel;
   if(!telId&&huespedes.find(h=>h.id===tel||h.tel===tel)){toast('Ya existe un huésped con ese teléfono','error');return;}
   setDbStatus('ing','Guardando…');
-  await upsertDoc('huespedes',docId,{tel,nombre,dni,eval:ev,obs});
+  await upsertDoc('huespedes',docId,{tel:telFinal,nombre,dni,eval:ev,obs});
   setDbStatus('ok','☁️ En línea');
   toast('Huésped guardado','success');
   closeModal('modal-huesped');
@@ -1570,25 +1604,59 @@ window.deleteHuesped = async function(tel) {
 };
 function renderHuespedes() {
   const search=document.getElementById('huesped-search')?.value.toLowerCase()||'';
-  let list=huespedes;
+  let list=[...huespedes];
   if(search) list=list.filter(h=>h.nombre?.toLowerCase().includes(search)||h.tel?.includes(search)||h.dni?.includes(search));
   const el=document.getElementById('huespedes-list');
   if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin huéspedes</h3><p>Se crean automáticamente con las reservas</p></div>`;return;}
-  el.innerHTML=`<div class="card"><div class="table-wrap"><table>
-    <thead><tr><th>Nombre</th><th>Teléfono</th><th>DNI</th><th>Evaluación</th><th>Reservas</th><th>Acciones</th></tr></thead>
-    <tbody>${list.map(h=>{
+
+  const isMobile = window.innerWidth <= 700;
+
+  if (isMobile) {
+    // ── TARJETAS en celular ──
+    const evMap={bueno:{b:'badge-green',i:'⭐',t:'Buen huésped'},regular:{b:'badge-yellow',i:'⚠️',t:'Regular'},malo:{b:'badge-red',i:'❌',t:'Mal huésped'}};
+    el.innerHTML = list.map(h => {
       const tel=h.tel||h.id;
       const rc=reservas.filter(r=>r.tel===tel&&r.estado!=='cancelada').length;
-      const ed={bueno:{b:'badge-green',i:'⭐'},regular:{b:'badge-yellow',i:'⚠️'},malo:{b:'badge-red',i:'❌'}}[h.eval||'bueno'];
-      return `<tr><td><strong>${h.nombre}</strong></td><td>${tel}</td><td>${h.dni||'—'}</td>
-        <td><span class="badge ${ed.b}">${ed.i} ${h.eval||'bueno'}</span></td>
-        <td>${rc} estancias</td>
-        <td><div style="display:flex;gap:5px;">
-          ${hasPerm('hues-edit')?`<button class="btn btn-ghost btn-sm" onclick="openHuespedModal('${tel}')">✏️</button>`:''}
-          ${hasPerm('hues-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteHuesped('${tel}')">🗑️</button>`:''}
-        </div></td></tr>`;}).join('')}
-    </tbody></table></div></div>`;
+      const ev=evMap[h.eval||'bueno'];
+      return `<div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">${h.nombre}</div>
+            <div style="font-size:.82rem;color:var(--text2);margin-top:2px;">📞 ${tel}${h.dni?` · DNI: ${h.dni}`:''}</div>
+          </div>
+          <span class="badge ${ev.b}">${ev.i} ${ev.t}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+          <span style="font-size:.8rem;color:var(--text2);">🏠 ${rc} estancia${rc!==1?'s':''} activa${rc!==1?'s':''}</span>
+          <div style="display:flex;gap:6px;">
+            ${hasPerm('hues-edit')?`<button class="btn btn-ghost btn-sm" onclick="openHuespedModal('${tel}')">✏️ Editar</button>`:''}
+            ${hasPerm('hues-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteHuesped('${tel}')">🗑️</button>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    // ── TABLA en escritorio ──
+    el.innerHTML=`<div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Nombre</th><th>Teléfono</th><th>DNI</th><th>Evaluación</th><th>Reservas</th><th>Acciones</th></tr></thead>
+      <tbody>${list.map(h=>{
+        const tel=h.tel||h.id;
+        const rc=reservas.filter(r=>r.tel===tel&&r.estado!=='cancelada').length;
+        const ed={bueno:{b:'badge-green',i:'⭐'},regular:{b:'badge-yellow',i:'⚠️'},malo:{b:'badge-red',i:'❌'}}[h.eval||'bueno'];
+        return `<tr><td><strong>${h.nombre}</strong></td><td>${tel}</td><td>${h.dni||'—'}</td>
+          <td><span class="badge ${ed.b}">${ed.i} ${h.eval||'bueno'}</span></td>
+          <td>${rc} estancias</td>
+          <td><div style="display:flex;gap:5px;">
+            ${hasPerm('hues-edit')?`<button class="btn btn-ghost btn-sm" onclick="openHuespedModal('${tel}')">✏️</button>`:''}
+            ${hasPerm('hues-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteHuesped('${tel}')">🗑️</button>`:''}
+          </div></td></tr>`;}).join('')}
+      </tbody></table></div></div>`;
+  }
 }
+// Re-renderizar al rotar pantalla
+window.addEventListener('resize', () => {
+  if (document.getElementById('page-huespedes')?.classList.contains('active')) renderHuespedes();
+});
 
 // ══════════════════════════════════════════
 // CALENDARIO
