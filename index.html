@@ -16,7 +16,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 const APP_CONFIG = {
-    // Google OAuth Client ID
+   // Google OAuth Client ID
   GOOGLE_CLIENT_ID: '962177296518-8vhoug9d06thgfd94rhvj2e6eo9k2eui.apps.googleusercontent.com',
 
   // Firebase config (obtenida desde Firebase Console → Configuración del proyecto)
@@ -1420,14 +1420,21 @@ window.abrirWhatsApp = function() {
 
   const msg =
 `¡Hola ${w.nombre}! 👋
+Somos de La Pausa - Departamentos Temporarios
 Te confirmamos tu reserva en *${w.aloj}*:
 
 📅 Entrada: *${w.entrada}*
 📅 Salida: *${w.salida}*
 🌙 ${w.noches} noche${w.noches!==1?'s':''}
 👥 ${w.personas} persona${w.personas!==1?'s':''}
-${w.costo?`💰 Costo: *${fmtMoney(w.costo)}*`:''}
 
+Te paso La ubicación por Google Maps asi llegan más directos al departamento.
+
+https://maps.app.goo.gl/4rjmMndUFgS9JdVX7?g_st=awb
+
+La Dirección es Delfín Gallo 1540.
+
+Cuando tengas la hora aproximada de llegada, por favor avísennos así coordinamos la entrega de las llaves.
 Cualquier consulta estamos a tu disposición. ¡Te esperamos!`;
 
   const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
