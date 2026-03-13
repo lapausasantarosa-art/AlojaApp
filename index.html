@@ -167,6 +167,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 
 /* ── STATS ── */
 .stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.stat-card[onclick]{transition:transform .18s,box-shadow .18s;}
+.stat-card[onclick]:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--accent));}
 .stat-value{font-family:var(--font-head);font-size:1.9rem;font-weight:800;color:var(--ac,var(--accent));}
 .stat-label{color:var(--text2);font-size:.82rem;margin-top:4px;}
@@ -528,6 +530,12 @@ tr:hover td{background:#f9f7ff;}
           <option value="">Todos los estados</option><option value="confirmada">Confirmada</option>
           <option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option>
         </select>
+        <select class="form-control" id="res-filter-periodo" onchange="renderReservas()" style="width:auto;">
+          <option value="activas">Actuales y futuras</option>
+          <option value="pasadas">Pasadas</option>
+          <option value="todas">Todas</option>
+        </select>
+        <input type="text" class="form-control" id="res-filter-huesped" oninput="renderReservas()" placeholder="🔍 Huésped..." style="width:auto;min-width:140px;">
         <input type="month" class="form-control" id="res-filter-mes" onchange="renderReservas()" style="width:auto;">
       </div>
       <div id="reservas-list"></div>
@@ -1268,6 +1276,12 @@ window.showPage = function(page) {
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
 window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
+window.irAReservasVigentes = function() {
+  showPage('reservas');
+  // Asegurar que el filtro quede en "activas"
+  const sel = document.getElementById('res-filter-periodo');
+  if (sel) { sel.value = 'activas'; renderReservas(); }
+};
 window.calNav        = dir=>{ calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1); renderCalendar(); };
 
 // ══════════════════════════════════════════
@@ -1685,13 +1699,27 @@ function renderReservas() {
   const fa=document.getElementById('res-filter-aloj')?.value||'';
   const fe=document.getElementById('res-filter-estado')?.value||'';
   const fm=document.getElementById('res-filter-mes')?.value||'';
+  const fp=document.getElementById('res-filter-periodo')?.value||'activas';
+  const fh=(document.getElementById('res-filter-huesped')?.value||'').toLowerCase().trim();
+  const todayStr=new Date().toISOString().split('T')[0];
   updateSelectOptions();
   let list=[...reservas].sort((a,b)=>a.entrada>b.entrada?1:-1);
+  // Filtro período
+  if(fp==='activas') list=list.filter(r=>r.salida>todayStr);
+  else if(fp==='pasadas') list=list.filter(r=>r.salida<=todayStr);
+  // Filtros adicionales
   if(fa) list=list.filter(r=>r.alojId===fa);
   if(fe) list=list.filter(r=>r.estado===fe);
   if(fm) list=list.filter(r=>r.entrada?.startsWith(fm)||r.salida?.startsWith(fm));
+  if(fh) list=list.filter(r=>r.nombre?.toLowerCase().includes(fh)||r.tel?.includes(fh));
   const el=document.getElementById('reservas-list');
-  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reservas</h3><p>No hay reservas con los filtros seleccionados</p></div>`;return;}
+  // Mensaje de estado según período
+  const emptyMsg = fp==='pasadas'
+    ? '<p>No hay reservas pasadas con esos filtros</p>'
+    : fp==='activas'
+    ? '<p>No hay reservas actuales o futuras. Usá "Pasadas" para ver el historial.</p>'
+    : '<p>No hay reservas con los filtros seleccionados</p>';
+  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin reservas</h3>${emptyMsg}</div>`;return;}
 
   const isMobile = window.innerWidth <= 700;
 
@@ -1956,6 +1984,8 @@ function renderDashboard() {
   const thisM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const todayStr=now.toISOString().split('T')[0];
   const activeRes=reservas.filter(r=>r.estado!=='cancelada');
+  // Reservas vigentes = en curso o futuras (salida > hoy)
+  const vigentesRes=activeRes.filter(r=>r.salida>todayStr);
   const ingMes=activeRes.filter(r=>r.entrada?.startsWith(thisM)||r.salida?.startsWith(thisM)).reduce((s,r)=>s+(r.costo||0),0);
   const ingTotal=activeRes.reduce((s,r)=>s+(r.costo||0),0);
   const hoyOc=activeRes.filter(r=>todayStr>=r.entrada&&todayStr<r.salida).length;
@@ -1967,8 +1997,16 @@ function renderDashboard() {
   const maxI=Math.max(...topAloj.map(a=>a.ing),1);
   document.getElementById('dashboard-content').innerHTML=`
   <div class="grid-4" style="margin-bottom:24px;">
-    <div class="stat-card" style="--ac:#3b82f6"><div class="stat-value">${alojamientos.length}</div><div class="stat-label">Alojamientos</div></div>
-    <div class="stat-card" style="--ac:#22c55e"><div class="stat-value">${activeRes.length}</div><div class="stat-label">Reservas activas</div><div class="stat-sub">${hoyOc} ocupados hoy</div></div>
+    <div class="stat-card" style="--ac:#3b82f6;cursor:pointer;" onclick="showPage('alojamientos')" title="Ver alojamientos">
+      <div class="stat-value">${alojamientos.length}</div>
+      <div class="stat-label">Alojamientos</div>
+      <div class="stat-sub" style="color:#3b82f6;">Ver todos →</div>
+    </div>
+    <div class="stat-card" style="--ac:#22c55e;cursor:pointer;" onclick="irAReservasVigentes()" title="Ver reservas actuales y futuras">
+      <div class="stat-value">${vigentesRes.length}</div>
+      <div class="stat-label">Reservas activas</div>
+      <div class="stat-sub">${hoyOc} ocupados hoy · Ver →</div>
+    </div>
     <div class="stat-card" style="--ac:#f97316"><div class="stat-value">${fmtMoney(ingMes)}</div><div class="stat-label">Ingresos este mes</div></div>
     <div class="stat-card" style="--ac:#8b5cf6"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Ingresos totales</div></div>
   </div>
