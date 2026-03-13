@@ -10,7 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
 <!-- ═══════════════════════════════════════════════════════════════
-     INDEX (9).HTML ULTIMA VERSION
      ⚙️  CONFIGURACIÓN — Completá estos valores con los tuyos
      ═══════════════════════════════════════════════════════════════
      Ver INSTRUCCIONES_FIREBASE.md para obtener estos datos
@@ -478,6 +477,7 @@ tr:hover td{background:#f9f7ff;}
   <div class="nav-section" id="nav-admin-section" style="display:none;">
     <div class="nav-label">Administración</div>
     <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
+    <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
     <div id="sidebar-avatar" class="sidebar-user-av">?</div>
@@ -540,6 +540,7 @@ tr:hover td{background:#f9f7ff;}
     </div>
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
+    <div id="page-mensajes" class="page"><div id="mensajes-content"></div></div>
   </div>
 </div>
 
@@ -702,10 +703,55 @@ tr:hover td{background:#f9f7ff;}
     <div class="modal-body" id="res-detail-body"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-res-detail')">Cerrar</button>
-      <button class="btn btn-success" id="btn-whatsapp-detail" onclick="abrirWhatsApp()" style="background:#25d366;">
+      <button class="btn btn-success" id="btn-whatsapp-detail" onclick="abrirSelectorWA()" style="background:#25d366;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.532 5.852L.057 23.5l5.799-1.452A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 01-4.932-1.341l-.354-.21-3.664.917.977-3.558-.23-.366A9.716 9.716 0 012.25 12C2.25 6.59 6.59 2.25 12 2.25S21.75 6.59 21.75 12 17.41 21.75 12 21.75z"/></svg>
         WhatsApp
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLANTILLA WA -->
+<div class="modal-overlay" id="modal-plantilla">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-plantilla-title">Nueva Plantilla</span>
+      <button class="close-btn" onclick="closeModal('modal-plantilla')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="plantilla-id">
+      <div class="form-group">
+        <label class="form-label">Título *</label>
+        <input type="text" class="form-control" id="plantilla-titulo" placeholder="Ej: Confirmación de reserva">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mensaje *</label>
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">
+          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+        </div>
+        <textarea class="form-control" id="plantilla-texto" rows="10" placeholder="Escribí el mensaje..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-plantilla')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePlantilla()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SELECTOR WA -->
+<div class="modal-overlay" id="modal-wa-selector">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">Enviar WhatsApp</span>
+      <button class="close-btn" onclick="closeModal('modal-wa-selector')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--text2);margin-bottom:14px;">Elegí el mensaje a enviar a <strong id="wa-sel-nombre"></strong>:</p>
+      <div id="wa-plantillas-lista"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-wa-selector')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -768,6 +814,7 @@ let reservas      = [];
 let huespedes     = [];
 let gastos        = [];
 let usuariosDB    = [];
+let plantillasWA  = [];
 let pendingUsers  = [];
 let calDate       = new Date();
 let selectedColor = COLORS_LIST[0];
@@ -845,6 +892,19 @@ function startListeners() {
   listen('pending_users', pendingUsers, () => {
     if (document.getElementById('page-usuarios').classList.contains('active'))   renderUsuarios();
   });
+  listen('plantillas_wa', plantillasWA, () => {
+    if (document.getElementById('page-mensajes').classList.contains('active'))   renderMensajes();
+  });
+  // Crear plantilla de confirmación por defecto si no existe ninguna
+  setTimeout(async () => {
+    if (plantillasWA.length === 0) {
+      await upsertDoc('plantillas_wa', 'confirmacion', {
+        titulo: 'Confirmación de reserva',
+        texto: `¡Hola {nombre}! 👋\nSomos de La Pausa - Departamentos Temporarios\nTe confirmamos tu reserva en *{aloj}*:\n\n📅 Entrada: *{entrada}*\n📅 Salida: *{salida}*\n🌙 {noches} noche(s)\n👥 {personas} persona(s)\n\nTe paso La ubicación por Google Maps asi llegan más directos al departamento.\n\nhttps://maps.app.goo.gl/4rjmMndUFgS9JdVX7?g_st=awb\n\nLa Dirección es Delfín Gallo 1540.\n\nCuando tengas la hora aproximada de llegada, por favor avísennos así coordinamos la entrega de las llaves.\nCualquier consulta estamos a tu disposición. ¡Te esperamos!`,
+        orden: 1
+      });
+    }
+  }, 3000);
 
   setDbStatus('ok', '☁️ En línea');
 }
@@ -1172,7 +1232,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1186,6 +1246,10 @@ window.showPage = function(page) {
   else if(page==='dashboard') renderDashboard();
   else if(page==='finanzas'){ renderFinanzas(); }
   else if(page==='usuarios')   renderUsuarios();
+  else if(page==='mensajes'){
+    if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-primary" onclick="openPlantillaModal()">+ Nueva Plantilla</button>`;
+    renderMensajes();
+  }
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
 window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
@@ -1374,7 +1438,8 @@ window.showReservaDetail = function(id) {
   const oi={particular:'👤',booking:'🌐',airbnb:'🏠',otros:'📌'}[r.origen]||'📌';
   const noches=daysBetween(r.entrada,r.salida);
 
-  // Guardar tel para el botón de WhatsApp
+  // Guardar datos para WhatsApp
+  window._waReservaId = id;
   window._waReserva = {
     tel: r.tel,
     nombre: r.nombre,
@@ -1408,42 +1473,138 @@ window.showReservaDetail = function(id) {
       <div><span style="color:var(--text2);">Origen:</span> ${oi} ${r.origen}</div>
       <div><span style="color:var(--text2);">Mascota:</span> ${r.mascota==='si'?'🐾 Sí':'No'}</div>
     </div>
-    ${r.obs?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 ${r.obs}</div>`:''}`;
+    ${r.obs?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 ${r.obs}</div>`:''}
+    ${(r.mensajesEnviados&&r.mensajesEnviados.length)?`
+    <div style="margin-top:14px;">
+      <div style="font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📨 Mensajes enviados</div>
+      ${r.mensajesEnviados.map(m=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:4px;font-size:.82rem;">
+          <span style="color:#065f46;font-weight:500;">💬 ${m.titulo}</span>
+          <span style="color:var(--text2);font-size:.75rem;">${m.fecha}</span>
+        </div>`).join('')}
+    </div>`:''}`;
   openModal('modal-res-detail');
 };
 
-window.abrirWhatsApp = function() {
+// ══════════════════════════════════════════
+// WHATSAPP — SELECTOR Y ENVÍO
+// ══════════════════════════════════════════
+function buildWAMsg(texto, w) {
+  return texto
+    .replace(/{nombre}/g, w.nombre)
+    .replace(/{aloj}/g, w.aloj)
+    .replace(/{entrada}/g, w.entrada)
+    .replace(/{salida}/g, w.salida)
+    .replace(/{noches}/g, w.noches + (w.noches!==1?' noches':' noche'))
+    .replace(/{personas}/g, w.personas + (w.personas!==1?' personas':' persona'));
+}
+
+function formatTelWA(tel) {
+  let t = tel.replace(/[\s\-\(\)\.]/g,'');
+  if (t.startsWith('0')) t = '54' + t.substring(1);
+  else if (!t.startsWith('54') && t.length <= 12) t = '54' + t;
+  return t;
+}
+
+window.abrirSelectorWA = function() {
   const w = window._waReserva;
   if (!w?.tel) { toast('Sin número de teléfono','error'); return; }
-
-  // Limpiar número: sacar espacios, guiones, paréntesis
-  // Si empieza con 0, asumir Argentina (+54) y quitar el 0
-  let tel = w.tel.replace(/[\s\-\(\)\.]/g,'');
-  if (tel.startsWith('0')) tel = '54' + tel.substring(1);
-  else if (!tel.startsWith('54') && tel.length <= 12) tel = '54' + tel;
-
-  const msg =
-`¡Hola ${w.nombre}! 👋
-Somos de La Pausa - Departamentos Temporarios
-Te confirmamos tu reserva en *${w.aloj}*:
-
-📅 Entrada: *${w.entrada}*
-📅 Salida: *${w.salida}*
-🌙 ${w.noches} noche${w.noches!==1?'s':''}
-👥 ${w.personas} persona${w.personas!==1?'s':''}
-
-Te paso La ubicación por Google Maps asi llegan más directos al departamento.
-
-https://maps.app.goo.gl/4rjmMndUFgS9JdVX7?g_st=awb
-
-La Dirección es Delfín Gallo 1540.
-
-Cuando tengas la hora aproximada de llegada, por favor avísennos así coordinamos la entrega de las llaves.
-Cualquier consulta estamos a tu disposición. ¡Te esperamos!`;
-
-  const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
+  document.getElementById('wa-sel-nombre').textContent = w.nombre;
+  const lista = document.getElementById('wa-plantillas-lista');
+  if (!plantillasWA.length) {
+    lista.innerHTML = `<div class="empty-state" style="padding:20px;"><p>No hay plantillas. Creá una en <strong>Mensajes WhatsApp</strong>.</p></div>`;
+  } else {
+    const sorted = [...plantillasWA].sort((a,b)=>(a.orden||99)-(b.orden||99));
+    lista.innerHTML = sorted.map(p => `
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;"
+           onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background=''"
+           onclick="enviarWAPlantilla('${p.id}')">
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">💬 ${p.titulo}</div>
+        <div style="font-size:.78rem;color:var(--text2);white-space:pre-wrap;max-height:60px;overflow:hidden;text-overflow:ellipsis;">${buildWAMsg(p.texto,w).substring(0,120)}…</div>
+      </div>`).join('');
+  }
+  closeModal('modal-res-detail');
+  openModal('modal-wa-selector');
 };
+
+window.enviarWAPlantilla = async function(plantillaId) {
+  const w   = window._waReserva;
+  const p   = plantillasWA.find(x=>x.id===plantillaId);
+  const rid = window._waReservaId;
+  if (!w || !p) return;
+  const msg = buildWAMsg(p.texto, w);
+  const url = `https://wa.me/${formatTelWA(w.tel)}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  closeModal('modal-wa-selector');
+  // Registrar en la reserva
+  if (rid) {
+    const r = reservas.find(x=>x.id===rid);
+    const prevMensajes = r?.mensajesEnviados || [];
+    const nuevos = [...prevMensajes, {
+      titulo: p.titulo,
+      fecha: new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    }];
+    await updateDoc(docRef('reservas', rid), { mensajesEnviados: nuevos });
+    toast(`Mensaje "${p.titulo}" enviado ✓`, 'success');
+  }
+};
+
+// ══════════════════════════════════════════
+// MENSAJES WHATSAPP — ABM PLANTILLAS
+// ══════════════════════════════════════════
+window.openPlantillaModal = function(id=null) {
+  const p = id ? plantillasWA.find(x=>x.id===id) : null;
+  document.getElementById('plantilla-id').value    = id||'';
+  document.getElementById('plantilla-titulo').value = p?.titulo||'';
+  document.getElementById('plantilla-texto').value  = p?.texto||'';
+  document.getElementById('modal-plantilla-title').textContent = id ? 'Editar Plantilla' : 'Nueva Plantilla';
+  openModal('modal-plantilla');
+};
+
+window.savePlantilla = async function() {
+  const id     = document.getElementById('plantilla-id').value;
+  const titulo = document.getElementById('plantilla-titulo').value.trim();
+  const texto  = document.getElementById('plantilla-texto').value.trim();
+  if (!titulo || !texto) { toast('Completá título y mensaje','error'); return; }
+  const docId  = id || getId();
+  const orden  = id ? (plantillasWA.find(p=>p.id===id)?.orden||99) : (plantillasWA.length + 1);
+  await upsertDoc('plantillas_wa', docId, { titulo, texto, orden });
+  toast(id ? 'Plantilla actualizada' : 'Plantilla creada', 'success');
+  closeModal('modal-plantilla');
+};
+
+window.deletePlantilla = async function(id) {
+  const ok = await confirm('Eliminar plantilla','¿Eliminar esta plantilla?');
+  if (!ok) return;
+  await delDoc('plantillas_wa', id);
+  toast('Plantilla eliminada','success');
+};
+
+function renderMensajes() {
+  const el = document.getElementById('mensajes-content');
+  if (!plantillasWA.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><h3>Sin plantillas</h3><p>Creá tu primera plantilla de mensaje con el botón de arriba.</p></div>`;
+    return;
+  }
+  const sorted = [...plantillasWA].sort((a,b)=>(a.orden||99)-(b.orden||99));
+  el.innerHTML = sorted.map(p => `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.4rem;">💬</span>
+          <span class="card-title">${p.titulo}</span>
+        </div>
+        ${currentUser?.isAdmin ? `<div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="openPlantillaModal('${p.id}')">✏️ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePlantilla('${p.id}')">🗑️</button>
+        </div>` : ''}
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.85rem;white-space:pre-wrap;line-height:1.6;color:var(--text);border:1px solid var(--border);">${p.texto}</div>
+      <div style="margin-top:10px;font-size:.75rem;color:var(--text2);">
+        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+      </div>
+    </div>`).join('');
+}
 function renderReservas() {
   const fa=document.getElementById('res-filter-aloj')?.value||'';
   const fe=document.getElementById('res-filter-estado')?.value||'';
