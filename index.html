@@ -581,7 +581,22 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada"></div>
         <div class="form-group"><label class="form-label">Fecha salida *</label><input type="date" class="form-control" id="res-salida"></div>
       </div>
-      <hr style="border-color:var(--border);margin:12px 0;"><p style="font-size:.82rem;color:var(--text2);margin-bottom:12px;">DATOS DEL HUÉSPED PRINCIPAL</p>
+      <hr style="border-color:var(--border);margin:12px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <p style="font-size:.82rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Datos del huésped principal</p>
+      </div>
+      <!-- BUSCADOR DE HUÉSPEDES EXISTENTES -->
+      <div class="form-group" id="huesped-search-group">
+        <label class="form-label">🔍 Buscar huésped existente</label>
+        <div style="position:relative;">
+          <input type="text" class="form-control" id="res-huesped-search" placeholder="Nombre o teléfono..." autocomplete="off" oninput="filtrarHuespedesRes()" onfocus="filtrarHuespedesRes()">
+          <div id="res-huesped-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:var(--shadow-lg);z-index:200;max-height:200px;overflow-y:auto;"></div>
+        </div>
+        <div id="res-huesped-seleccionado" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-top:6px;font-size:.85rem;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span id="res-huesped-sel-txt"></span>
+          <button type="button" onclick="limpiarHuespedRes()" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:1rem;">✕</button>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Nombre completo *</label><input type="text" class="form-control" id="res-nombre"></div>
         <div class="form-group"><label class="form-label">Teléfono *</label><input type="tel" class="form-control" id="res-tel"></div>
@@ -1362,9 +1377,70 @@ window.openReservaModal = function(id=null) {
   document.getElementById('res-mascota').value =r?.mascota||'no';
   document.getElementById('res-obs').value     =r?.obs||'';
   document.getElementById('modal-res-title').textContent=id?'Editar Reserva':'Nueva Reserva';
+  // Limpiar buscador de huésped
+  limpiarHuespedRes();
+  // Ocultar buscador si es edición (ya tiene huésped cargado)
+  document.getElementById('huesped-search-group').style.display = id ? 'none' : '';
   updateResAlojInfo();
   openModal('modal-reserva');
 };
+// ── BUSCADOR DE HUÉSPEDES EN RESERVA ──
+window.filtrarHuespedesRes = function() {
+  const q = document.getElementById('res-huesped-search').value.toLowerCase().trim();
+  const dd = document.getElementById('res-huesped-dropdown');
+  if (!q) { dd.style.display='none'; return; }
+  const matches = huespedes.filter(h =>
+    h.nombre?.toLowerCase().includes(q) || h.tel?.includes(q) || h.dni?.includes(q)
+  ).slice(0, 8);
+  if (!matches.length) {
+    dd.innerHTML = `<div style="padding:10px 14px;font-size:.85rem;color:var(--text2);">Sin resultados</div>`;
+    dd.style.display = 'block';
+    return;
+  }
+  const evMap = {bueno:'⭐',regular:'⚠️',malo:'❌'};
+  dd.innerHTML = matches.map(h => {
+    const rc = reservas.filter(r=>r.tel===h.tel&&r.estado!=='cancelada').length;
+    return `<div onclick="seleccionarHuespedRes('${h.tel||h.id}')"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;"
+      onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background=''">
+      <div style="font-weight:600;font-size:.9rem;">${h.nombre} ${evMap[h.eval||'bueno']}</div>
+      <div style="font-size:.78rem;color:var(--text2);">📞 ${h.tel}${h.dni?' · DNI '+h.dni:''} · ${rc} estancia${rc!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  dd.style.display = 'block';
+};
+
+window.seleccionarHuespedRes = function(tel) {
+  const h = huespedes.find(h=>h.id===tel||h.tel===tel);
+  if (!h) return;
+  document.getElementById('res-nombre').value = h.nombre||'';
+  document.getElementById('res-tel').value    = h.tel||tel;
+  document.getElementById('res-dni').value    = h.dni||'';
+  // Mostrar chip de huésped seleccionado
+  const chip = document.getElementById('res-huesped-seleccionado');
+  document.getElementById('res-huesped-sel-txt').innerHTML =
+    `✅ <strong>${h.nombre}</strong> · 📞 ${h.tel}`;
+  chip.style.display = 'flex';
+  document.getElementById('res-huesped-search').value = '';
+  document.getElementById('res-huesped-dropdown').style.display = 'none';
+};
+
+window.limpiarHuespedRes = function() {
+  document.getElementById('res-huesped-search').value = '';
+  document.getElementById('res-huesped-dropdown').style.display = 'none';
+  const chip = document.getElementById('res-huesped-seleccionado');
+  chip.style.display = 'none';
+  document.getElementById('res-huesped-sel-txt').innerHTML = '';
+};
+
+// Cerrar dropdown al hacer click fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('#huesped-search-group')) {
+    const dd = document.getElementById('res-huesped-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
 function checkConflictos(alojId,entrada,salida,excludeId=null) {
   return reservas.filter(r=>{
     if(r.alojId!==alojId||r.estado==='cancelada') return false;
