@@ -6,13 +6,45 @@
 <meta name="theme-color" content="#6d40c4">
 <meta name="description" content="Gestión de Alojamientos Temporarios">
 
-<!-- PWA -->
-<link rel="manifest" href="/alojapp/manifest.json">
+<!-- PWA — manifest y service worker generados inline, sin archivos externos -->
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="AlojApp">
-<link rel="apple-touch-icon" href="/alojapp/icons/icon-192.png">
+<script>
+// ── MANIFEST inline (blob URL) ──────────────────────────────
+(function() {
+  const base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+  const manifest = {
+    name: "AlojApp - La Pausa",
+    short_name: "AlojApp",
+    description: "Gestión de Alojamientos Temporarios",
+    start_url: window.location.pathname.replace(/\/[^\/]*$/, '/'),
+    scope: window.location.pathname.replace(/\/[^\/]*$/, '/'),
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#6d40c4",
+    orientation: "portrait-primary",
+    lang: "es",
+    icons: [
+      { src: base + "icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+      { src: base + "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel   = 'manifest';
+  link.href  = url;
+  document.head.appendChild(link);
+
+  // apple-touch-icon dinámico
+  const icon = document.createElement('link');
+  icon.rel   = 'apple-touch-icon';
+  icon.href  = base + 'icons/icon-192.png';
+  document.head.appendChild(icon);
+})();
+</script>
 <title>AlojApp — Gestión de Alojamientos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -598,7 +630,7 @@ tr:hover td{background:#f9f7ff;}
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada"></div>
+        <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada" onchange="onEntradaChange()"></div>
         <div class="form-group"><label class="form-label">Fecha salida *</label><input type="date" class="form-control" id="res-salida"></div>
       </div>
       <hr style="border-color:var(--border);margin:12px 0;">
@@ -633,7 +665,7 @@ tr:hover td{background:#f9f7ff;}
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">¿Con mascota?</label><select class="form-control" id="res-mascota"><option value="no">No</option><option value="si">Sí</option></select></div>
-        <div class="form-group"></div>
+        <div class="form-group"><label class="form-label">Seña $</label><input type="number" class="form-control" id="res-senia" min="0" placeholder="0"></div>
       </div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="res-obs"></textarea></div>
     </div>
@@ -1161,12 +1193,27 @@ async function syncReservaToCalendar(r) {
   if (!calendarReady||!gapiReady) return false;
   const aloj = alojamientos.find(a=>a.id===r.alojId);
   const title = `${aloj?.nombre||'Reserva'} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
+  const noches = daysBetween(r.entrada, r.salida);
+  // Descripción con seña si corresponde
+  const seniaLine = r.senia ? `\nSeña: $${r.senia} (resta $${(r.costo||0)-(r.senia||0)})` : '';
   const event = {
-    summary:title,
-    description:`Huésped: ${r.nombre}\nTel: ${r.tel}\nDNI: ${r.dni||'—'}\nPersonas: ${r.personas}\nCosto: $${r.costo||0}\nOrigen: ${r.origen}\nEstado: ${r.estado}${r.obs?'\nObs: '+r.obs:''}`,
-    start:{date:r.entrada}, end:{date:r.salida},
+    summary: title,
+    description: `Huésped: ${r.nombre}\nTel: ${r.tel}\nDNI: ${r.dni||'—'}\nPersonas: ${r.personas}\nCosto: $${r.costo||0}${seniaLine}\nOrigen: ${r.origen}\nEstado: ${r.estado}${r.obs?'\nObs: '+r.obs:''}`,
+    start: {date: r.entrada},
+    end:   {date: r.salida},
     colorId: getGCalColorId(aloj?.color),
-    extendedProperties:{private:{alojappId:r.id}}
+    extendedProperties: {private: {alojappId: r.id}},
+    // Alerta a las 10:00 AM del día de entrada, solo si es más de 1 noche
+    reminders: noches > 1 ? {
+      useDefault: false,
+      overrides: [{
+        method: 'popup',
+        // minutos desde el inicio del evento (medianoche) hasta las 10:00 AM = 600 min
+        minutes: 600
+      }]
+    } : {
+      useDefault: true
+    }
   };
   try {
     if (r.gcalEventId) {
@@ -1415,16 +1462,40 @@ window.openReservaModal = function(id=null) {
   document.getElementById('res-dni').value     =r?.dni||'';
   document.getElementById('res-personas').value=r?.personas||1;
   document.getElementById('res-costo').value   =r?.costo||'';
+  document.getElementById('res-senia').value   =r?.senia||'';
   document.getElementById('res-origen').value  =r?.origen||'particular';
   document.getElementById('res-mascota').value =r?.mascota||'no';
   document.getElementById('res-obs').value     =r?.obs||'';
   document.getElementById('modal-res-title').textContent=id?'Editar Reserva':'Nueva Reserva';
+  // Si hay entrada cargada, aplicar min en salida
+  if (r?.entrada) {
+    document.getElementById('res-salida').min = r.entrada;
+  }
   // Limpiar buscador de huésped
   limpiarHuespedRes();
   // Ocultar buscador si es edición (ya tiene huésped cargado)
   document.getElementById('huesped-search-group').style.display = id ? 'none' : '';
   updateResAlojInfo();
   openModal('modal-reserva');
+};
+
+// Al cambiar fecha de entrada: mover el mínimo y valor de salida
+window.onEntradaChange = function() {
+  const entrada = document.getElementById('res-entrada').value;
+  const salida  = document.getElementById('res-salida');
+  if (!entrada) return;
+  // Setear mínimo = día siguiente a la entrada
+  const minDate = new Date(entrada + 'T12:00:00');
+  minDate.setDate(minDate.getDate() + 1);
+  const minStr = minDate.toISOString().split('T')[0];
+  salida.min = minStr;
+  // Si salida está vacía o es anterior/igual a entrada, moverla al día siguiente
+  if (!salida.value || salida.value <= entrada) {
+    salida.value = minStr;
+  }
+  // Abrir el picker de salida automáticamente (funciona en la mayoría de browsers)
+  salida.focus();
+  salida.showPicker?.();
 };
 // ── BUSCADOR DE HUÉSPEDES EN RESERVA ──
 window.filtrarHuespedesRes = function() {
@@ -1503,6 +1574,7 @@ window.saveReserva = async function() {
   const costo   =parseFloat(document.getElementById('res-costo').value)||0;
   const origen  =document.getElementById('res-origen').value;
   const mascota =document.getElementById('res-mascota').value;
+  const senia   =parseFloat(document.getElementById('res-senia').value)||0;
   const obs     =document.getElementById('res-obs').value.trim();
   if(!alojId||!entrada||!salida||!nombre||!tel){toast('Completá los campos obligatorios (*)','error');return;}
   if(entrada>=salida){toast('La salida debe ser posterior a la entrada','error');return;}
@@ -1514,7 +1586,7 @@ window.saveReserva = async function() {
   }
   const docId=id||getId();
   const existing=id?reservas.find(r=>r.id===id):null;
-  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
+  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,senia,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
   setDbStatus('ing','Guardando…');
   await upsertDoc('reservas',docId,data);
   setDbStatus('ok','☁️ En línea');
@@ -1581,6 +1653,7 @@ window.showReservaDetail = function(id) {
       <div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${noches}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}</div></div>
+      ${r.senia?`<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">${fmtMoney(r.senia)} <span style="font-size:.72rem;color:var(--text2);">(resta ${fmtMoney((r.costo||0)-(r.senia||0))})</span></div></div>`:''}
     </div>
     <hr style="border-color:var(--border);margin-bottom:14px;">
     <div class="grid-2" style="gap:10px;font-size:.9rem;">
@@ -2388,15 +2461,59 @@ if (APP_CONFIG.FIREBASE.apiKey === 'TU_API_KEY') {
 <script src="https://accounts.google.com/gsi/client" async onload="gsiLoaded()"></script>
 <script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
 
-<!-- PWA Service Worker -->
+<!-- PWA Service Worker — generado inline, sin archivo externo -->
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/alojapp/sw.js')
-        .then(() => console.log('SW registrado'))
-        .catch(e => console.log('SW error:', e));
-    });
-  }
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+const CACHE = 'alojapp-v2';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (
+    url.includes('firestore.googleapis.com') ||
+    url.includes('firebase') ||
+    url.includes('googleapis.com') ||
+    url.includes('accounts.google.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('gstatic.com')
+  ) return;
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});`;
+    const blob = new Blob([swCode], {type: 'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, {scope: './'})
+      .then(r => console.log('SW ok', r.scope))
+      .catch(e => {
+        // Fallback: intentar con archivo externo si existe
+        const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
+        navigator.serviceWorker.register(base + 'sw.js')
+          .then(r2 => console.log('SW externo ok', r2.scope))
+          .catch(e2 => console.log('SW no disponible'));
+      });
+  });
+}
 </script>
 
 </body>
