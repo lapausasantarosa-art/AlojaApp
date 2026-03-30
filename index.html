@@ -1099,10 +1099,9 @@ function hidLoginScreens() {
 // ══════════════════════════════════════════
 // GOOGLE CALENDAR
 // ══════════════════════════════════════════
-// ── GOOGLE CALENDAR — inicialización robusta ──
-// Esperamos que AMBAS librerías (gapi + gsi) estén listas antes de continuar
 let gapiLoadedFlag = false;
 let gsiLoadedFlag  = false;
+let calTokenObtained = false; // true cuando el usuario ya autorizó en esta sesión
 
 window.gapiLoaded = function() {
   gapi.load('client', async () => {
@@ -1115,30 +1114,30 @@ window.gapiLoaded = function() {
   });
 };
 
-// Esta función se llama cuando gsi/client termina de cargar
 window.gsiLoaded = function() {
   gsiLoadedFlag = true;
   tryInitTokenClient();
 };
 
 function tryInitTokenClient() {
-  // Solo inicializar cuando AMBAS librerías están listas
   if (!gapiLoadedFlag || !gsiLoadedFlag) return;
-  if (tokenClient) return; // ya inicializado
+  if (tokenClient) return;
   try {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (r) => {
         if (r.error) {
+          calTokenObtained = false;
+          calendarReady = false;
           updateCalStatus('error', 'Error de autorización');
           toast('Error al conectar Google Calendar: ' + r.error, 'error');
           return;
         }
+        calTokenObtained = true;
         calendarReady = true;
-        updateCalStatus('ok', 'Cal sincronizado');
+        updateCalStatus('ok', 'Cal conectado');
         toast('Google Calendar conectado ✓', 'success');
-        // Si había una sincronización pendiente, ejecutarla ahora
         if (window._pendingCalSync) {
           window._pendingCalSync = false;
           await doSyncAll();
@@ -1151,18 +1150,20 @@ function tryInitTokenClient() {
 }
 
 window.syncAllToCalendar = async function() {
-  // Si el token ya está activo, sincronizar directo
-  if (calendarReady) { await doSyncAll(); return; }
+  // Si el token ya está activo en esta sesión, sincronizar directo
+  if (calendarReady && calTokenObtained) { await doSyncAll(); return; }
 
   // Si tokenClient está listo, pedir autorización
   if (tokenClient) {
     window._pendingCalSync = true;
     updateCalStatus('syncing', 'Autorizando…');
-    tokenClient.requestAccessToken({ prompt: '' }); // '' = no forzar re-consent si ya autorizó
+    // Si ya autorizó antes en esta sesión intentar silencioso, si no mostrar selector de cuenta
+    const prompt = calTokenObtained ? '' : 'select_account';
+    tokenClient.requestAccessToken({ prompt });
     return;
   }
 
-  // tokenClient no está listo — esperar hasta 8 segundos
+  // tokenClient no está listo aún — esperar hasta 8 segundos
   updateCalStatus('syncing', 'Iniciando Calendar…');
   toast('Iniciando conexión con Google Calendar…', 'info');
   let intentos = 0;
@@ -1171,8 +1172,8 @@ window.syncAllToCalendar = async function() {
     if (tokenClient) {
       clearInterval(esperar);
       window._pendingCalSync = true;
-      tokenClient.requestAccessToken({ prompt: '' });
-    } else if (intentos >= 16) { // 8 segundos
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
+    } else if (intentos >= 16) {
       clearInterval(esperar);
       updateCalStatus('error', 'Error al cargar');
       toast('No se pudo cargar Google Calendar. Recargá la página e intentá de nuevo.', 'error');
