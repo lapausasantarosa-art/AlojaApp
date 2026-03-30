@@ -1153,30 +1153,47 @@ window.syncAllToCalendar = async function() {
   // Si el token ya está activo en esta sesión, sincronizar directo
   if (calendarReady && calTokenObtained) { await doSyncAll(); return; }
 
+  // Diagnóstico rápido
+  console.log('Sync Calendar — estado:', { gapiLoadedFlag, gsiLoadedFlag, gapiReady, tokenClient: !!tokenClient, calTokenObtained });
+
   // Si tokenClient está listo, pedir autorización
   if (tokenClient) {
     window._pendingCalSync = true;
     updateCalStatus('syncing', 'Autorizando…');
-    // Si ya autorizó antes en esta sesión intentar silencioso, si no mostrar selector de cuenta
     const prompt = calTokenObtained ? '' : 'select_account';
-    tokenClient.requestAccessToken({ prompt });
+    try {
+      tokenClient.requestAccessToken({ prompt });
+    } catch(e) {
+      console.warn('requestAccessToken error:', e);
+      updateCalStatus('error', 'Error de autorización');
+      toast('Error al autorizar: ' + e.message, 'error');
+    }
     return;
   }
 
-  // tokenClient no está listo aún — esperar hasta 8 segundos
-  updateCalStatus('syncing', 'Iniciando Calendar…');
-  toast('Iniciando conexión con Google Calendar…', 'info');
+  // tokenClient no está listo — puede ser que las librerías aún no cargaron
+  // Distinguir entre "cargando" y "error real"
+  if (!gapiLoadedFlag && !gsiLoadedFlag) {
+    updateCalStatus('syncing', 'Cargando librerías…');
+    toast('Las librerías de Google están cargando, intentá en unos segundos…', 'info');
+  } else {
+    updateCalStatus('syncing', 'Iniciando Calendar…');
+  }
+
   let intentos = 0;
   const esperar = setInterval(() => {
     intentos++;
+    console.log(`Esperando tokenClient… intento ${intentos}`, { gapiLoadedFlag, gsiLoadedFlag, gapiReady, tokenClient: !!tokenClient });
     if (tokenClient) {
       clearInterval(esperar);
       window._pendingCalSync = true;
       tokenClient.requestAccessToken({ prompt: 'select_account' });
-    } else if (intentos >= 16) {
+    } else if (intentos >= 30) { // 15 segundos
       clearInterval(esperar);
+      const detalle = !gapiLoadedFlag ? 'GAPI no cargó' : !gsiLoadedFlag ? 'GSI no cargó' : !gapiReady ? 'GAPI no inicializó' : 'tokenClient null';
+      console.warn('Timeout Calendar:', detalle);
       updateCalStatus('error', 'Error al cargar');
-      toast('No se pudo cargar Google Calendar. Recargá la página e intentá de nuevo.', 'error');
+      toast(`No se pudo conectar Google Calendar (${detalle}). Verificá que el dominio esté autorizado en Google Cloud Console.`, 'error');
     }
   }, 500);
 };
@@ -2459,9 +2476,31 @@ if (APP_CONFIG.FIREBASE.apiKey === 'TU_API_KEY') {
 
 </script>
 
-<!-- Google APIs para Calendar -->
-<script src="https://accounts.google.com/gsi/client" async onload="gsiLoaded()"></script>
-<script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
+<!-- Google APIs para Calendar — carga controlada -->
+<script>
+// Cargamos los scripts de Google dinámicamente para garantizar el orden
+function loadScript(src, onload) {
+  const s = document.createElement('script');
+  s.src = src;
+  s.async = true;
+  s.defer = true;
+  s.onload = onload;
+  s.onerror = () => console.warn('Error cargando script:', src);
+  document.head.appendChild(s);
+}
+
+// Primero GSI (Identity Services)
+loadScript('https://accounts.google.com/gsi/client', () => {
+  console.log('GSI cargado');
+  window.gsiLoaded();
+});
+
+// Luego GAPI
+loadScript('https://apis.google.com/js/api.js', () => {
+  console.log('GAPI cargado');
+  window.gapiLoaded();
+});
+</script>
 
 <!-- PWA Service Worker — generado inline, sin archivo externo -->
 <script>
