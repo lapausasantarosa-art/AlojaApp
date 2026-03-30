@@ -1192,7 +1192,8 @@ async function doSyncAll() {
 async function syncReservaToCalendar(r) {
   if (!calendarReady||!gapiReady) return false;
   const aloj = alojamientos.find(a=>a.id===r.alojId);
-  const title = `${aloj?.nombre||'Reserva'} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
+  const nombreAloj = (aloj?.nombre||'Reserva').replace(/departamento/gi, 'Dpto.');
+  const title = `${nombreAloj} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
   const noches = daysBetween(r.entrada, r.salida);
   // Descripción con seña si corresponde
   const seniaLine = r.senia ? `\nSeña: $${r.senia} (resta $${(r.costo||0)-(r.senia||0)})` : '';
