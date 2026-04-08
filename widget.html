@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario — La Pausa</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #f4f5f8;
+    --surface:  #ffffff;
+    --border:   #e2e5ed;
+    --text:     #1a1d23;
+    --text2:    #6b7280;
+    --accent:   #6d40c4;
+    --radius:   10px;
+    --shadow:   0 2px 10px rgba(0,0,0,.08);
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  /* ── HEADER ── */
+  .widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .widget-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text);
+    transition: background .15s;
+  }
+  .nav-btn:hover { background: var(--bg); }
+  .month-label {
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 140px;
+    text-align: center;
+  }
+
+  /* ── LOADING / ERROR ── */
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text2);
+    font-size: .9rem;
+  }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CALENDARIO ── */
+  .cal-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    width: 100%;
+  }
+  .cal-head-cell {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: .68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text2);
+    background: #f8f9fb;
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-cell {
+    min-height: 80px;
+    padding: 5px 4px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    overflow: hidden;
+  }
+  .cal-cell:nth-child(7n) { border-right: none; }
+  .cal-cell.other-month { background: #fafafa; }
+  .cal-cell.other-month .day-num { color: #ccc; }
+  .cal-cell.today .day-num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .day-num {
+    font-size: .75rem;
+    font-weight: 600;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 3px;
+  }
+  .cal-event {
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: .65rem;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+    display: block;
+    max-width: 100%;
+    line-height: 1.4;
+  }
+
+  /* ── LEYENDA ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f8f9fb;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .75rem;
+    color: var(--text2);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── TOOLTIP / POPUP ── */
+  .popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .popup-overlay.open { display: flex; }
+  .popup {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    width: 100%;
+    max-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    animation: popIn .2s ease;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.93) translateY(8px); }
+    to   { opacity: 1; transform: scale(1)  translateY(0); }
+  }
+  .popup-aloj {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .popup-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .popup-aloj-name { font-weight: 700; font-size: .95rem; }
+  .popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    font-size: .85rem;
+    margin-bottom: 10px;
+  }
+  .popup-label { color: var(--text2); font-size: .72rem; text-transform: uppercase; letter-spacing: .4px; }
+  .popup-val   { font-weight: 600; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+  }
+  .badge-green  { background: #ecfdf5; color: #065f46; }
+  .badge-yellow { background: #fffbeb; color: #92400e; }
+  .badge-red    { background: #fef2f2; color: #991b1b; }
+  .close-popup {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .88rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── RESPONSIVE MÓVIL ── */
+  @media (max-width: 480px) {
+    body { padding: 8px; }
+    .cal-cell { min-height: 56px; padding: 3px 2px; }
+    .cal-event { font-size: .58rem; padding: 1px 3px; }
+    .day-num { font-size: .68rem; }
+    .cal-head-cell { font-size: .6rem; padding: 6px 2px; letter-spacing: 0; }
+    .month-label { font-size: .88rem; min-width: 110px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  Cargando calendario…
+</div>
+
+<div id="app" style="display:none;">
+  <!-- Header con navegación -->
+  <div class="widget-header">
+    <div class="widget-title">
+      <span>📅</span>
+      <span id="app-brand">La Pausa</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="nav-btn" onclick="navMes(-1)">‹</button>
+      <span class="month-label" id="month-label"></span>
+      <button class="nav-btn" onclick="navMes(1)">›</button>
+    </div>
+  </div>
+
+  <!-- Calendario -->
+  <div class="cal-wrap">
+    <div class="cal-grid" id="cal-heads"></div>
+    <div class="cal-grid" id="cal-body"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+
+<!-- Popup detalle reserva -->
+<div class="popup-overlay" id="popup-overlay" onclick="cerrarPopup(event)">
+  <div class="popup" id="popup-box">
+    <div class="popup-aloj">
+      <div class="popup-dot" id="pop-dot"></div>
+      <span class="popup-aloj-name" id="pop-aloj"></span>
+      <span class="badge" id="pop-estado-badge"></span>
+    </div>
+    <div class="popup-grid">
+      <div>
+        <div class="popup-label">Huésped</div>
+        <div class="popup-val" id="pop-nombre"></div>
+      </div>
+      <div>
+        <div class="popup-label">Personas</div>
+        <div class="popup-val" id="pop-personas"></div>
+      </div>
+      <div>
+        <div class="popup-label">Entrada</div>
+        <div class="popup-val" id="pop-entrada"></div>
+      </div>
+      <div>
+        <div class="popup-label">Salida</div>
+        <div class="popup-val" id="pop-salida"></div>
+      </div>
+      <div>
+        <div class="popup-label">Noches</div>
+        <div class="popup-val" id="pop-noches"></div>
+      </div>
+      <div>
+        <div class="popup-label">Mascota</div>
+        <div class="popup-val" id="pop-mascota"></div>
+      </div>
+    </div>
+    <button class="close-popup" onclick="cerrarPopup()">Cerrar</button>
+  </div>
+</div>
+
+<script type="module">
+// ══════════════════════════════════════════
+// CONFIGURACIÓN — mismos datos que index.html
+// ══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBe0h2TWO5oBS4WxeJVoC37PKbyz1jmJiU",
+  authDomain:        "alojaapp-8ed45.firebaseapp.com",
+  projectId:         "alojaapp-8ed45",
+  storageBucket:     "alojaapp-8ed45.firebasestorage.app",
+  messagingSenderId: "763636738474",
+  appId:             "1:763636738474:web:661dd264664b468c2ae3d3"
+};
+
+// ── Firebase ──
+import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, onSnapshot, doc }
+                                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInAnonymously }           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const app  = initializeApp(FIREBASE_CONFIG, 'widget');
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// ── Estado ──
+let alojamientos = [];
+let reservas     = [];
+let calDate      = new Date();
+
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+function fmt(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+// ── Autenticación anónima para leer Firestore ──
+try {
+  await signInAnonymously(auth);
+} catch(e) {
+  console.warn('Auth anónima:', e);
+}
+
+// ── Listeners en tiempo real ──
+let alojLoaded = false, resLoaded = false;
+
+onSnapshot(collection(db, 'alojamientos'), snap => {
+  alojamientos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  alojLoaded = true;
+  if (alojLoaded && resLoaded) mostrarApp();
+  else render();
+});
+
+onSnapshot(collection(db, 'reservas'), snap => {
+  reservas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  resLoaded = true;
+  if (alojLoaded && resLoaded) mostrarApp();
+  else render();
+});
+
+// Branding
+onSnapshot(doc(db, 'config', 'branding'), snap => {
+  if (snap.exists()) {
+    const d = snap.data();
+    const brand = document.getElementById('app-brand');
+    if (d.logoBase64) {
+      brand.innerHTML = `<img src="${d.logoBase64}" style="max-height:32px;max-width:120px;object-fit:contain;vertical-align:middle;">`;
+    } else if (d.appNombre) {
+      brand.textContent = d.appNombre;
+    }
+  }
+});
+
+function mostrarApp() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  render();
+}
+
+// ── Render ──
+function render() {
+  const year  = calDate.getFullYear();
+  const month = calDate.getMonth();
+  document.getElementById('month-label').textContent = `${MONTHS[month]} ${year}`;
+
+  // Cabeceras días
+  document.getElementById('cal-heads').innerHTML =
+    DAYS.map(d => `<div class="cal-head-cell">${d}</div>`).join('');
+
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInM  = new Date(year, month + 1, 0).getDate();
+  const prevD    = new Date(year, month, 0).getDate();
+
+  let cells = [];
+  for (let i = firstDay - 1; i >= 0; i--)
+    cells.push({ day: prevD - i, cur: false, date: `${year}-${String(month).padStart(2,'0')}-${String(prevD-i).padStart(2,'0')}` });
+  for (let d = 1; d <= daysInM; d++)
+    cells.push({ day: d, cur: true, date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
+  let nx = 1;
+  while (cells.length % 7 !== 0)
+    cells.push({ day: nx++, cur: false, date: `${year}-${String(month+2).padStart(2,'0')}-${String(nx-1).padStart(2,'0')}` });
+
+  const activeRes = reservas.filter(r => r.estado !== 'cancelada');
+
+  document.getElementById('cal-body').innerHTML = cells.map(({ day, cur, date }) => {
+    const isToday = cur && date === todayStr;
+    let events = '';
+    activeRes.forEach(r => {
+      if (date >= r.entrada && date < r.salida) {
+        const a = alojamientos.find(a => a.id === r.alojId);
+        const color = a?.color || '#888';
+        const nombreAloj = (a?.nombre || '').replace(/departamento/gi, 'Dpto.');
+        const isEntrada = date === r.entrada;
+        const label = isEntrada
+          ? `🔑 ${r.nombre.split(' ')[0]} · ${r.personas}p${r.mascota==='si'?' 🐾':''}`
+          : `· ${r.personas}p${r.mascota==='si'?' 🐾':''}`;
+        events += `<div class="cal-event" style="background:${color};"
+          onclick="window.verDetalle('${r.id}')"
+          title="${r.nombre} — ${nombreAloj}">${label}</div>`;
+      }
+    });
+    return `<div class="cal-cell ${!cur?'other-month':''} ${isToday?'today':''}">
+      <div class="day-num">${day}</div>${events}
+    </div>`;
+  }).join('');
+
+  // Leyenda
+  const alojConRes = alojamientos.filter(a =>
+    activeRes.some(r => {
+      const year2 = calDate.getFullYear(), month2 = calDate.getMonth();
+      const mesStr = `${year2}-${String(month2+1).padStart(2,'0')}`;
+      return r.alojId === a.id && (r.entrada?.startsWith(mesStr) || r.salida?.startsWith(mesStr));
+    })
+  );
+  document.getElementById('legend').innerHTML = alojConRes.map(a =>
+    `<div class="legend-item">
+      <div class="legend-dot" style="background:${a.color}"></div>
+      <span>${(a.nombre||'').replace(/departamento/gi,'Dpto.')}</span>
+    </div>`
+  ).join('') || '<span style="font-size:.75rem;color:#aaa;">Sin reservas este mes</span>';
+}
+
+// ── Navegación ──
+window.navMes = function(dir) {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  render();
+};
+
+// ── Popup detalle ──
+window.verDetalle = function(id) {
+  const r = reservas.find(r => r.id === id);
+  if (!r) return;
+  const a = alojamientos.find(a => a.id === r.alojId);
+  const eb = { confirmada:'badge-green', pendiente:'badge-yellow', cancelada:'badge-red' }[r.estado] || 'badge-green';
+  document.getElementById('pop-dot').style.background    = a?.color || '#888';
+  document.getElementById('pop-aloj').textContent        = (a?.nombre||'?').replace(/departamento/gi,'Dpto.');
+  document.getElementById('pop-estado-badge').textContent= r.estado;
+  document.getElementById('pop-estado-badge').className  = `badge ${eb}`;
+  document.getElementById('pop-nombre').textContent      = r.nombre;
+  document.getElementById('pop-personas').textContent    = `${r.personas}${r.mascota==='si'?' 🐾':''}`;
+  document.getElementById('pop-entrada').textContent     = fmt(r.entrada);
+  document.getElementById('pop-salida').textContent      = fmt(r.salida);
+  document.getElementById('pop-noches').textContent      = daysBetween(r.entrada, r.salida) + ' noches';
+  document.getElementById('pop-mascota').textContent     = r.mascota === 'si' ? '🐾 Sí' : 'No';
+  document.getElementById('popup-overlay').classList.add('open');
+};
+
+window.cerrarPopup = function(e) {
+  if (!e || e.target === document.getElementById('popup-overlay')) {
+    document.getElementById('popup-overlay').classList.remove('open');
+  }
+};
+</script>
+</body>
+</html>
