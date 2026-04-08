@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="1800"> <!-- auto-recarga cada 30 min -->
+<title>Widget Calendario</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #ffffff;
+    --border:  #e8eaed;
+    --text:    #1a1d23;
+    --text2:   #9aa0ab;
+    --accent:  #6d40c4;
+    --head-bg: #f7f8fb;
+    --radius:  10px;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 2px;
+  }
+  .mes-label {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .hoy-badge {
+    font-size: .65rem;
+    color: var(--text2);
+    font-weight: 500;
+  }
+
+  /* ── GRILLA ── */
+  .cal {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .head {
+    background: var(--head-bg);
+    text-align: center;
+    font-size: .55rem;
+    font-weight: 700;
+    color: var(--text2);
+    padding: 3px 0;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
+  .cell {
+    background: var(--bg);
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .cell.otro { background: #fafafa; }
+  .cell.hoy  { background: #f5f0ff; }
+
+  .num {
+    font-size: .6rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cell.otro .num  { color: #d0d3db; }
+  .cell.hoy  .num  {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: .55rem;
+  }
+
+  /* Barras de reserva */
+  .bar {
+    height: 4px;
+    border-radius: 2px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── LEYENDA ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 2px 2px 0;
+  }
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: .6rem;
+    color: var(--text2);
+    font-weight: 500;
+  }
+  .leg-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── LOADING ── */
+  .loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text2);
+    font-size: .75rem;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <span>Cargando…</span>
+</div>
+
+<div id="app" style="display:none;flex-direction:column;gap:6px;height:100%;"></div>
+
+<script type="module">
+// ══════════════════════════════════════════
+// CONFIG FIREBASE
+// ══════════════════════════════════════════
+const FB = {
+  apiKey:            "AIzaSyBe0h2TWO5oBS4WxeJVoC37PKbyz1jmJiU",
+  authDomain:        "alojaapp-8ed45.firebaseapp.com",
+  projectId:         "alojaapp-8ed45",
+  storageBucket:     "alojaapp-8ed45.firebasestorage.app",
+  messagingSenderId: "763636738474",
+  appId:             "1:763636738474:web:661dd264664b468c2ae3d3"
+};
+
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInAnonymously }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const fireApp = initializeApp(FB, 'widget-android');
+const db      = getFirestore(fireApp);
+const auth    = getAuth(fireApp);
+
+// ── Estado ──
+let alojamientos = [];
+let reservas     = [];
+let alojOk = false, resOk = false;
+
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS   = ['D','L','M','X','J','V','S'];
+
+// ── Auth anónima ──
+try { await signInAnonymously(auth); } catch(e) {}
+
+// ── Listeners ──
+onSnapshot(collection(db, 'alojamientos'), snap => {
+  alojamientos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  alojOk = true;
+  if (alojOk && resOk) render();
+});
+
+onSnapshot(collection(db, 'reservas'), snap => {
+  reservas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  resOk = true;
+  if (alojOk && resOk) render();
+});
+
+// ── Render ──
+function render() {
+  document.getElementById('loading').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+
+  const now    = new Date();
+  const year   = now.getFullYear();
+  const month  = now.getMonth();
+  const today  = now.toISOString().split('T')[0];
+
+  const firstDay  = new Date(year, month, 1).getDay();
+  const daysInM   = new Date(year, month + 1, 0).getDate();
+  const prevD     = new Date(year, month, 0).getDate();
+
+  // Construir celdas
+  let cells = [];
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = prevD - i;
+    cells.push({ day: d, cur: false,
+      date: `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
+  }
+  for (let d = 1; d <= daysInM; d++) {
+    cells.push({ day: d, cur: true,
+      date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
+  }
+  let nx = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ day: nx, cur: false,
+      date: `${year}-${String(month+2).padStart(2,'0')}-${String(nx).padStart(2,'0')}` });
+    nx++;
+  }
+
+  const active = reservas.filter(r => r.estado !== 'cancelada');
+
+  // Alojamientos con reservas este mes
+  const mesStr = `${year}-${String(month+1).padStart(2,'0')}`;
+  const alojMes = alojamientos.filter(a =>
+    active.some(r => r.alojId === a.id &&
+      (r.entrada?.startsWith(mesStr) || r.salida?.startsWith(mesStr) ||
+       (r.entrada < mesStr+'-01' && r.salida > mesStr+'-31')))
+  );
+
+  // ── HTML ──
+  const hoyFmt = now.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+
+  app.innerHTML = `
+    <div class="header">
+      <span class="mes-label">${MONTHS[month]} ${year}</span>
+      <span class="hoy-badge">Hoy: ${now.getDate()}/${month+1}</span>
+    </div>
+
+    <div class="cal">
+      ${DAYS.map(d => `<div class="head">${d}</div>`).join('')}
+      ${cells.map(({ day, cur, date }) => {
+        const isHoy = cur && date === today;
+        const resDelDia = active.filter(r => date >= r.entrada && date < r.salida);
+
+        // Mostrar hasta 3 barras de color (una por reserva)
+        const bars = resDelDia.slice(0, 3).map(r => {
+          const a = alojamientos.find(a => a.id === r.alojId);
+          const color = a?.color || '#888';
+          // Mostrar nombre solo en día de entrada
+          const esEntrada = date === r.entrada;
+          return `<div class="bar" style="background:${color};${esEntrada?'opacity:1':'opacity:.75'}"></div>`;
+        }).join('');
+
+        return `<div class="cell ${!cur?'otro':''} ${isHoy?'hoy':''}">
+          <div class="num">${day}</div>
+          ${bars}
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${alojMes.length ? `
+    <div class="legend">
+      ${alojMes.map(a => `
+        <div class="leg-item">
+          <div class="leg-dot" style="background:${a.color}"></div>
+          <span>${(a.nombre||'').replace(/departamento/gi,'Dpto.')}</span>
+        </div>`).join('')}
+    </div>` : ''}
+  `;
+}
+</script>
+</body>
+</html>
