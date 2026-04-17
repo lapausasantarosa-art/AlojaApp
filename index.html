@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -664,10 +665,23 @@ tr:hover td{background:#f9f7ff;}
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Valor en USD <span style="font-size:.72rem;color:var(--text2);font-weight:400;">(solo referencia, no afecta ingresos)</span></label>
+          <label class="form-label">
+            Valor en USD
+            <span style="font-size:.72rem;color:var(--text2);font-weight:400;">(solo referencia, no afecta ingresos)</span>
+          </label>
+          <!-- Cotización dólar oficial -->
+          <div id="dolar-cotizacion" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.78rem;">
+            <span style="color:#059669;">💵</span>
+            <span id="dolar-info" style="color:#065f46;font-weight:500;">Cargando cotización…</span>
+          </div>
           <div style="position:relative;">
-            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.85rem;font-weight:600;">$</span>
-            <input type="number" class="form-control" id="res-costo-usd" min="0" placeholder="0" style="padding-left:22px;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.85rem;font-weight:600;">U$D</span>
+            <input type="number" class="form-control" id="res-costo-usd" min="0" placeholder="0"
+              style="padding-left:40px;" oninput="calcularConversionUSD()">
+          </div>
+          <!-- Conversión en tiempo real -->
+          <div id="usd-conversion" style="display:none;margin-top:5px;padding:5px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:.8rem;color:#1e40af;">
+            💱 Equivalente: <strong id="usd-conversion-val"></strong> (al tipo de cambio oficial)
           </div>
         </div>
         <div class="form-group"><label class="form-label">Seña $</label><input type="number" class="form-control" id="res-senia" min="0" placeholder="0"></div>
@@ -1497,6 +1511,10 @@ window.openReservaModal = function(id=null) {
   document.getElementById('res-mascota').value =r?.mascota||'no';
   document.getElementById('res-obs').value     =r?.obs||'';
   document.getElementById('modal-res-title').textContent=id?'Editar Reserva':'Nueva Reserva';
+  // Si es nueva reserva, cargar cotización del dólar
+  if (!id) cargarCotizacionDolar();
+  // Limpiar conversión si es edición
+  if (id) { const c=document.getElementById('usd-conversion'); if(c) c.style.display='none'; }
   // Si hay entrada cargada, aplicar min en salida
   if (r?.entrada) {
     document.getElementById('res-salida').min = r.entrada;
@@ -1527,7 +1545,45 @@ window.onEntradaChange = function() {
   salida.focus();
   salida.showPicker?.();
 };
-// ── BUSCADOR DE HUÉSPEDES EN RESERVA ──
+// ══════════════════════════════════════════
+// DÓLAR OFICIAL — API
+// ══════════════════════════════════════════
+let dolarVenta = null; // cotización cargada
+
+async function cargarCotizacionDolar() {
+  const el = document.getElementById('dolar-info');
+  if (!el) return;
+  try {
+    const res = await fetch('https://dolarapi.com/v1/dolares/oficial');
+    if (!res.ok) throw new Error('Sin respuesta');
+    const data = await res.json();
+    dolarVenta = data.venta;
+    const fecha = data.fechaActualizacion
+      ? new Date(data.fechaActualizacion).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '';
+    el.innerHTML = `Dólar Oficial · Compra: <strong>$${data.compra}</strong> · Venta: <strong>$${data.venta}</strong>${fecha?` <span style="color:#9ca3af;font-size:.72rem;">(${fecha})</span>`:''}`;
+    calcularConversionUSD();
+  } catch(e) {
+    el.textContent = 'No se pudo cargar la cotización';
+    el.style.color = '#991b1b';
+    document.getElementById('dolar-cotizacion').style.background = '#fef2f2';
+    document.getElementById('dolar-cotizacion').style.borderColor = '#fecaca';
+  }
+}
+
+window.calcularConversionUSD = function() {
+  const usd = parseFloat(document.getElementById('res-costo-usd')?.value) || 0;
+  const convEl = document.getElementById('usd-conversion');
+  const convVal = document.getElementById('usd-conversion-val');
+  if (!convEl || !convVal) return;
+  if (usd > 0 && dolarVenta) {
+    const pesos = usd * dolarVenta;
+    convVal.textContent = '$' + pesos.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    convEl.style.display = 'block';
+  } else {
+    convEl.style.display = 'none';
+  }
+};
 window.filtrarHuespedesRes = function() {
   const q = document.getElementById('res-huesped-search').value.toLowerCase().trim();
   const dd = document.getElementById('res-huesped-dropdown');
