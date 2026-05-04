@@ -609,6 +609,12 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">Color</label><div class="color-picker-grid" id="color-picker"></div></div>
       </div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="aloj-obs"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">🔐 Clave caja de seguridad
+          <span style="font-size:.72rem;color:var(--text2);font-weight:400;">— usá <code>{clave}</code> en mensajes de WhatsApp</span>
+        </label>
+        <input type="text" class="form-control" id="aloj-clave" placeholder="Ej: 1234" autocomplete="off">
+      </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aloj')">Cancelar</button><button class="btn btn-primary" onclick="saveAlojamiento()">💾 Guardar</button></div>
   </div>
@@ -817,7 +823,7 @@ tr:hover td{background:#f9f7ff;}
       <div class="form-group">
         <label class="form-label">Mensaje *</label>
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">
-          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
         </div>
         <textarea class="form-control" id="plantilla-texto" rows="10" placeholder="Escribí el mensaje..."></textarea>
       </div>
@@ -1424,6 +1430,7 @@ window.openAlojModal = function(id=null) {
   document.getElementById('aloj-nombre').value=a?.nombre||'';
   document.getElementById('aloj-max').value   =a?.maxHuespedes||4;
   document.getElementById('aloj-obs').value   =a?.obs||'';
+  document.getElementById('aloj-clave').value =a?.clave||'';
   document.getElementById('modal-aloj-title').textContent=id?'Editar Alojamiento':'Nuevo Alojamiento';
   renderColorPicker(a?.color);
   openModal('modal-aloj');
@@ -1432,11 +1439,12 @@ window.saveAlojamiento = async function() {
   const nombre=document.getElementById('aloj-nombre').value.trim();
   const max=parseInt(document.getElementById('aloj-max').value);
   const obs=document.getElementById('aloj-obs').value.trim();
+  const clave=document.getElementById('aloj-clave').value.trim();
   const id=document.getElementById('aloj-id').value||getId();
   if(!nombre){toast('El nombre es requerido','error');return;}
   if(!max||max<1){toast('Máximo inválido','error');return;}
   setDbStatus('ing','Guardando…');
-  await upsertDoc('alojamientos',id,{nombre,maxHuespedes:max,color:selectedColor,obs});
+  await upsertDoc('alojamientos',id,{nombre,maxHuespedes:max,color:selectedColor,obs,clave});
   setDbStatus('ok','☁️ En línea');
   toast('Alojamiento guardado','success');
   closeModal('modal-aloj');
@@ -1456,6 +1464,17 @@ window.deleteAlojamiento = async function(id) {
   setDbStatus('ok','☁️ En línea');
   toast('Alojamiento eliminado','success');
 };
+window.toggleClave = function(id, clave) {
+  const el = document.getElementById('clave-' + id);
+  if (!el) return;
+  if (el.textContent === '••••') {
+    el.textContent = clave;
+    el.style.letterSpacing = 'normal';
+  } else {
+    el.textContent = '••••';
+    el.style.letterSpacing = '2px';
+  }
+};
 function renderAlojamientos() {
   const el=document.getElementById('aloj-list');
   if(!alojamientos.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏠</div><h3>Sin alojamientos</h3><p>Agrega tu primer alojamiento</p></div>`;return;}
@@ -1463,7 +1482,11 @@ function renderAlojamientos() {
     const rc=reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
     return `<div class="aloj-card" style="--aloj-color:${a.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><div class="color-dot" style="background:${a.color}"></div><div class="aloj-card-name">${a.nombre}</div></div>
-      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}</div>
+      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}
+        ${a.clave?`<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-${a.id}" style="letter-spacing:2px;">••••</span>
+          <button onclick="toggleClave('${a.id}','${a.clave}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button>
+        </span>`:''}
+      </div>
       <div class="aloj-card-actions">
         ${hasPerm('aloj-edit')?`<button class="btn btn-ghost btn-sm" onclick="openAlojModal('${a.id}')">✏️ Editar</button>`:''}
         ${hasPerm('aloj-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteAlojamiento('${a.id}')">🗑️</button>`:''}
@@ -1721,6 +1744,7 @@ window.showReservaDetail = function(id) {
     tel: r.tel,
     nombre: r.nombre,
     aloj: a?.nombre||'el alojamiento',
+    clave: a?.clave||'',
     entrada: fmt(r.entrada),
     salida: fmt(r.salida),
     noches,
@@ -1771,6 +1795,7 @@ function buildWAMsg(texto, w) {
   return texto
     .replace(/{nombre}/g, w.nombre)
     .replace(/{aloj}/g, w.aloj)
+    .replace(/{clave}/g, w.clave || '—')
     .replace(/{entrada}/g, w.entrada)
     .replace(/{salida}/g, w.salida)
     .replace(/{noches}/g, w.noches + (w.noches!==1?' noches':' noche'))
@@ -1879,7 +1904,7 @@ function renderMensajes() {
       </div>
       <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.85rem;white-space:pre-wrap;line-height:1.6;color:var(--text);border:1px solid var(--border);">${p.texto}</div>
       <div style="margin-top:10px;font-size:.75rem;color:var(--text2);">
-        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
       </div>
     </div>`).join('');
 }
