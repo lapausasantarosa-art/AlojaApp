@@ -2161,24 +2161,46 @@ function renderCalFilterOptions() {
   const el=document.getElementById('cal-filter-aloj');if(!el)return;
   const cur=el.value;
   el.innerHTML=`<option value="">Todos los alojamientos</option>`;
-  alojamientos.forEach(a=>el.innerHTML+=`<option value="${a.id}">${a.nombre}</option>`);
-  el.value=cur;
+  alojamientos.forEach(a=>el.innerHTML+=`<option value="${a.id}" ${cur===a.id?'selected':''}>${a.nombre}</option>`);
+  // Restaurar valor seleccionado
+  if(cur) el.value=cur;
 }
+
 function renderCalendar() {
   const year=calDate.getFullYear(),month=calDate.getMonth();
   document.getElementById('cal-title').textContent=`${MONTHS_ES[month]} ${year}`;
+
+  // Actualizar opciones del filtro manteniendo selección
+  renderCalFilterOptions();
   const fa=document.getElementById('cal-filter-aloj')?.value||'';
+
   const today=new Date();today.setHours(0,0,0,0);
   document.getElementById('cal-days-head').innerHTML=DAYS_ES.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
   const firstDay=new Date(year,month,1).getDay();
   const daysInM=new Date(year,month+1,0).getDate();
   const prevD=new Date(year,month,0).getDate();
+  const prevYear=month===0?year-1:year;
+  const prevMonth=month===0?12:month;
+  const nextYear=month===11?year+1:year;
+  const nextMonth=month===11?1:month+2;
+
   let cells=[];
-  for(let i=firstDay-1;i>=0;i--) cells.push({day:prevD-i,cur:false,date:`${year}-${String(month).padStart(2,'0')}-${String(prevD-i).padStart(2,'0')}`});
-  for(let d=1;d<=daysInM;d++) cells.push({day:d,cur:true,date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
-  let nx=1;while(cells.length%7!==0) cells.push({day:nx++,cur:false,date:`${year}-${String(month+2).padStart(2,'0')}-${String(nx-1).padStart(2,'0')}`});
+  for(let i=firstDay-1;i>=0;i--){
+    const d=prevD-i;
+    cells.push({day:d,cur:false,date:`${prevYear}-${String(prevMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  }
+  for(let d=1;d<=daysInM;d++){
+    cells.push({day:d,cur:true,date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  }
+  let nx=1;
+  while(cells.length%7!==0){
+    cells.push({day:nx,cur:false,date:`${nextYear}-${String(nextMonth).padStart(2,'0')}-${String(nx).padStart(2,'0')}`});
+    nx++;
+  }
+
   let fRes=reservas.filter(r=>r.estado!=='cancelada');
   if(fa) fRes=fRes.filter(r=>r.alojId===fa);
+
   document.getElementById('cal-grid').innerHTML=cells.map(({day,cur,date})=>{
     const isToday=cur&&new Date(date+'T12:00:00').toDateString()===today.toDateString();
     const isMobile=window.innerWidth<=600;
@@ -2189,7 +2211,6 @@ function renderCalendar() {
         const mascota=r.mascota==='si'?' 🐾':'';
         const personas=`${r.personas}p`;
         if(isMobile){
-          // Móvil: nombre corto + personas + mascota en líneas separadas
           const nombreCorto=r.nombre.split(' ')[0].substring(0,7);
           const isEntrada=date===r.entrada;
           events+=`<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre} · ${r.personas} pers.${mascota}">
@@ -2204,6 +2225,7 @@ function renderCalendar() {
     });
     return `<div class="cal-day ${!cur?'other-month':''} ${isToday?'today':''}"><div class="cal-day-num">${day}</div>${events}</div>`;
   }).join('');
+
   const alojShow=fa?alojamientos.filter(a=>a.id===fa):alojamientos;
   document.getElementById('cal-legend').innerHTML=alojShow.map(a=>`<div class="legend-item"><div class="legend-color" style="background:${a.color}"></div><span>${a.nombre}</span></div>`).join('');
 }
