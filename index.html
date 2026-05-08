@@ -2,9 +2,49 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ffffff">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6d40c4">
 <meta name="description" content="Gestión de Alojamientos Temporarios">
+
+<!-- PWA — manifest y service worker generados inline, sin archivos externos -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AlojApp">
+<script>
+// ── MANIFEST inline (blob URL) ──────────────────────────────
+(function() {
+  const base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+  const manifest = {
+    name: "AlojApp - La Pausa",
+    short_name: "AlojApp",
+    description: "Gestión de Alojamientos Temporarios",
+    start_url: window.location.pathname.replace(/\/[^\/]*$/, '/'),
+    scope: window.location.pathname.replace(/\/[^\/]*$/, '/'),
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#6d40c4",
+    orientation: "portrait-primary",
+    lang: "es",
+    icons: [
+      { src: base + "icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+      { src: base + "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel   = 'manifest';
+  link.href  = url;
+  document.head.appendChild(link);
+
+  // apple-touch-icon dinámico
+  const icon = document.createElement('link');
+  icon.rel   = 'apple-touch-icon';
+  icon.href  = base + 'icons/icon-192.png';
+  document.head.appendChild(icon);
+})();
+</script>
 <title>AlojApp — Gestión de Alojamientos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -484,6 +524,7 @@ tr:hover td{background:#f9f7ff;}
     <div class="nav-label">Administración</div>
     <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
     <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
+    <div class="nav-item" id="nav-exportar" onclick="showPage('exportar')"><span class="icon">📥</span> Exportar datos</div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
     <div id="sidebar-avatar" class="sidebar-user-av">?</div>
@@ -511,7 +552,7 @@ tr:hover td{background:#f9f7ff;}
     <div id="page-dashboard" class="page"><div id="dashboard-content"></div></div>
     <div id="page-calendario" class="page active">
       <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="renderCalendar()"><option value="">Todos los alojamientos</option></select>
+        <select class="form-control" id="cal-filter-aloj" style="width:auto;" onchange="onCalFilterChange()"><option value="">Todos los alojamientos</option></select>
         <button class="btn btn-ghost btn-sm" onclick="syncAllToCalendar()" id="btn-sync-cal">🔄 Sincronizar con Google Cal</button>
         <div style="margin-left:auto;" id="cal-btn-nueva"></div>
       </div>
@@ -553,6 +594,7 @@ tr:hover td{background:#f9f7ff;}
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
     <div id="page-mensajes" class="page"><div id="mensajes-content"></div></div>
+    <div id="page-exportar" class="page"><div id="exportar-content"></div></div>
   </div>
 </div>
 
@@ -569,6 +611,12 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">Color</label><div class="color-picker-grid" id="color-picker"></div></div>
       </div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="aloj-obs"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">🔐 Clave caja de seguridad
+          <span style="font-size:.72rem;color:var(--text2);font-weight:400;">— usá <code>{clave}</code> en mensajes de WhatsApp</span>
+        </label>
+        <input type="text" class="form-control" id="aloj-clave" placeholder="Ej: 1234" autocomplete="off">
+      </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aloj')">Cancelar</button><button class="btn btn-primary" onclick="saveAlojamiento()">💾 Guardar</button></div>
   </div>
@@ -590,7 +638,7 @@ tr:hover td{background:#f9f7ff;}
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada"></div>
+        <div class="form-group"><label class="form-label">Fecha entrada *</label><input type="date" class="form-control" id="res-entrada" onchange="onEntradaChange()"></div>
         <div class="form-group"><label class="form-label">Fecha salida *</label><input type="date" class="form-control" id="res-salida"></div>
       </div>
       <hr style="border-color:var(--border);margin:12px 0;">
@@ -622,6 +670,29 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">Origen</label>
           <select class="form-control" id="res-origen"><option value="particular">Particular</option><option value="booking">Booking</option><option value="airbnb">Airbnb</option><option value="otros">Otros</option></select>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            Valor en USD
+            <span style="font-size:.72rem;color:var(--text2);font-weight:400;">(solo referencia, no afecta ingresos)</span>
+          </label>
+          <!-- Cotización dólar oficial -->
+          <div id="dolar-cotizacion" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.78rem;">
+            <span style="color:#059669;">💵</span>
+            <span id="dolar-info" style="color:#065f46;font-weight:500;">Cargando cotización…</span>
+          </div>
+          <div style="position:relative;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.85rem;font-weight:600;">U$D</span>
+            <input type="number" class="form-control" id="res-costo-usd" min="0" placeholder="0"
+              style="padding-left:40px;" oninput="calcularConversionUSD()">
+          </div>
+          <!-- Conversión en tiempo real -->
+          <div id="usd-conversion" style="display:none;margin-top:5px;padding:5px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:.8rem;color:#1e40af;">
+            💱 Equivalente: <strong id="usd-conversion-val"></strong> (al tipo de cambio oficial)
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Seña $</label><input type="number" class="form-control" id="res-senia" min="0" placeholder="0"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">¿Con mascota?</label><select class="form-control" id="res-mascota"><option value="no">No</option><option value="si">Sí</option></select></div>
@@ -754,7 +825,7 @@ tr:hover td{background:#f9f7ff;}
       <div class="form-group">
         <label class="form-label">Mensaje *</label>
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">
-          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
         </div>
         <textarea class="form-control" id="plantilla-texto" rows="10" placeholder="Escribí el mensaje..."></textarea>
       </div>
@@ -1059,10 +1130,9 @@ function hidLoginScreens() {
 // ══════════════════════════════════════════
 // GOOGLE CALENDAR
 // ══════════════════════════════════════════
-// ── GOOGLE CALENDAR — inicialización robusta ──
-// Esperamos que AMBAS librerías (gapi + gsi) estén listas antes de continuar
 let gapiLoadedFlag = false;
 let gsiLoadedFlag  = false;
+let calTokenObtained = false; // true cuando el usuario ya autorizó en esta sesión
 
 window.gapiLoaded = function() {
   gapi.load('client', async () => {
@@ -1075,30 +1145,30 @@ window.gapiLoaded = function() {
   });
 };
 
-// Esta función se llama cuando gsi/client termina de cargar
 window.gsiLoaded = function() {
   gsiLoadedFlag = true;
   tryInitTokenClient();
 };
 
 function tryInitTokenClient() {
-  // Solo inicializar cuando AMBAS librerías están listas
   if (!gapiLoadedFlag || !gsiLoadedFlag) return;
-  if (tokenClient) return; // ya inicializado
+  if (tokenClient) return;
   try {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (r) => {
         if (r.error) {
+          calTokenObtained = false;
+          calendarReady = false;
           updateCalStatus('error', 'Error de autorización');
           toast('Error al conectar Google Calendar: ' + r.error, 'error');
           return;
         }
+        calTokenObtained = true;
         calendarReady = true;
-        updateCalStatus('ok', 'Cal sincronizado');
+        updateCalStatus('ok', 'Cal conectado');
         toast('Google Calendar conectado ✓', 'success');
-        // Si había una sincronización pendiente, ejecutarla ahora
         if (window._pendingCalSync) {
           window._pendingCalSync = false;
           await doSyncAll();
@@ -1111,31 +1181,50 @@ function tryInitTokenClient() {
 }
 
 window.syncAllToCalendar = async function() {
-  // Si el token ya está activo, sincronizar directo
-  if (calendarReady) { await doSyncAll(); return; }
+  // Si el token ya está activo en esta sesión, sincronizar directo
+  if (calendarReady && calTokenObtained) { await doSyncAll(); return; }
+
+  // Diagnóstico rápido
+  console.log('Sync Calendar — estado:', { gapiLoadedFlag, gsiLoadedFlag, gapiReady, tokenClient: !!tokenClient, calTokenObtained });
 
   // Si tokenClient está listo, pedir autorización
   if (tokenClient) {
     window._pendingCalSync = true;
     updateCalStatus('syncing', 'Autorizando…');
-    tokenClient.requestAccessToken({ prompt: '' }); // '' = no forzar re-consent si ya autorizó
+    const prompt = calTokenObtained ? '' : 'select_account';
+    try {
+      tokenClient.requestAccessToken({ prompt });
+    } catch(e) {
+      console.warn('requestAccessToken error:', e);
+      updateCalStatus('error', 'Error de autorización');
+      toast('Error al autorizar: ' + e.message, 'error');
+    }
     return;
   }
 
-  // tokenClient no está listo — esperar hasta 8 segundos
-  updateCalStatus('syncing', 'Iniciando Calendar…');
-  toast('Iniciando conexión con Google Calendar…', 'info');
+  // tokenClient no está listo — puede ser que las librerías aún no cargaron
+  // Distinguir entre "cargando" y "error real"
+  if (!gapiLoadedFlag && !gsiLoadedFlag) {
+    updateCalStatus('syncing', 'Cargando librerías…');
+    toast('Las librerías de Google están cargando, intentá en unos segundos…', 'info');
+  } else {
+    updateCalStatus('syncing', 'Iniciando Calendar…');
+  }
+
   let intentos = 0;
   const esperar = setInterval(() => {
     intentos++;
+    console.log(`Esperando tokenClient… intento ${intentos}`, { gapiLoadedFlag, gsiLoadedFlag, gapiReady, tokenClient: !!tokenClient });
     if (tokenClient) {
       clearInterval(esperar);
       window._pendingCalSync = true;
-      tokenClient.requestAccessToken({ prompt: '' });
-    } else if (intentos >= 16) { // 8 segundos
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
+    } else if (intentos >= 30) { // 15 segundos
       clearInterval(esperar);
+      const detalle = !gapiLoadedFlag ? 'GAPI no cargó' : !gsiLoadedFlag ? 'GSI no cargó' : !gapiReady ? 'GAPI no inicializó' : 'tokenClient null';
+      console.warn('Timeout Calendar:', detalle);
       updateCalStatus('error', 'Error al cargar');
-      toast('No se pudo cargar Google Calendar. Recargá la página e intentá de nuevo.', 'error');
+      toast(`No se pudo conectar Google Calendar (${detalle}). Verificá que el dominio esté autorizado en Google Cloud Console.`, 'error');
     }
   }, 500);
 };
@@ -1152,13 +1241,30 @@ async function doSyncAll() {
 async function syncReservaToCalendar(r) {
   if (!calendarReady||!gapiReady) return false;
   const aloj = alojamientos.find(a=>a.id===r.alojId);
-  const title = `${aloj?.nombre||'Reserva'} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
+  const nombreAloj = (aloj?.nombre||'Reserva').replace(/departamento/gi, 'Dpto.');
+  const title = `${nombreAloj} — ${r.nombre} (${r.personas}p${r.mascota==='si'?' 🐾':''})`;
+  const noches = daysBetween(r.entrada, r.salida);
+  // Descripción con seña si corresponde
+  const seniaLine  = r.senia    ? `\nSeña: $${r.senia} (resta $${(r.costo||0)-(r.senia||0)})` : '';
+  const usdLine    = r.costoUsd ? `\nValor USD: U$D ${r.costoUsd}` : '';
   const event = {
-    summary:title,
-    description:`Huésped: ${r.nombre}\nTel: ${r.tel}\nDNI: ${r.dni||'—'}\nPersonas: ${r.personas}\nCosto: $${r.costo||0}\nOrigen: ${r.origen}\nEstado: ${r.estado}${r.obs?'\nObs: '+r.obs:''}`,
-    start:{date:r.entrada}, end:{date:r.salida},
+    summary: title,
+    description: `Huésped: ${r.nombre}\nTel: ${r.tel}\nDNI: ${r.dni||'—'}\nPersonas: ${r.personas}\nCosto: $${r.costo||0}${usdLine}${seniaLine}\nOrigen: ${r.origen}\nEstado: ${r.estado}${r.obs?'\nObs: '+r.obs:''}`,
+    start: {date: r.entrada},
+    end:   {date: r.salida},
     colorId: getGCalColorId(aloj?.color),
-    extendedProperties:{private:{alojappId:r.id}}
+    extendedProperties: {private: {alojappId: r.id}},
+    // Alerta a las 10:00 AM del día de entrada, solo si es más de 1 noche
+    reminders: noches > 1 ? {
+      useDefault: false,
+      overrides: [{
+        method: 'popup',
+        // minutos desde el inicio del evento (medianoche) hasta las 10:00 AM = 600 min
+        minutes: 600
+      }]
+    } : {
+      useDefault: true
+    }
   };
   try {
     if (r.gcalEventId) {
@@ -1275,7 +1381,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1293,6 +1399,7 @@ window.showPage = function(page) {
     if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-primary" onclick="openPlantillaModal()">+ Nueva Plantilla</button>`;
     renderMensajes();
   }
+  else if(page==='exportar') renderExportar();
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
 window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
@@ -1302,7 +1409,17 @@ window.irAReservasVigentes = function() {
   const sel = document.getElementById('res-filter-periodo');
   if (sel) { sel.value = 'activas'; renderReservas(); }
 };
-window.calNav        = dir=>{ calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1); renderCalendar(); };
+let calFilterAloj = '';
+
+window.calNav = function(dir) {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  renderCalendar();
+};
+
+window.onCalFilterChange = function() {
+  calFilterAloj = document.getElementById('cal-filter-aloj')?.value || '';
+  renderCalendar();
+};
 
 // ══════════════════════════════════════════
 // COLOR PICKER
@@ -1326,6 +1443,7 @@ window.openAlojModal = function(id=null) {
   document.getElementById('aloj-nombre').value=a?.nombre||'';
   document.getElementById('aloj-max').value   =a?.maxHuespedes||4;
   document.getElementById('aloj-obs').value   =a?.obs||'';
+  document.getElementById('aloj-clave').value =a?.clave||'';
   document.getElementById('modal-aloj-title').textContent=id?'Editar Alojamiento':'Nuevo Alojamiento';
   renderColorPicker(a?.color);
   openModal('modal-aloj');
@@ -1334,11 +1452,12 @@ window.saveAlojamiento = async function() {
   const nombre=document.getElementById('aloj-nombre').value.trim();
   const max=parseInt(document.getElementById('aloj-max').value);
   const obs=document.getElementById('aloj-obs').value.trim();
+  const clave=document.getElementById('aloj-clave').value.trim();
   const id=document.getElementById('aloj-id').value||getId();
   if(!nombre){toast('El nombre es requerido','error');return;}
   if(!max||max<1){toast('Máximo inválido','error');return;}
   setDbStatus('ing','Guardando…');
-  await upsertDoc('alojamientos',id,{nombre,maxHuespedes:max,color:selectedColor,obs});
+  await upsertDoc('alojamientos',id,{nombre,maxHuespedes:max,color:selectedColor,obs,clave});
   setDbStatus('ok','☁️ En línea');
   toast('Alojamiento guardado','success');
   closeModal('modal-aloj');
@@ -1358,6 +1477,17 @@ window.deleteAlojamiento = async function(id) {
   setDbStatus('ok','☁️ En línea');
   toast('Alojamiento eliminado','success');
 };
+window.toggleClave = function(id, clave) {
+  const el = document.getElementById('clave-' + id);
+  if (!el) return;
+  if (el.textContent === '••••') {
+    el.textContent = clave;
+    el.style.letterSpacing = 'normal';
+  } else {
+    el.textContent = '••••';
+    el.style.letterSpacing = '2px';
+  }
+};
 function renderAlojamientos() {
   const el=document.getElementById('aloj-list');
   if(!alojamientos.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏠</div><h3>Sin alojamientos</h3><p>Agrega tu primer alojamiento</p></div>`;return;}
@@ -1365,7 +1495,11 @@ function renderAlojamientos() {
     const rc=reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
     return `<div class="aloj-card" style="--aloj-color:${a.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><div class="color-dot" style="background:${a.color}"></div><div class="aloj-card-name">${a.nombre}</div></div>
-      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}</div>
+      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}
+        ${a.clave?`<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-${a.id}" style="letter-spacing:2px;">••••</span>
+          <button onclick="toggleClave('${a.id}','${a.clave}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button>
+        </span>`:''}
+      </div>
       <div class="aloj-card-actions">
         ${hasPerm('aloj-edit')?`<button class="btn btn-ghost btn-sm" onclick="openAlojModal('${a.id}')">✏️ Editar</button>`:''}
         ${hasPerm('aloj-del') ?`<button class="btn btn-danger btn-sm" onclick="deleteAlojamiento('${a.id}')">🗑️</button>`:''}
@@ -1407,10 +1541,20 @@ window.openReservaModal = function(id=null) {
   document.getElementById('res-dni').value     =r?.dni||'';
   document.getElementById('res-personas').value=r?.personas||1;
   document.getElementById('res-costo').value   =r?.costo||'';
+  document.getElementById('res-costo-usd').value=r?.costoUsd||'';
+  document.getElementById('res-senia').value   =r?.senia||'';
   document.getElementById('res-origen').value  =r?.origen||'particular';
   document.getElementById('res-mascota').value =r?.mascota||'no';
   document.getElementById('res-obs').value     =r?.obs||'';
   document.getElementById('modal-res-title').textContent=id?'Editar Reserva':'Nueva Reserva';
+  // Si es nueva reserva, cargar cotización del dólar
+  if (!id) cargarCotizacionDolar();
+  // Limpiar conversión si es edición
+  if (id) { const c=document.getElementById('usd-conversion'); if(c) c.style.display='none'; }
+  // Si hay entrada cargada, aplicar min en salida
+  if (r?.entrada) {
+    document.getElementById('res-salida').min = r.entrada;
+  }
   // Limpiar buscador de huésped
   limpiarHuespedRes();
   // Ocultar buscador si es edición (ya tiene huésped cargado)
@@ -1418,7 +1562,64 @@ window.openReservaModal = function(id=null) {
   updateResAlojInfo();
   openModal('modal-reserva');
 };
-// ── BUSCADOR DE HUÉSPEDES EN RESERVA ──
+
+// Al cambiar fecha de entrada: mover el mínimo y valor de salida
+window.onEntradaChange = function() {
+  const entrada = document.getElementById('res-entrada').value;
+  const salida  = document.getElementById('res-salida');
+  if (!entrada) return;
+  // Setear mínimo = día siguiente a la entrada
+  const minDate = new Date(entrada + 'T12:00:00');
+  minDate.setDate(minDate.getDate() + 1);
+  const minStr = minDate.toISOString().split('T')[0];
+  salida.min = minStr;
+  // Si salida está vacía o es anterior/igual a entrada, moverla al día siguiente
+  if (!salida.value || salida.value <= entrada) {
+    salida.value = minStr;
+  }
+  // Abrir el picker de salida automáticamente (funciona en la mayoría de browsers)
+  salida.focus();
+  salida.showPicker?.();
+};
+// ══════════════════════════════════════════
+// DÓLAR OFICIAL — API
+// ══════════════════════════════════════════
+let dolarVenta = null; // cotización cargada
+
+async function cargarCotizacionDolar() {
+  const el = document.getElementById('dolar-info');
+  if (!el) return;
+  try {
+    const res = await fetch('https://dolarapi.com/v1/dolares/oficial');
+    if (!res.ok) throw new Error('Sin respuesta');
+    const data = await res.json();
+    dolarVenta = data.venta;
+    const fecha = data.fechaActualizacion
+      ? new Date(data.fechaActualizacion).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '';
+    el.innerHTML = `Dólar Oficial · Compra: <strong>$${data.compra}</strong> · Venta: <strong>$${data.venta}</strong>${fecha?` <span style="color:#9ca3af;font-size:.72rem;">(${fecha})</span>`:''}`;
+    calcularConversionUSD();
+  } catch(e) {
+    el.textContent = 'No se pudo cargar la cotización';
+    el.style.color = '#991b1b';
+    document.getElementById('dolar-cotizacion').style.background = '#fef2f2';
+    document.getElementById('dolar-cotizacion').style.borderColor = '#fecaca';
+  }
+}
+
+window.calcularConversionUSD = function() {
+  const usd = parseFloat(document.getElementById('res-costo-usd')?.value) || 0;
+  const convEl = document.getElementById('usd-conversion');
+  const convVal = document.getElementById('usd-conversion-val');
+  if (!convEl || !convVal) return;
+  if (usd > 0 && dolarVenta) {
+    const pesos = usd * dolarVenta;
+    convVal.textContent = '$' + pesos.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    convEl.style.display = 'block';
+  } else {
+    convEl.style.display = 'none';
+  }
+};
 window.filtrarHuespedesRes = function() {
   const q = document.getElementById('res-huesped-search').value.toLowerCase().trim();
   const dd = document.getElementById('res-huesped-dropdown');
@@ -1493,8 +1694,10 @@ window.saveReserva = async function() {
   const dni     =document.getElementById('res-dni').value.trim();
   const personas=parseInt(document.getElementById('res-personas').value)||1;
   const costo   =parseFloat(document.getElementById('res-costo').value)||0;
+  const costoUsd=parseFloat(document.getElementById('res-costo-usd').value)||0;
   const origen  =document.getElementById('res-origen').value;
   const mascota =document.getElementById('res-mascota').value;
+  const senia   =parseFloat(document.getElementById('res-senia').value)||0;
   const obs     =document.getElementById('res-obs').value.trim();
   if(!alojId||!entrada||!salida||!nombre||!tel){toast('Completá los campos obligatorios (*)','error');return;}
   if(entrada>=salida){toast('La salida debe ser posterior a la entrada','error');return;}
@@ -1506,7 +1709,7 @@ window.saveReserva = async function() {
   }
   const docId=id||getId();
   const existing=id?reservas.find(r=>r.id===id):null;
-  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
+  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,costoUsd,senia,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
   setDbStatus('ing','Guardando…');
   await upsertDoc('reservas',docId,data);
   setDbStatus('ok','☁️ En línea');
@@ -1554,6 +1757,7 @@ window.showReservaDetail = function(id) {
     tel: r.tel,
     nombre: r.nombre,
     aloj: a?.nombre||'el alojamiento',
+    clave: a?.clave||'',
     entrada: fmt(r.entrada),
     salida: fmt(r.salida),
     noches,
@@ -1572,7 +1776,8 @@ window.showReservaDetail = function(id) {
       <div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${noches}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}</div></div>
+      <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}${r.costoUsd?` <span style="font-size:.75rem;color:#16a34a;font-weight:600;">(USD ${r.costoUsd.toLocaleString('es-AR')})</span>`:''}</div></div>
+      ${r.senia?`<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">${fmtMoney(r.senia)} <span style="font-size:.72rem;color:var(--text2);">(resta ${fmtMoney((r.costo||0)-(r.senia||0))})</span></div></div>`:''}
     </div>
     <hr style="border-color:var(--border);margin-bottom:14px;">
     <div class="grid-2" style="gap:10px;font-size:.9rem;">
@@ -1603,6 +1808,7 @@ function buildWAMsg(texto, w) {
   return texto
     .replace(/{nombre}/g, w.nombre)
     .replace(/{aloj}/g, w.aloj)
+    .replace(/{clave}/g, w.clave || '—')
     .replace(/{entrada}/g, w.entrada)
     .replace(/{salida}/g, w.salida)
     .replace(/{noches}/g, w.noches + (w.noches!==1?' noches':' noche'))
@@ -1711,7 +1917,7 @@ function renderMensajes() {
       </div>
       <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.85rem;white-space:pre-wrap;line-height:1.6;color:var(--text);border:1px solid var(--border);">${p.texto}</div>
       <div style="margin-top:10px;font-size:.75rem;color:var(--text2);">
-        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code>
+        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
       </div>
     </div>`).join('');
 }
@@ -1835,7 +2041,7 @@ window.openHuespedModal = function(tel=null) {
     telInput.style.background = '';
     telInput.style.cursor     = '';
     telInput.title            = '';
-    telInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g,''); };
+    telInput.oninput = function() { this.value = this.value.replace(/[^0-9+]/g,'').replace(/(?!^)\+/g,''); };
     telLabel.innerHTML = 'Teléfono (clave) *';
   } else {
     telInput.readOnly         = true;
@@ -1869,7 +2075,7 @@ window.saveHuesped = async function() {
   const ev    =document.getElementById('huesped-eval').value;
   const obs   =document.getElementById('huesped-obs').value.trim();
   if(!nombre||!tel){toast('Nombre y teléfono requeridos','error');return;}
-  if(!/^[0-9]+$/.test(tel)){toast('El teléfono solo puede contener números','error');return;}
+  if(!/^\+?[0-9]+$/.test(tel)){toast('El teléfono solo puede contener números (y + al inicio)','error');return;}
   const docId    = telId||tel;
   const telFinal = (telId && !currentUser?.isAdmin) ? telId : tel;
   if(!telId&&huespedes.find(h=>h.id===tel||h.tel===tel)){toast('Ya existe un huésped con ese teléfono','error');return;}
@@ -1887,11 +2093,30 @@ window.deleteHuesped = async function(tel) {
   toast('Huésped eliminado','success');
 };
 function renderHuespedes() {
-  const search=document.getElementById('huesped-search')?.value.toLowerCase()||'';
-  let list=[...huespedes];
-  if(search) list=list.filter(h=>h.nombre?.toLowerCase().includes(search)||h.tel?.includes(search)||h.dni?.includes(search));
-  const el=document.getElementById('huespedes-list');
-  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin huéspedes</h3><p>Se crean automáticamente con las reservas</p></div>`;return;}
+  const search = (document.getElementById('huesped-search')?.value || '').toLowerCase().trim();
+  // Normalizar texto quitando tildes para búsqueda más tolerante
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const searchNorm = norm(search);
+
+  let list = [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'', 'es'));
+
+  if (search) {
+    list = list.filter(h => {
+      const tel = (h.tel || h.id || '');
+      return norm(h.nombre).includes(searchNorm)
+          || tel.includes(search)
+          || norm(h.dni||'').includes(searchNorm)
+          || norm(h.obs||'').includes(searchNorm);
+    });
+  }
+
+  const el = document.getElementById('huespedes-list');
+  if (!list.length) {
+    el.innerHTML = search
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Sin resultados</h3><p>No hay huéspedes que coincidan con "<strong>${search}</strong>"</p></div>`
+      : `<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin huéspedes</h3><p>Se crean automáticamente con las reservas</p></div>`;
+    return;
+  }
 
   const isMobile = window.innerWidth <= 700;
 
@@ -1946,54 +2171,74 @@ window.addEventListener('resize', () => {
 // CALENDARIO
 // ══════════════════════════════════════════
 function renderCalFilterOptions() {
-  const el=document.getElementById('cal-filter-aloj');if(!el)return;
-  const cur=el.value;
-  el.innerHTML=`<option value="">Todos los alojamientos</option>`;
-  alojamientos.forEach(a=>el.innerHTML+=`<option value="${a.id}">${a.nombre}</option>`);
-  el.value=cur;
+  const el = document.getElementById('cal-filter-aloj');
+  if (!el) return;
+  // Usar la variable global como fuente de verdad
+  el.innerHTML = `<option value="">Todos los alojamientos</option>`
+    + alojamientos.map(a => `<option value="${a.id}" ${calFilterAloj===a.id?'selected':''}>${a.nombre}</option>`).join('');
+  el.value = calFilterAloj;
 }
+
 function renderCalendar() {
-  const year=calDate.getFullYear(),month=calDate.getMonth();
-  document.getElementById('cal-title').textContent=`${MONTHS_ES[month]} ${year}`;
-  const fa=document.getElementById('cal-filter-aloj')?.value||'';
-  const today=new Date();today.setHours(0,0,0,0);
-  document.getElementById('cal-days-head').innerHTML=DAYS_ES.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
-  const firstDay=new Date(year,month,1).getDay();
-  const daysInM=new Date(year,month+1,0).getDate();
-  const prevD=new Date(year,month,0).getDate();
-  let cells=[];
-  for(let i=firstDay-1;i>=0;i--) cells.push({day:prevD-i,cur:false,date:`${year}-${String(month).padStart(2,'0')}-${String(prevD-i).padStart(2,'0')}`});
-  for(let d=1;d<=daysInM;d++) cells.push({day:d,cur:true,date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
-  let nx=1;while(cells.length%7!==0) cells.push({day:nx++,cur:false,date:`${year}-${String(month+2).padStart(2,'0')}-${String(nx-1).padStart(2,'0')}`});
-  let fRes=reservas.filter(r=>r.estado!=='cancelada');
-  if(fa) fRes=fRes.filter(r=>r.alojId===fa);
-  document.getElementById('cal-grid').innerHTML=cells.map(({day,cur,date})=>{
-    const isToday=cur&&new Date(date+'T12:00:00').toDateString()===today.toDateString();
-    const isMobile=window.innerWidth<=600;
-    let events='';
-    fRes.forEach(r=>{
-      if(date>=r.entrada&&date<r.salida){
-        const a=getAloj(r.alojId);
-        const mascota=r.mascota==='si'?' 🐾':'';
-        const personas=`${r.personas}p`;
-        if(isMobile){
-          // Móvil: nombre corto + personas + mascota en líneas separadas
-          const nombreCorto=r.nombre.split(' ')[0].substring(0,7);
-          const isEntrada=date===r.entrada;
-          events+=`<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre} · ${r.personas} pers.${mascota}">
-            ${isEntrada?`🔑 `:''}${nombreCorto} ${personas}${mascota}
-          </div>`;
+  // Leer el filtro — primero del select, fallback a la variable global
+  const fa = document.getElementById('cal-filter-aloj')?.value ?? calFilterAloj;
+
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  document.getElementById('cal-title').textContent = `${MONTHS_ES[month]} ${year}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById('cal-days-head').innerHTML = DAYS_ES.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
+
+  const firstDay  = new Date(year, month, 1).getDay();
+  const daysInM   = new Date(year, month+1, 0).getDate();
+  const prevD     = new Date(year, month, 0).getDate();
+  const prevYear  = month===0 ? year-1 : year;
+  const prevMonth = month===0 ? 12 : month;
+  const nextYear  = month===11 ? year+1 : year;
+  const nextMonth = month===11 ? 1 : month+2;
+
+  let cells = [];
+  for (let i=firstDay-1; i>=0; i--) {
+    const d = prevD-i;
+    cells.push({day:d, cur:false, date:`${prevYear}-${String(prevMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  }
+  for (let d=1; d<=daysInM; d++) {
+    cells.push({day:d, cur:true, date:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  }
+  let nx=1;
+  while (cells.length%7!==0) {
+    cells.push({day:nx, cur:false, date:`${nextYear}-${String(nextMonth).padStart(2,'0')}-${String(nx).padStart(2,'0')}`});
+    nx++;
+  }
+
+  let fRes = reservas.filter(r => r.estado !== 'cancelada');
+  if (fa) fRes = fRes.filter(r => r.alojId === fa);
+
+  document.getElementById('cal-grid').innerHTML = cells.map(({day,cur,date}) => {
+    const isToday = cur && new Date(date+'T12:00:00').toDateString()===today.toDateString();
+    const isMobile = window.innerWidth <= 600;
+    let events = '';
+    fRes.forEach(r => {
+      if (date >= r.entrada && date < r.salida) {
+        const a = getAloj(r.alojId);
+        const mascota = r.mascota==='si' ? ' 🐾' : '';
+        const personas = `${r.personas}p`;
+        if (isMobile) {
+          const nombreCorto = r.nombre.split(' ')[0].substring(0,7);
+          const isEntrada = date === r.entrada;
+          events += `<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre} · ${r.personas} pers.${mascota}">${isEntrada?'🔑 ':''}${nombreCorto} ${personas}${mascota}</div>`;
         } else {
-          events+=`<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre}">
-            ${date===r.entrada?`🔑 ${r.nombre.split(' ')[0]}`:'·'} ${personas}${mascota}
-          </div>`;
+          events += `<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre}">${date===r.entrada?`🔑 ${r.nombre.split(' ')[0]}`:'·'} ${personas}${mascota}</div>`;
         }
       }
     });
     return `<div class="cal-day ${!cur?'other-month':''} ${isToday?'today':''}"><div class="cal-day-num">${day}</div>${events}</div>`;
   }).join('');
-  const alojShow=fa?alojamientos.filter(a=>a.id===fa):alojamientos;
-  document.getElementById('cal-legend').innerHTML=alojShow.map(a=>`<div class="legend-item"><div class="legend-color" style="background:${a.color}"></div><span>${a.nombre}</span></div>`).join('');
+
+  const alojShow = fa ? alojamientos.filter(a=>a.id===fa) : alojamientos;
+  document.getElementById('cal-legend').innerHTML = alojShow.map(a =>
+    `<div class="legend-item"><div class="legend-color" style="background:${a.color}"></div><span>${a.nombre}</span></div>`
+  ).join('');
 }
 
 // ══════════════════════════════════════════
@@ -2090,9 +2335,319 @@ window.deleteGasto = async function(id) {
   await delDoc('gastos',id);
   toast('Gasto eliminado','success');
 };
+function calcFinanzasData(fa, fDesde, fHasta) {
+  const now    = new Date();
+  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const desde  = fDesde || thisM;
+  const hasta  = fHasta || thisM;
+  const fechaDesde = desde + '-01';
+  const lastDay    = new Date(parseInt(hasta.split('-')[0]), parseInt(hasta.split('-')[1]), 0).getDate();
+  const fechaHasta = hasta + '-' + String(lastDay).padStart(2,'0');
+  const diasPeriodo = Math.round((new Date(fechaHasta) - new Date(fechaDesde)) / 86400000) + 1;
+
+  let activeRes = reservas.filter(r => r.estado !== 'cancelada');
+  let activeGas = [...gastos];
+  if (fa) {
+    activeRes = activeRes.filter(r => r.alojId === fa);
+    activeGas = activeGas.filter(g => g.alojId === fa || g.alojId === 'general');
+  }
+  activeRes = activeRes.filter(r => r.entrada <= fechaHasta && r.salida > fechaDesde);
+  activeGas = activeGas.filter(g => g.fecha >= fechaDesde && g.fecha <= fechaHasta);
+
+  const ingTotal = activeRes.reduce((s,r) => s+(r.costo||0), 0);
+  const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
+
+  // Por mes (para gráfico de barras)
+  const meses = [];
+  const d0 = new Date(desde + '-01');
+  const d1 = new Date(hasta + '-01');
+  for (let d = new Date(d0); d <= d1; d.setMonth(d.getMonth()+1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const ing = activeRes.filter(r => r.entrada?.startsWith(key)||r.salida?.startsWith(key)).reduce((s,r)=>s+(r.costo||0),0);
+    const gas = activeGas.filter(g => g.fecha?.startsWith(key)).reduce((s,g)=>s+(g.monto||0),0);
+    meses.push({ key, label: MONTHS_ES[d.getMonth()].substring(0,3)+' '+d.getFullYear().toString().slice(2), ing, gas });
+  }
+
+  // Por categoría de gasto
+  const catMap = {};
+  activeGas.forEach(g => { catMap[g.cat||'Otros'] = (catMap[g.cat||'Otros']||0) + (g.monto||0); });
+
+  // Por alojamiento
+  const byAloj = alojamientos.map(a => {
+    const resA = activeRes.filter(r => r.alojId === a.id);
+    const gasA = activeGas.filter(g => g.alojId === a.id);
+    const ing  = resA.reduce((s,r) => s+(r.costo||0), 0);
+    const gas  = gasA.reduce((s,g) => s+(g.monto||0), 0);
+    let diasOcup = 0;
+    resA.forEach(r => {
+      const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
+      const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
+      const dd  = Math.round((new Date(fin) - new Date(ini)) / 86400000);
+      if (dd > 0) diasOcup += dd;
+    });
+    return { ...a, ing, gas, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
+  });
+
+  // Orígenes
+  const origenCount = {};
+  activeRes.forEach(r => { const o=r.origen||'otros'; origenCount[o]=(origenCount[o]||0)+1; });
+
+  return { activeRes, activeGas, ingTotal, gasTotal, gan: ingTotal-gasTotal, diasPeriodo, meses, catMap, byAloj, origenCount, fechaDesde, fechaHasta };
+}
+
 function renderFinanzas() {
-  const fa = document.getElementById('fin-filter-aloj')?.value || '';
-  const fm = document.getElementById('fin-filter-mes')?.value  || '';
+  const now    = new Date();
+  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const fa     = document.getElementById('fin-filter-aloj')?.value  || '';
+  const fDesde = document.getElementById('fin-filter-desde')?.value || thisM;
+  const fHasta = document.getElementById('fin-filter-hasta')?.value || thisM;
+  const tab    = document.getElementById('fin-tab-active')?.value   || 'resumen';
+
+  const D = calcFinanzasData(fa, fDesde, fHasta);
+  const fmtMes = iso => { const [y,m]=iso.split('-'); return `${MONTHS_ES[parseInt(m)-1]} ${y}`; };
+  const periodoLabel = fDesde===fHasta ? fmtMes(fDesde) : `${fmtMes(fDesde)} → ${fmtMes(fHasta)}`;
+  const alojLabel    = fa ? (alojamientos.find(a=>a.id===fa)?.nombre||'') : '';
+  const fg           = [...D.activeGas].sort((a,b)=>b.fecha>a.fecha?1:-1);
+  const origenMap    = {particular:'👤 Particular',booking:'🌐 Booking',airbnb:'🏠 Airbnb',otros:'📌 Otros'};
+  const totalRes     = D.activeRes.length||1;
+
+  document.getElementById('finanzas-content').innerHTML = `
+  <input type="hidden" id="fin-tab-active" value="${tab}">
+
+  <!-- FILTROS -->
+  <div class="card" style="margin-bottom:14px;">
+    <div class="filter-row" style="margin-bottom:0;flex-wrap:wrap;gap:10px;">
+      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;">
+        <option value="">Todos los departamentos</option>
+        ${alojamientos.map(a=>`<option value="${a.id}" ${fa===a.id?'selected':''}>${a.nombre}</option>`).join('')}
+      </select>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="font-size:.8rem;color:var(--text2);">Desde</label>
+        <input type="month" class="form-control" id="fin-filter-desde" value="${fDesde}" onchange="renderFinanzas()" style="width:auto;">
+        <label style="font-size:.8rem;color:var(--text2);">Hasta</label>
+        <input type="month" class="form-control" id="fin-filter-hasta" value="${fHasta}" onchange="renderFinanzas()" style="width:auto;">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fin-filter-aloj').value='';document.getElementById('fin-filter-desde').value='${thisM}';document.getElementById('fin-filter-hasta').value='${thisM}';renderFinanzas()">↺ Mes actual</button>
+    </div>
+    <div style="margin-top:8px;font-size:.8rem;color:var(--text2);">
+      <strong style="color:var(--text);">${periodoLabel}${alojLabel?' · '+alojLabel:''}</strong>
+      · ${D.diasPeriodo} días · ${D.activeRes.length} reserva${D.activeRes.length!==1?'s':''}
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid-3" style="margin-bottom:14px;">
+    <div class="stat-card" style="--ac:#059669"><div class="stat-value">${fmtMoney(D.ingTotal)}</div><div class="stat-label">Ingresos</div></div>
+    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(D.gasTotal)}</div><div class="stat-label">Gastos</div></div>
+    <div class="stat-card" style="--ac:${D.gan>=0?'#059669':'var(--danger)'}"><div class="stat-value" style="color:${D.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(D.gan)}</div><div class="stat-label">Ganancia Neta</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" style="margin-bottom:14px;">
+    <button class="tab-btn ${tab==='resumen'?'active':''}" onclick="switchFinTab('resumen')">📋 Resumen</button>
+    <button class="tab-btn ${tab==='graficos'?'active':''}" onclick="switchFinTab('graficos')">📊 Gráficos</button>
+  </div>
+
+  <!-- TAB RESUMEN -->
+  <div id="fin-panel-resumen" style="${tab!=='resumen'?'display:none':''}">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">📊 Resumen por Departamento</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Días ocup.</th><th>Ocupación</th></tr></thead>
+        <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
+          <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
+          <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}</td>
+          <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
+          <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
+          <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
+            <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
+              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:4px;"></div>
+            </div>
+            <span style="font-size:.8rem;font-weight:700;color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</span>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">🌐 Orígenes de Reservas</span></div>
+      ${D.activeRes.length===0?`<div style="text-align:center;color:var(--text2);padding:20px;">Sin reservas en el período</div>`
+      :`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+        ${Object.entries(origenMap).map(([key,label])=>{
+          const cnt=D.origenCount[key]||0, pct=Math.round(cnt/totalRes*100);
+          const cols={particular:'#6d40c4',booking:'#2563eb',airbnb:'#f97316',otros:'#6b7280'};
+          return `<div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">${label}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${cols[key]};border-radius:4px;"></div>
+              </div>
+              <span style="font-size:.85rem;font-weight:700;color:${cols[key]};">${pct}%</span>
+            </div>
+            <div style="font-size:.75rem;color:var(--text2);margin-top:3px;">${cnt} reserva${cnt!==1?'s':''}</div>
+          </div>`;}).join('')}
+      </div>`}
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">💸 Gastos del Período</span>
+        ${hasPerm('fin-edit')?`<button class="btn btn-primary btn-sm" onclick="openGastoModal()">+ Gasto</button>`:''}
+      </div>
+      ${fg.length?`<div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Departamento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th></th></tr></thead>
+        <tbody>${fg.map(g=>{const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
+          return`<tr><td>${fmt(g.fecha)}</td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td>
+            <td>${g.concepto}</td><td><span class="badge badge-blue">${g.cat}</span></td>
+            <td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td>
+            <td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td>
+          </tr>`;}).join('')}</tbody>
+      </table></div>`:`<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos en el período</div>`}
+    </div>
+  </div>
+
+  <!-- TAB GRÁFICOS -->
+  <div id="fin-panel-graficos" style="${tab!=='graficos'?'display:none':''}">
+    <!-- Ingresos vs Gastos por mes -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">📈 Ingresos vs Gastos por Mes</span></div>
+      ${D.meses.length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin datos</p>`:`
+      <div style="overflow-x:auto;">
+        <div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0;min-width:${D.meses.length*80}px;">
+          ${(()=>{
+            const maxV = Math.max(...D.meses.map(m=>Math.max(m.ing,m.gas)),1);
+            return D.meses.map(m=>`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;">
+                <div style="display:flex;align-items:flex-end;gap:3px;height:120px;width:100%;">
+                  <div style="flex:1;background:#059669;border-radius:4px 4px 0 0;height:${Math.round(m.ing/maxV*100)}%;min-height:${m.ing>0?4:0}px;" title="Ing: ${fmtMoney(m.ing)}"></div>
+                  <div style="flex:1;background:#dc2626;border-radius:4px 4px 0 0;height:${Math.round(m.gas/maxV*100)}%;min-height:${m.gas>0?4:0}px;" title="Gas: ${fmtMoney(m.gas)}"></div>
+                </div>
+                <div style="font-size:.65rem;color:var(--text2);text-align:center;">${m.label}</div>
+              </div>`).join('');
+          })()}
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>
+        </div>
+      </div>`}
+    </div>
+
+    <!-- Ingresos por departamento -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">🏠 Ingresos por Departamento</span></div>
+      ${D.byAloj.filter(a=>a.ing>0).length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin ingresos en el período</p>`:`
+      <div style="padding:4px 0;">
+        ${D.byAloj.filter(a=>a.ing>0).sort((a,b)=>b.ing-a.ing).map(a=>{
+          const pct=Math.round(a.ing/D.ingTotal*100);
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
+              <span style="font-weight:600;color:#059669;">${fmtMoney(a.ing)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
+            </div>
+            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${a.color};border-radius:5px;"></div>
+            </div>
+          </div>`;}).join('')}
+      </div>`}
+    </div>
+
+    <!-- Gastos por categoría -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">💸 Gastos por Categoría</span></div>
+      ${Object.keys(D.catMap).length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>`:`
+      <div style="padding:4px 0;">
+        ${Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
+          const pct=Math.round(monto/D.gasTotal*100);
+          const catColors={'Mantenimiento':'#f97316','Limpieza':'#06b6d4','Servicios':'#8b5cf6','Impuestos':'#ef4444','Otros':'#6b7280'};
+          const col=catColors[cat]||'#6b7280';
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <span>${cat}</span>
+              <span style="font-weight:600;color:var(--danger);">${fmtMoney(monto)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
+            </div>
+            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${col};border-radius:5px;"></div>
+            </div>
+          </div>`;}).join('')}
+      </div>`}
+    </div>
+
+    <!-- Ocupación por departamento -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">📅 Ocupación por Departamento</span></div>
+      <div style="padding:4px 0;">
+        ${D.byAloj.map(a=>`
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
+              <span style="font-size:.8rem;"><strong style="color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</strong> · ${a.diasOcup}/${D.diasPeriodo} días</span>
+            </div>
+            <div style="height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;">
+              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:6px;transition:width .5s;"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+window.switchFinTab = function(tab) {
+  document.getElementById('fin-tab-active').value = tab;
+  document.getElementById('fin-panel-resumen').style.display  = tab==='resumen'  ? '' : 'none';
+  document.getElementById('fin-panel-graficos').style.display = tab==='graficos' ? '' : 'none';
+  document.querySelectorAll('.tabs .tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active', (i===0&&tab==='resumen')||(i===1&&tab==='graficos'));
+  });
+};
+
+window.exportToSheets = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar','error'); return; }
+  const now    = new Date();
+  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const fa     = document.getElementById('fin-filter-aloj')?.value  || '';
+  const fDesde = document.getElementById('fin-filter-desde')?.value || thisM;
+  const fHasta = document.getElementById('fin-filter-hasta')?.value || thisM;
+  const D      = calcFinanzasData(fa, fDesde, fHasta);
+
+  // Reservas
+  let csv = 'RESERVAS\n';
+  csv += 'Alojamiento;Huésped;Teléfono;Entrada;Salida;Noches;Personas;Costo $;Seña $;Origen;Estado\n';
+  D.activeRes.sort((a,b)=>a.entrada>b.entrada?1:-1).forEach(r => {
+    const a = getAloj(r.alojId);
+    csv += [esc(a?.nombre||'?'),esc(r.nombre),esc(r.tel),esc(r.entrada),esc(r.salida),
+      esc(daysBetween(r.entrada,r.salida)),esc(r.personas),esc(r.costo||0),esc(r.senia||0),esc(r.origen),esc(r.estado)].join(';')+'\n';
+  });
+
+  // Gastos
+  csv += '\nGASTOS\n';
+  csv += 'Fecha;Alojamiento;Concepto;Categoría;Monto $\n';
+  D.activeGas.sort((a,b)=>a.fecha>b.fecha?1:-1).forEach(g => {
+    const a = g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};
+    csv += [esc(g.fecha),esc(a.nombre),esc(g.concepto),esc(g.cat),esc(g.monto||0)].join(';')+'\n';
+  });
+
+  // Resumen
+  csv += '\nRESUMEN POR DEPARTAMENTO\n';
+  csv += 'Departamento;Ingresos;Gastos;Ganancia;Días ocupados;% Ocupación\n';
+  D.byAloj.forEach(a => {
+    csv += [esc(a.nombre),esc(a.ing),esc(a.gas),esc(a.gan),esc(a.diasOcup),esc(a.pctOcup+'%')].join(';')+'\n';
+  });
+
+  csv += `\nTOTAL;${esc(D.ingTotal)};${esc(D.gasTotal)};${esc(D.gan)}\n`;
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `finanzas_${fecha}.csv`);
+  toast('Finanzas exportadas ✓', 'success');
+};
+
+  // Rango de fechas del período seleccionado
+  const fechaDesde = fDesde + '-01';
+  const lastDay    = new Date(parseInt(fHasta.split('-')[0]), parseInt(fHasta.split('-')[1]), 0).getDate();
+  const fechaHasta = fHasta + '-' + String(lastDay).padStart(2,'0');
+
+  // Días totales del período
+  const diasPeriodo = Math.round((new Date(fechaHasta) - new Date(fechaDesde)) / 86400000) + 1;
 
   let activeRes = reservas.filter(r => r.estado !== 'cancelada');
   let activeGas = [...gastos];
@@ -2102,66 +2657,149 @@ function renderFinanzas() {
     activeRes = activeRes.filter(r => r.alojId === fa);
     activeGas = activeGas.filter(g => g.alojId === fa || g.alojId === 'general');
   }
-  // Filtro por mes
-  if (fm) {
-    activeRes = activeRes.filter(r => r.entrada?.startsWith(fm) || r.salida?.startsWith(fm));
-    activeGas = activeGas.filter(g => g.fecha?.startsWith(fm));
-  }
+
+  // Filtro por período — reserva toca el período si se solapa
+  activeRes = activeRes.filter(r => r.entrada <= fechaHasta && r.salida > fechaDesde);
+  activeGas = activeGas.filter(g => g.fecha >= fechaDesde && g.fecha <= fechaHasta);
 
   const ingTotal = activeRes.reduce((s,r) => s+(r.costo||0), 0);
   const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
-  const gan = ingTotal - gasTotal;
+  const gan      = ingTotal - gasTotal;
 
-  // Resumen por alojamiento (siempre muestra todos, sin filtro de mes para el resumen)
-  const allActiveRes = reservas.filter(r => r.estado !== 'cancelada');
-  const byAloj = alojamientos.map(a => ({
-    ...a,
-    ing: allActiveRes.filter(r => r.alojId === a.id).reduce((s,r) => s+(r.costo||0), 0),
-    gas: gastos.filter(g => g.alojId === a.id).reduce((s,g) => s+(g.monto||0), 0)
-  })).map(a => ({...a, gan: a.ing - a.gas}));
+  // ── Resumen por alojamiento (respeta filtros) ──
+  const byAloj = alojamientos.map(a => {
+    const resA = activeRes.filter(r => r.alojId === a.id);
+    const gasA = activeGas.filter(g => g.alojId === a.id);
+    const ing  = resA.reduce((s,r) => s+(r.costo||0), 0);
+    const gas  = gasA.reduce((s,g) => s+(g.monto||0), 0);
+
+    // Días ocupados en el período
+    let diasOcup = 0;
+    resA.forEach(r => {
+      const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
+      const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
+      const d   = Math.round((new Date(fin) - new Date(ini)) / 86400000);
+      if (d > 0) diasOcup += d;
+    });
+    const pctOcup = diasPeriodo > 0 ? Math.min(100, Math.round(diasOcup / diasPeriodo * 100)) : 0;
+
+    return { ...a, ing, gas, gan: ing-gas, diasOcup, pctOcup };
+  });
+
+  // ── Orígenes ──
+  const origenMap = { particular:'👤 Particular', booking:'🌐 Booking', airbnb:'🏠 Airbnb', otros:'📌 Otros' };
+  const origenCount = {};
+  activeRes.forEach(r => {
+    const o = r.origen || 'otros';
+    origenCount[o] = (origenCount[o]||0) + 1;
+  });
+  const totalRes = activeRes.length || 1;
+
+  // ── Período label ──
+  const fmtMes = iso => {
+    const [y,m] = iso.split('-');
+    return `${MONTHS_ES[parseInt(m)-1]} ${y}`;
+  };
+  const periodoLabel = fDesde===fHasta ? fmtMes(fDesde) : `${fmtMes(fDesde)} → ${fmtMes(fHasta)}`;
+  const alojLabel    = fa ? (alojamientos.find(a=>a.id===fa)?.nombre || '') : '';
 
   const fg = [...activeGas].sort((a,b) => b.fecha > a.fecha ? 1 : -1);
-  const alojLabel = fa ? (alojamientos.find(a=>a.id===fa)?.nombre || 'General') : 'Todos';
 
   document.getElementById('finanzas-content').innerHTML = `
-  <div class="card" style="margin-bottom:20px;">
-    <div class="filter-row" style="margin-bottom:0;">
-      <div style="font-size:.82rem;color:var(--text2);font-weight:500;align-self:center;white-space:nowrap;">Filtrar por:</div>
+
+  <!-- FILTROS -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="filter-row" style="margin-bottom:0;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:.82rem;color:var(--text2);font-weight:500;align-self:center;white-space:nowrap;">Filtrar:</div>
       <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;">
         <option value="">Todos los departamentos</option>
-        ${alojamientos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')}
+        ${alojamientos.map(a=>`<option value="${a.id}" ${fa===a.id?'selected':''}>${a.nombre}</option>`).join('')}
       </select>
-      <input type="month" class="form-control" id="fin-filter-mes" onchange="renderFinanzas()" style="width:auto;">
-      ${fa||fm ? `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('fin-filter-aloj').value='';document.getElementById('fin-filter-mes').value='';renderFinanzas()">✕ Limpiar</button>` : ''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="font-size:.8rem;color:var(--text2);">Desde</label>
+        <input type="month" class="form-control" id="fin-filter-desde" value="${fDesde}" onchange="renderFinanzas()" style="width:auto;">
+        <label style="font-size:.8rem;color:var(--text2);">Hasta</label>
+        <input type="month" class="form-control" id="fin-filter-hasta" value="${fHasta}" onchange="renderFinanzas()" style="width:auto;">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="
+        document.getElementById('fin-filter-aloj').value='';
+        document.getElementById('fin-filter-desde').value='${thisM}';
+        document.getElementById('fin-filter-hasta').value='${thisM}';
+        renderFinanzas()">↺ Mes actual</button>
     </div>
-    ${fa||fm ? `<div style="margin-top:10px;font-size:.8rem;color:var(--text2);">Mostrando: <strong style="color:var(--text);">${alojLabel}${fm?' · '+fm:''}</strong></div>` : ''}
+    <div style="margin-top:8px;font-size:.8rem;color:var(--text2);">
+      Período: <strong style="color:var(--text);">${periodoLabel}${alojLabel?' · '+alojLabel:''}</strong>
+      · <span>${diasPeriodo} días</span>
+      · <span>${activeRes.length} reserva${activeRes.length!==1?'s':''}</span>
+    </div>
   </div>
 
-  <div class="grid-3" style="margin-bottom:20px;">
-    <div class="stat-card" style="--ac:var(--accent3)"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Ingresos${fa?' ('+alojLabel+')':''}</div></div>
-    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(gasTotal)}</div><div class="stat-label">Gastos${fa?' ('+alojLabel+')':''}</div></div>
+  <!-- TOTALES -->
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="stat-card" style="--ac:#059669"><div class="stat-value">${fmtMoney(ingTotal)}</div><div class="stat-label">Ingresos del período</div></div>
+    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(gasTotal)}</div><div class="stat-label">Gastos del período</div></div>
     <div class="stat-card" style="--ac:${gan>=0?'#059669':'var(--danger)'}">
       <div class="stat-value" style="color:${gan>=0?'#059669':'var(--danger)'};">${fmtMoney(gan)}</div>
-      <div class="stat-label">Ganancia Neta${fa?' ('+alojLabel+')':''}</div>
+      <div class="stat-label">Ganancia Neta</div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">Resumen por Departamento</span></div>
+  <!-- RESUMEN POR DEPARTAMENTO + OCUPACIÓN -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">📊 Resumen por Departamento</span></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th></tr></thead>
+      <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Días ocup.</th><th>Ocupación</th></tr></thead>
       <tbody>${byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
-        <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre}</strong>${fa===a.id?' <span class="badge badge-purple" style="font-size:.65rem;">filtrado</span>':''}</div></td>
+        <td><div style="display:flex;align-items:center;gap:7px;">
+          <div class="color-dot" style="background:${a.color}"></div>
+          <strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong>
+        </div></td>
         <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
         <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}</td>
         <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
+        <td style="font-size:.85rem;">${a.diasOcup} / ${diasPeriodo} días</td>
+        <td style="min-width:120px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
+              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:4px;"></div>
+            </div>
+            <span style="font-size:.8rem;font-weight:700;color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</span>
+          </div>
+        </td>
       </tr>`).join('')}</tbody>
     </table></div>
   </div>
 
+  <!-- ORÍGENES -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">🌐 Orígenes de Reservas</span></div>
+    ${activeRes.length === 0
+      ? `<div style="text-align:center;color:var(--text2);padding:20px;">Sin reservas en el período</div>`
+      : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:4px;">
+        ${Object.entries(origenMap).map(([key,label])=>{
+          const cnt  = origenCount[key]||0;
+          const pct  = Math.round(cnt/totalRes*100);
+          const cols = {particular:'#6d40c4',booking:'#2563eb',airbnb:'#f97316',otros:'#6b7280'};
+          const color= cols[key]||'#888';
+          return `<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;border:1px solid var(--border);">
+            <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">${label}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width .4s;"></div>
+              </div>
+              <span style="font-size:.85rem;font-weight:700;color:${color};min-width:36px;text-align:right;">${pct}%</span>
+            </div>
+            <div style="font-size:.75rem;color:var(--text2);margin-top:3px;">${cnt} reserva${cnt!==1?'s':''}</div>
+          </div>`;
+        }).join('')}
+      </div>`
+    }
+  </div>
+
+  <!-- GASTOS -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Gastos Registrados${fa?' — '+alojLabel:''}</span>
+      <span class="card-title">💸 Gastos del Período</span>
       ${hasPerm('fin-edit')?`<button class="btn btn-primary btn-sm" onclick="openGastoModal()">+ Gasto</button>`:''}
     </div>
     ${fg.length ? `<div class="table-wrap"><table>
@@ -2176,11 +2814,8 @@ function renderFinanzas() {
           <td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td>
         </tr>`;}).join('')}
       </tbody></table></div>`
-    : `<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos${fa?' para '+alojLabel:''}</div>`}
+    : `<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos en el período seleccionado</div>`}
   </div>`;
-
-  if (fa) document.getElementById('fin-filter-aloj').value = fa;
-  if (fm) document.getElementById('fin-filter-mes').value  = fm;
 }
 
 // ══════════════════════════════════════════
@@ -2336,22 +2971,181 @@ window.savePermisos = async function() {
 // ══════════════════════════════════════════
 // EXPORTAR
 // ══════════════════════════════════════════
-window.exportToSheets = function() {
-  if(!hasPerm('fin-export')){toast('Sin permiso para exportar','error');return;}
-  const activeRes=reservas.filter(r=>r.estado!=='cancelada');
-  let csv='RESERVAS\n';
-  csv+='Alojamiento,Huésped,Teléfono,DNI,Entrada,Salida,Noches,Personas,Costo,Origen,Mascota,Estado\n';
-  activeRes.forEach(r=>{const a=getAloj(r.alojId);csv+=`"${a?.nombre||'?'}","${r.nombre}","${r.tel}","${r.dni||''}","${r.entrada}","${r.salida}",${daysBetween(r.entrada,r.salida)},${r.personas},${r.costo||0},"${r.origen}","${r.mascota}","${r.estado}"\n`;});
-  csv+='\nGASTOS\nFecha,Alojamiento,Concepto,Categoría,Monto\n';
-  gastos.forEach(g=>{const a=g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};csv+=`"${g.fecha}","${a.nombre}","${g.concepto}","${g.cat}",${g.monto}\n`;});
-  csv+='\nRESUMEN\nAlojamiento,Ingresos,Gastos,Ganancia\n';
-  alojamientos.forEach(a=>{const i=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);const g=gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0);csv+=`"${a.nombre}",${i},${g},${i-g}\n`;});
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`AlojApp_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+// ══════════════════════════════════════════
+// EXPORTAR DATOS
+// ══════════════════════════════════════════
+function esc(val) {
+  // Escapar valor para CSV con ; como separador
+  const s = String(val ?? '').replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+function descargarCSV(contenido, nombre) {
+  const blob = new Blob(['\ufeff' + contenido], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nombre;
+  a.click();
   URL.revokeObjectURL(url);
-  setTimeout(()=>{window.open('https://sheets.new','_blank');toast('CSV descargado. Importalo con Archivo → Importar en Google Sheets','info');},500);
+}
+
+window.exportarReservas = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  const desde = document.getElementById('exp-desde')?.value || '';
+  const hasta = document.getElementById('exp-hasta')?.value || '';
+  const estado = document.getElementById('exp-estado')?.value || '';
+
+  let list = [...reservas];
+  if (desde) list = list.filter(r => r.entrada >= desde + '-01');
+  if (hasta) {
+    const lastDay = new Date(parseInt(hasta.split('-')[0]), parseInt(hasta.split('-')[1]), 0).getDate();
+    list = list.filter(r => r.salida <= hasta + '-' + String(lastDay).padStart(2,'0'));
+  }
+  if (estado) list = list.filter(r => r.estado === estado);
+  list.sort((a,b) => a.entrada > b.entrada ? 1 : -1);
+
+  let csv = 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
+  list.forEach(r => {
+    const a = getAloj(r.alojId);
+    const noches = daysBetween(r.entrada, r.salida);
+    csv += [
+      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
+      esc(r.entrada), esc(r.salida), esc(noches), esc(r.personas),
+      esc(r.mascota==='si'?'Sí':'No'),
+      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
+      esc(r.origen), esc(r.estado), esc(r.obs||'')
+    ].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `reservas_${fecha}.csv`);
+  toast(`${list.length} reservas exportadas ✓`, 'success');
 };
+
+window.exportarHuespedes = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  const list = [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
+
+  let csv = 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
+  list.forEach(h => {
+    const tel = h.tel || h.id;
+    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
+    csv += [
+      esc(h.nombre), esc(tel), esc(h.dni||''),
+      esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')
+    ].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `huespedes_${fecha}.csv`);
+  toast(`${list.length} huéspedes exportados ✓`, 'success');
+};
+
+window.exportarTodo = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  // Reservas
+  const activeRes = reservas.filter(r => r.estado !== 'cancelada')
+    .sort((a,b) => a.entrada > b.entrada ? 1 : -1);
+  let csv = 'RESERVAS\n';
+  csv += 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
+  activeRes.forEach(r => {
+    const a = getAloj(r.alojId);
+    csv += [
+      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
+      esc(r.entrada), esc(r.salida), esc(daysBetween(r.entrada,r.salida)),
+      esc(r.personas), esc(r.mascota==='si'?'Sí':'No'),
+      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
+      esc(r.origen), esc(r.estado), esc(r.obs||'')
+    ].join(';') + '\n';
+  });
+
+  // Huéspedes
+  csv += '\nHUÉSPEDES\n';
+  csv += 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
+  [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es')).forEach(h => {
+    const tel = h.tel || h.id;
+    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
+    csv += [esc(h.nombre), esc(tel), esc(h.dni||''), esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')].join(';') + '\n';
+  });
+
+  // Gastos
+  csv += '\nGASTOS\n';
+  csv += 'Fecha;Alojamiento;Concepto;Categoría;Monto $\n';
+  [...gastos].sort((a,b) => a.fecha > b.fecha ? 1 : -1).forEach(g => {
+    const a = g.alojId==='general' ? {nombre:'General'} : getAloj(g.alojId)||{nombre:'?'};
+    csv += [esc(g.fecha), esc(a.nombre), esc(g.concepto), esc(g.cat), esc(g.monto||0)].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `alojapp_completo_${fecha}.csv`);
+  toast('Exportación completa descargada ✓', 'success');
+};
+
+function renderExportar() {
+  const now   = new Date();
+  const thisM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const firstM= reservas.length
+    ? reservas.reduce((min,r) => r.entrada < min ? r.entrada : min, reservas[0].entrada||thisM).substring(0,7)
+    : thisM;
+
+  document.getElementById('exportar-content').innerHTML = `
+
+  <!-- EXPORTAR RESERVAS -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">📋 Exportar Reservas</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Filtrá por período y estado antes de exportar. El archivo CSV usa <strong>;</strong> como separador.</p>
+    <div class="filter-row" style="flex-wrap:wrap;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="font-size:.82rem;color:var(--text2);">Desde</label>
+        <input type="month" class="form-control" id="exp-desde" value="${firstM}" style="width:auto;">
+        <label style="font-size:.82rem;color:var(--text2);">Hasta</label>
+        <input type="month" class="form-control" id="exp-hasta" value="${thisM}" style="width:auto;">
+      </div>
+      <select class="form-control" id="exp-estado" style="width:auto;">
+        <option value="">Todos los estados</option>
+        <option value="confirmada">Confirmada</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="cancelada">Cancelada</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="exportarReservas()">⬇️ Descargar reservas.csv</button>
+      <span style="font-size:.8rem;color:var(--text2);">${reservas.length} reservas en total</span>
+    </div>
+    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
+      <strong>Columnas incluidas:</strong> Alojamiento · Huésped · Teléfono · DNI · Entrada · Salida · Noches · Personas · Mascota · Costo $ · Seña $ · Valor USD · Origen · Estado · Observaciones
+    </div>
+  </div>
+
+  <!-- EXPORTAR HUÉSPEDES -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">👥 Exportar Huéspedes</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Exporta el listado completo de huéspedes con su historial de estancias.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="exportarHuespedes()">⬇️ Descargar huespedes.csv</button>
+      <span style="font-size:.8rem;color:var(--text2);">${huespedes.length} huéspedes en total</span>
+    </div>
+    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
+      <strong>Columnas incluidas:</strong> Nombre · Teléfono · DNI · Evaluación · Cant. Reservas · Observaciones
+    </div>
+  </div>
+
+  <!-- EXPORTAR TODO -->
+  <div class="card" style="border:2px solid var(--accent);">
+    <div class="card-header"><span class="card-title">📦 Exportación Completa</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Descarga un único archivo con todas las reservas activas, huéspedes y gastos en hojas separadas.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="background:var(--accent);" onclick="exportarTodo()">⬇️ Descargar todo (completo.csv)</button>
+    </div>
+    <div style="margin-top:14px;background:#f5f3ff;border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--accent);">
+      💡 Para abrirlo en Excel o LibreOffice: Archivo → Abrir → elegí el CSV → seleccioná <strong>;</strong> como separador → Finalizar.
+    </div>
+  </div>`;
+}
+
+// Mantener acceso desde finanzas (alias)
+// window.exportToSheets ya definido arriba
 
 // ── Exponer renderFinanzas para onchange en HTML dinámico
 window.renderFinanzas = renderFinanzas;
@@ -2376,9 +3170,86 @@ if (APP_CONFIG.FIREBASE.apiKey === 'TU_API_KEY') {
 
 </script>
 
-<!-- Google APIs para Calendar -->
-<script src="https://accounts.google.com/gsi/client" async onload="gsiLoaded()"></script>
-<script src="https://apis.google.com/js/api.js" async onload="gapiLoaded()"></script>
+<!-- Google APIs para Calendar — carga controlada -->
+<script>
+// Cargamos los scripts de Google dinámicamente para garantizar el orden
+function loadScript(src, onload) {
+  const s = document.createElement('script');
+  s.src = src;
+  s.async = true;
+  s.defer = true;
+  s.onload = onload;
+  s.onerror = () => console.warn('Error cargando script:', src);
+  document.head.appendChild(s);
+}
+
+// Primero GSI (Identity Services)
+loadScript('https://accounts.google.com/gsi/client', () => {
+  console.log('GSI cargado');
+  window.gsiLoaded();
+});
+
+// Luego GAPI
+loadScript('https://apis.google.com/js/api.js', () => {
+  console.log('GAPI cargado');
+  window.gapiLoaded();
+});
+</script>
+
+<!-- PWA Service Worker — generado inline, sin archivo externo -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+const CACHE = 'alojapp-v2';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (
+    url.includes('firestore.googleapis.com') ||
+    url.includes('firebase') ||
+    url.includes('googleapis.com') ||
+    url.includes('accounts.google.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('gstatic.com')
+  ) return;
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});`;
+    const blob = new Blob([swCode], {type: 'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, {scope: './'})
+      .then(r => console.log('SW ok', r.scope))
+      .catch(e => {
+        // Fallback: intentar con archivo externo si existe
+        const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
+        navigator.serviceWorker.register(base + 'sw.js')
+          .then(r2 => console.log('SW externo ok', r2.scope))
+          .catch(e2 => console.log('SW no disponible'));
+      });
+  });
+}
+</script>
 
 </body>
 </html>
