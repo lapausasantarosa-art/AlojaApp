@@ -524,7 +524,6 @@ tr:hover td{background:#f9f7ff;}
     <div class="nav-label">Administración</div>
     <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
     <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
-    <div class="nav-item" id="nav-exportar" onclick="showPage('exportar')"><span class="icon">📥</span> Exportar datos</div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
     <div id="sidebar-avatar" class="sidebar-user-av">?</div>
@@ -594,7 +593,6 @@ tr:hover td{background:#f9f7ff;}
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
     <div id="page-mensajes" class="page"><div id="mensajes-content"></div></div>
-    <div id="page-exportar" class="page"><div id="exportar-content"></div></div>
   </div>
 </div>
 
@@ -1381,7 +1379,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1399,7 +1397,6 @@ window.showPage = function(page) {
     if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-primary" onclick="openPlantillaModal()">+ Nueva Plantilla</button>`;
     renderMensajes();
   }
-  else if(page==='exportar') renderExportar();
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
 window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
@@ -2335,311 +2332,14 @@ window.deleteGasto = async function(id) {
   await delDoc('gastos',id);
   toast('Gasto eliminado','success');
 };
-function calcFinanzasData(fa, fDesde, fHasta) {
-  const now    = new Date();
-  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const desde  = fDesde || thisM;
-  const hasta  = fHasta || thisM;
-  const fechaDesde = desde + '-01';
-  const lastDay    = new Date(parseInt(hasta.split('-')[0]), parseInt(hasta.split('-')[1]), 0).getDate();
-  const fechaHasta = hasta + '-' + String(lastDay).padStart(2,'0');
-  const diasPeriodo = Math.round((new Date(fechaHasta) - new Date(fechaDesde)) / 86400000) + 1;
-
-  let activeRes = reservas.filter(r => r.estado !== 'cancelada');
-  let activeGas = [...gastos];
-  if (fa) {
-    activeRes = activeRes.filter(r => r.alojId === fa);
-    activeGas = activeGas.filter(g => g.alojId === fa || g.alojId === 'general');
-  }
-  activeRes = activeRes.filter(r => r.entrada <= fechaHasta && r.salida > fechaDesde);
-  activeGas = activeGas.filter(g => g.fecha >= fechaDesde && g.fecha <= fechaHasta);
-
-  const ingTotal = activeRes.reduce((s,r) => s+(r.costo||0), 0);
-  const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
-
-  // Por mes (para gráfico de barras)
-  const meses = [];
-  const d0 = new Date(desde + '-01');
-  const d1 = new Date(hasta + '-01');
-  for (let d = new Date(d0); d <= d1; d.setMonth(d.getMonth()+1)) {
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const ing = activeRes.filter(r => r.entrada?.startsWith(key)||r.salida?.startsWith(key)).reduce((s,r)=>s+(r.costo||0),0);
-    const gas = activeGas.filter(g => g.fecha?.startsWith(key)).reduce((s,g)=>s+(g.monto||0),0);
-    meses.push({ key, label: MONTHS_ES[d.getMonth()].substring(0,3)+' '+d.getFullYear().toString().slice(2), ing, gas });
-  }
-
-  // Por categoría de gasto
-  const catMap = {};
-  activeGas.forEach(g => { catMap[g.cat||'Otros'] = (catMap[g.cat||'Otros']||0) + (g.monto||0); });
-
-  // Por alojamiento
-  const byAloj = alojamientos.map(a => {
-    const resA = activeRes.filter(r => r.alojId === a.id);
-    const gasA = activeGas.filter(g => g.alojId === a.id);
-    const ing  = resA.reduce((s,r) => s+(r.costo||0), 0);
-    const gas  = gasA.reduce((s,g) => s+(g.monto||0), 0);
-    let diasOcup = 0;
-    resA.forEach(r => {
-      const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
-      const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
-      const dd  = Math.round((new Date(fin) - new Date(ini)) / 86400000);
-      if (dd > 0) diasOcup += dd;
-    });
-    return { ...a, ing, gas, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
-  });
-
-  // Orígenes
-  const origenCount = {};
-  activeRes.forEach(r => { const o=r.origen||'otros'; origenCount[o]=(origenCount[o]||0)+1; });
-
-  return { activeRes, activeGas, ingTotal, gasTotal, gan: ingTotal-gasTotal, diasPeriodo, meses, catMap, byAloj, origenCount, fechaDesde, fechaHasta };
-}
-
 function renderFinanzas() {
-  const now    = new Date();
-  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const fa     = document.getElementById('fin-filter-aloj')?.value  || '';
-  const fDesde = document.getElementById('fin-filter-desde')?.value || thisM;
-  const fHasta = document.getElementById('fin-filter-hasta')?.value || thisM;
-  const tab    = document.getElementById('fin-tab-active')?.value   || 'resumen';
+  const now     = new Date();
+  const thisM   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-  const D = calcFinanzasData(fa, fDesde, fHasta);
-  const fmtMes = iso => { const [y,m]=iso.split('-'); return `${MONTHS_ES[parseInt(m)-1]} ${y}`; };
-  const periodoLabel = fDesde===fHasta ? fmtMes(fDesde) : `${fmtMes(fDesde)} → ${fmtMes(fHasta)}`;
-  const alojLabel    = fa ? (alojamientos.find(a=>a.id===fa)?.nombre||'') : '';
-  const fg           = [...D.activeGas].sort((a,b)=>b.fecha>a.fecha?1:-1);
-  const origenMap    = {particular:'👤 Particular',booking:'🌐 Booking',airbnb:'🏠 Airbnb',otros:'📌 Otros'};
-  const totalRes     = D.activeRes.length||1;
-
-  document.getElementById('finanzas-content').innerHTML = `
-  <input type="hidden" id="fin-tab-active" value="${tab}">
-
-  <!-- FILTROS -->
-  <div class="card" style="margin-bottom:14px;">
-    <div class="filter-row" style="margin-bottom:0;flex-wrap:wrap;gap:10px;">
-      <select class="form-control" id="fin-filter-aloj" onchange="renderFinanzas()" style="width:auto;">
-        <option value="">Todos los departamentos</option>
-        ${alojamientos.map(a=>`<option value="${a.id}" ${fa===a.id?'selected':''}>${a.nombre}</option>`).join('')}
-      </select>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <label style="font-size:.8rem;color:var(--text2);">Desde</label>
-        <input type="month" class="form-control" id="fin-filter-desde" value="${fDesde}" onchange="renderFinanzas()" style="width:auto;">
-        <label style="font-size:.8rem;color:var(--text2);">Hasta</label>
-        <input type="month" class="form-control" id="fin-filter-hasta" value="${fHasta}" onchange="renderFinanzas()" style="width:auto;">
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fin-filter-aloj').value='';document.getElementById('fin-filter-desde').value='${thisM}';document.getElementById('fin-filter-hasta').value='${thisM}';renderFinanzas()">↺ Mes actual</button>
-    </div>
-    <div style="margin-top:8px;font-size:.8rem;color:var(--text2);">
-      <strong style="color:var(--text);">${periodoLabel}${alojLabel?' · '+alojLabel:''}</strong>
-      · ${D.diasPeriodo} días · ${D.activeRes.length} reserva${D.activeRes.length!==1?'s':''}
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div class="grid-3" style="margin-bottom:14px;">
-    <div class="stat-card" style="--ac:#059669"><div class="stat-value">${fmtMoney(D.ingTotal)}</div><div class="stat-label">Ingresos</div></div>
-    <div class="stat-card" style="--ac:var(--danger)"><div class="stat-value">${fmtMoney(D.gasTotal)}</div><div class="stat-label">Gastos</div></div>
-    <div class="stat-card" style="--ac:${D.gan>=0?'#059669':'var(--danger)'}"><div class="stat-value" style="color:${D.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(D.gan)}</div><div class="stat-label">Ganancia Neta</div></div>
-  </div>
-
-  <!-- TABS -->
-  <div class="tabs" style="margin-bottom:14px;">
-    <button class="tab-btn ${tab==='resumen'?'active':''}" onclick="switchFinTab('resumen')">📋 Resumen</button>
-    <button class="tab-btn ${tab==='graficos'?'active':''}" onclick="switchFinTab('graficos')">📊 Gráficos</button>
-  </div>
-
-  <!-- TAB RESUMEN -->
-  <div id="fin-panel-resumen" style="${tab!=='resumen'?'display:none':''}">
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">📊 Resumen por Departamento</span></div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Días ocup.</th><th>Ocupación</th></tr></thead>
-        <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
-          <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
-          <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}</td>
-          <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
-          <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
-          <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
-            <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
-              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:4px;"></div>
-            </div>
-            <span style="font-size:.8rem;font-weight:700;color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</span>
-          </div></td>
-        </tr>`).join('')}</tbody>
-      </table></div>
-    </div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">🌐 Orígenes de Reservas</span></div>
-      ${D.activeRes.length===0?`<div style="text-align:center;color:var(--text2);padding:20px;">Sin reservas en el período</div>`
-      :`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-        ${Object.entries(origenMap).map(([key,label])=>{
-          const cnt=D.origenCount[key]||0, pct=Math.round(cnt/totalRes*100);
-          const cols={particular:'#6d40c4',booking:'#2563eb',airbnb:'#f97316',otros:'#6b7280'};
-          return `<div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border);">
-            <div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">${label}</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;">
-                <div style="width:${pct}%;height:100%;background:${cols[key]};border-radius:4px;"></div>
-              </div>
-              <span style="font-size:.85rem;font-weight:700;color:${cols[key]};">${pct}%</span>
-            </div>
-            <div style="font-size:.75rem;color:var(--text2);margin-top:3px;">${cnt} reserva${cnt!==1?'s':''}</div>
-          </div>`;}).join('')}
-      </div>`}
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">💸 Gastos del Período</span>
-        ${hasPerm('fin-edit')?`<button class="btn btn-primary btn-sm" onclick="openGastoModal()">+ Gasto</button>`:''}
-      </div>
-      ${fg.length?`<div class="table-wrap"><table>
-        <thead><tr><th>Fecha</th><th>Departamento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th></th></tr></thead>
-        <tbody>${fg.map(g=>{const a=g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
-          return`<tr><td>${fmt(g.fecha)}</td>
-            <td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div>${a.nombre}</div></td>
-            <td>${g.concepto}</td><td><span class="badge badge-blue">${g.cat}</span></td>
-            <td style="color:var(--danger);font-weight:600;">${fmtMoney(g.monto)}</td>
-            <td><div style="display:flex;gap:5px;">${hasPerm('fin-edit')?`<button class="btn btn-ghost btn-sm" onclick="openGastoModal('${g.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">🗑️</button>`:''}</div></td>
-          </tr>`;}).join('')}</tbody>
-      </table></div>`:`<div style="text-align:center;color:var(--text2);padding:30px;">Sin gastos en el período</div>`}
-    </div>
-  </div>
-
-  <!-- TAB GRÁFICOS -->
-  <div id="fin-panel-graficos" style="${tab!=='graficos'?'display:none':''}">
-    <!-- Ingresos vs Gastos por mes -->
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">📈 Ingresos vs Gastos por Mes</span></div>
-      ${D.meses.length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin datos</p>`:`
-      <div style="overflow-x:auto;">
-        <div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0;min-width:${D.meses.length*80}px;">
-          ${(()=>{
-            const maxV = Math.max(...D.meses.map(m=>Math.max(m.ing,m.gas)),1);
-            return D.meses.map(m=>`
-              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;">
-                <div style="display:flex;align-items:flex-end;gap:3px;height:120px;width:100%;">
-                  <div style="flex:1;background:#059669;border-radius:4px 4px 0 0;height:${Math.round(m.ing/maxV*100)}%;min-height:${m.ing>0?4:0}px;" title="Ing: ${fmtMoney(m.ing)}"></div>
-                  <div style="flex:1;background:#dc2626;border-radius:4px 4px 0 0;height:${Math.round(m.gas/maxV*100)}%;min-height:${m.gas>0?4:0}px;" title="Gas: ${fmtMoney(m.gas)}"></div>
-                </div>
-                <div style="font-size:.65rem;color:var(--text2);text-align:center;">${m.label}</div>
-              </div>`).join('');
-          })()}
-        </div>
-        <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
-          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>
-        </div>
-      </div>`}
-    </div>
-
-    <!-- Ingresos por departamento -->
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">🏠 Ingresos por Departamento</span></div>
-      ${D.byAloj.filter(a=>a.ing>0).length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin ingresos en el período</p>`:`
-      <div style="padding:4px 0;">
-        ${D.byAloj.filter(a=>a.ing>0).sort((a,b)=>b.ing-a.ing).map(a=>{
-          const pct=Math.round(a.ing/D.ingTotal*100);
-          return`<div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
-              <span style="font-weight:600;color:#059669;">${fmtMoney(a.ing)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
-            </div>
-            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${a.color};border-radius:5px;"></div>
-            </div>
-          </div>`;}).join('')}
-      </div>`}
-    </div>
-
-    <!-- Gastos por categoría -->
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">💸 Gastos por Categoría</span></div>
-      ${Object.keys(D.catMap).length===0?`<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>`:`
-      <div style="padding:4px 0;">
-        ${Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
-          const pct=Math.round(monto/D.gasTotal*100);
-          const catColors={'Mantenimiento':'#f97316','Limpieza':'#06b6d4','Servicios':'#8b5cf6','Impuestos':'#ef4444','Otros':'#6b7280'};
-          const col=catColors[cat]||'#6b7280';
-          return`<div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <span>${cat}</span>
-              <span style="font-weight:600;color:var(--danger);">${fmtMoney(monto)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
-            </div>
-            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${col};border-radius:5px;"></div>
-            </div>
-          </div>`;}).join('')}
-      </div>`}
-    </div>
-
-    <!-- Ocupación por departamento -->
-    <div class="card">
-      <div class="card-header"><span class="card-title">📅 Ocupación por Departamento</span></div>
-      <div style="padding:4px 0;">
-        ${D.byAloj.map(a=>`
-          <div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
-              <span style="font-size:.8rem;"><strong style="color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</strong> · ${a.diasOcup}/${D.diasPeriodo} días</span>
-            </div>
-            <div style="height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;">
-              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:6px;transition:width .5s;"></div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>
-  </div>`;
-}
-
-window.switchFinTab = function(tab) {
-  document.getElementById('fin-tab-active').value = tab;
-  document.getElementById('fin-panel-resumen').style.display  = tab==='resumen'  ? '' : 'none';
-  document.getElementById('fin-panel-graficos').style.display = tab==='graficos' ? '' : 'none';
-  document.querySelectorAll('.tabs .tab-btn').forEach((b,i)=>{
-    b.classList.toggle('active', (i===0&&tab==='resumen')||(i===1&&tab==='graficos'));
-  });
-};
-
-window.exportToSheets = function() {
-  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar','error'); return; }
-  const now    = new Date();
-  const thisM  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const fa     = document.getElementById('fin-filter-aloj')?.value  || '';
-  const fDesde = document.getElementById('fin-filter-desde')?.value || thisM;
-  const fHasta = document.getElementById('fin-filter-hasta')?.value || thisM;
-  const D      = calcFinanzasData(fa, fDesde, fHasta);
-
-  // Reservas
-  let csv = 'RESERVAS\n';
-  csv += 'Alojamiento;Huésped;Teléfono;Entrada;Salida;Noches;Personas;Costo $;Seña $;Origen;Estado\n';
-  D.activeRes.sort((a,b)=>a.entrada>b.entrada?1:-1).forEach(r => {
-    const a = getAloj(r.alojId);
-    csv += [esc(a?.nombre||'?'),esc(r.nombre),esc(r.tel),esc(r.entrada),esc(r.salida),
-      esc(daysBetween(r.entrada,r.salida)),esc(r.personas),esc(r.costo||0),esc(r.senia||0),esc(r.origen),esc(r.estado)].join(';')+'\n';
-  });
-
-  // Gastos
-  csv += '\nGASTOS\n';
-  csv += 'Fecha;Alojamiento;Concepto;Categoría;Monto $\n';
-  D.activeGas.sort((a,b)=>a.fecha>b.fecha?1:-1).forEach(g => {
-    const a = g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};
-    csv += [esc(g.fecha),esc(a.nombre),esc(g.concepto),esc(g.cat),esc(g.monto||0)].join(';')+'\n';
-  });
-
-  // Resumen
-  csv += '\nRESUMEN POR DEPARTAMENTO\n';
-  csv += 'Departamento;Ingresos;Gastos;Ganancia;Días ocupados;% Ocupación\n';
-  D.byAloj.forEach(a => {
-    csv += [esc(a.nombre),esc(a.ing),esc(a.gas),esc(a.gan),esc(a.diasOcup),esc(a.pctOcup+'%')].join(';')+'\n';
-  });
-
-  csv += `\nTOTAL;${esc(D.ingTotal)};${esc(D.gasTotal)};${esc(D.gan)}\n`;
-
-  const fecha = new Date().toISOString().split('T')[0];
-  descargarCSV(csv, `finanzas_${fecha}.csv`);
-  toast('Finanzas exportadas ✓', 'success');
-};
+  // Leer filtros — por defecto mes actual
+  const fa      = document.getElementById('fin-filter-aloj')?.value  || '';
+  const fDesde  = document.getElementById('fin-filter-desde')?.value || thisM;
+  const fHasta  = document.getElementById('fin-filter-hasta')?.value || thisM;
 
   // Rango de fechas del período seleccionado
   const fechaDesde = fDesde + '-01';
@@ -2971,181 +2671,22 @@ window.savePermisos = async function() {
 // ══════════════════════════════════════════
 // EXPORTAR
 // ══════════════════════════════════════════
-// ══════════════════════════════════════════
-// EXPORTAR DATOS
-// ══════════════════════════════════════════
-function esc(val) {
-  // Escapar valor para CSV con ; como separador
-  const s = String(val ?? '').replace(/"/g, '""');
-  return `"${s}"`;
-}
-
-function descargarCSV(contenido, nombre) {
-  const blob = new Blob(['\ufeff' + contenido], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = nombre;
-  a.click();
+window.exportToSheets = function() {
+  if(!hasPerm('fin-export')){toast('Sin permiso para exportar','error');return;}
+  const activeRes=reservas.filter(r=>r.estado!=='cancelada');
+  let csv='RESERVAS\n';
+  csv+='Alojamiento,Huésped,Teléfono,DNI,Entrada,Salida,Noches,Personas,Costo,Origen,Mascota,Estado\n';
+  activeRes.forEach(r=>{const a=getAloj(r.alojId);csv+=`"${a?.nombre||'?'}","${r.nombre}","${r.tel}","${r.dni||''}","${r.entrada}","${r.salida}",${daysBetween(r.entrada,r.salida)},${r.personas},${r.costo||0},"${r.origen}","${r.mascota}","${r.estado}"\n`;});
+  csv+='\nGASTOS\nFecha,Alojamiento,Concepto,Categoría,Monto\n';
+  gastos.forEach(g=>{const a=g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};csv+=`"${g.fecha}","${a.nombre}","${g.concepto}","${g.cat}",${g.monto}\n`;});
+  csv+='\nRESUMEN\nAlojamiento,Ingresos,Gastos,Ganancia\n';
+  alojamientos.forEach(a=>{const i=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);const g=gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0);csv+=`"${a.nombre}",${i},${g},${i-g}\n`;});
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`AlojApp_${new Date().toISOString().split('T')[0]}.csv`;a.click();
   URL.revokeObjectURL(url);
-}
-
-window.exportarReservas = function() {
-  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
-  const desde = document.getElementById('exp-desde')?.value || '';
-  const hasta = document.getElementById('exp-hasta')?.value || '';
-  const estado = document.getElementById('exp-estado')?.value || '';
-
-  let list = [...reservas];
-  if (desde) list = list.filter(r => r.entrada >= desde + '-01');
-  if (hasta) {
-    const lastDay = new Date(parseInt(hasta.split('-')[0]), parseInt(hasta.split('-')[1]), 0).getDate();
-    list = list.filter(r => r.salida <= hasta + '-' + String(lastDay).padStart(2,'0'));
-  }
-  if (estado) list = list.filter(r => r.estado === estado);
-  list.sort((a,b) => a.entrada > b.entrada ? 1 : -1);
-
-  let csv = 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
-  list.forEach(r => {
-    const a = getAloj(r.alojId);
-    const noches = daysBetween(r.entrada, r.salida);
-    csv += [
-      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
-      esc(r.entrada), esc(r.salida), esc(noches), esc(r.personas),
-      esc(r.mascota==='si'?'Sí':'No'),
-      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
-      esc(r.origen), esc(r.estado), esc(r.obs||'')
-    ].join(';') + '\n';
-  });
-
-  const fecha = new Date().toISOString().split('T')[0];
-  descargarCSV(csv, `reservas_${fecha}.csv`);
-  toast(`${list.length} reservas exportadas ✓`, 'success');
+  setTimeout(()=>{window.open('https://sheets.new','_blank');toast('CSV descargado. Importalo con Archivo → Importar en Google Sheets','info');},500);
 };
-
-window.exportarHuespedes = function() {
-  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
-  const list = [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
-
-  let csv = 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
-  list.forEach(h => {
-    const tel = h.tel || h.id;
-    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
-    csv += [
-      esc(h.nombre), esc(tel), esc(h.dni||''),
-      esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')
-    ].join(';') + '\n';
-  });
-
-  const fecha = new Date().toISOString().split('T')[0];
-  descargarCSV(csv, `huespedes_${fecha}.csv`);
-  toast(`${list.length} huéspedes exportados ✓`, 'success');
-};
-
-window.exportarTodo = function() {
-  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
-  // Reservas
-  const activeRes = reservas.filter(r => r.estado !== 'cancelada')
-    .sort((a,b) => a.entrada > b.entrada ? 1 : -1);
-  let csv = 'RESERVAS\n';
-  csv += 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
-  activeRes.forEach(r => {
-    const a = getAloj(r.alojId);
-    csv += [
-      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
-      esc(r.entrada), esc(r.salida), esc(daysBetween(r.entrada,r.salida)),
-      esc(r.personas), esc(r.mascota==='si'?'Sí':'No'),
-      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
-      esc(r.origen), esc(r.estado), esc(r.obs||'')
-    ].join(';') + '\n';
-  });
-
-  // Huéspedes
-  csv += '\nHUÉSPEDES\n';
-  csv += 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
-  [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es')).forEach(h => {
-    const tel = h.tel || h.id;
-    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
-    csv += [esc(h.nombre), esc(tel), esc(h.dni||''), esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')].join(';') + '\n';
-  });
-
-  // Gastos
-  csv += '\nGASTOS\n';
-  csv += 'Fecha;Alojamiento;Concepto;Categoría;Monto $\n';
-  [...gastos].sort((a,b) => a.fecha > b.fecha ? 1 : -1).forEach(g => {
-    const a = g.alojId==='general' ? {nombre:'General'} : getAloj(g.alojId)||{nombre:'?'};
-    csv += [esc(g.fecha), esc(a.nombre), esc(g.concepto), esc(g.cat), esc(g.monto||0)].join(';') + '\n';
-  });
-
-  const fecha = new Date().toISOString().split('T')[0];
-  descargarCSV(csv, `alojapp_completo_${fecha}.csv`);
-  toast('Exportación completa descargada ✓', 'success');
-};
-
-function renderExportar() {
-  const now   = new Date();
-  const thisM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const firstM= reservas.length
-    ? reservas.reduce((min,r) => r.entrada < min ? r.entrada : min, reservas[0].entrada||thisM).substring(0,7)
-    : thisM;
-
-  document.getElementById('exportar-content').innerHTML = `
-
-  <!-- EXPORTAR RESERVAS -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><span class="card-title">📋 Exportar Reservas</span></div>
-    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Filtrá por período y estado antes de exportar. El archivo CSV usa <strong>;</strong> como separador.</p>
-    <div class="filter-row" style="flex-wrap:wrap;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <label style="font-size:.82rem;color:var(--text2);">Desde</label>
-        <input type="month" class="form-control" id="exp-desde" value="${firstM}" style="width:auto;">
-        <label style="font-size:.82rem;color:var(--text2);">Hasta</label>
-        <input type="month" class="form-control" id="exp-hasta" value="${thisM}" style="width:auto;">
-      </div>
-      <select class="form-control" id="exp-estado" style="width:auto;">
-        <option value="">Todos los estados</option>
-        <option value="confirmada">Confirmada</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="cancelada">Cancelada</option>
-      </select>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="exportarReservas()">⬇️ Descargar reservas.csv</button>
-      <span style="font-size:.8rem;color:var(--text2);">${reservas.length} reservas en total</span>
-    </div>
-    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
-      <strong>Columnas incluidas:</strong> Alojamiento · Huésped · Teléfono · DNI · Entrada · Salida · Noches · Personas · Mascota · Costo $ · Seña $ · Valor USD · Origen · Estado · Observaciones
-    </div>
-  </div>
-
-  <!-- EXPORTAR HUÉSPEDES -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><span class="card-title">👥 Exportar Huéspedes</span></div>
-    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Exporta el listado completo de huéspedes con su historial de estancias.</p>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="exportarHuespedes()">⬇️ Descargar huespedes.csv</button>
-      <span style="font-size:.8rem;color:var(--text2);">${huespedes.length} huéspedes en total</span>
-    </div>
-    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
-      <strong>Columnas incluidas:</strong> Nombre · Teléfono · DNI · Evaluación · Cant. Reservas · Observaciones
-    </div>
-  </div>
-
-  <!-- EXPORTAR TODO -->
-  <div class="card" style="border:2px solid var(--accent);">
-    <div class="card-header"><span class="card-title">📦 Exportación Completa</span></div>
-    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Descarga un único archivo con todas las reservas activas, huéspedes y gastos en hojas separadas.</p>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-primary" style="background:var(--accent);" onclick="exportarTodo()">⬇️ Descargar todo (completo.csv)</button>
-    </div>
-    <div style="margin-top:14px;background:#f5f3ff;border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--accent);">
-      💡 Para abrirlo en Excel o LibreOffice: Archivo → Abrir → elegí el CSV → seleccioná <strong>;</strong> como separador → Finalizar.
-    </div>
-  </div>`;
-}
-
-// Mantener acceso desde finanzas (alias)
-// window.exportToSheets ya definido arriba
 
 // ── Exponer renderFinanzas para onchange en HTML dinámico
 window.renderFinanzas = renderFinanzas;
