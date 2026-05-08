@@ -1406,7 +1406,12 @@ window.irAReservasVigentes = function() {
   const sel = document.getElementById('res-filter-periodo');
   if (sel) { sel.value = 'activas'; renderReservas(); }
 };
-let calFilterAloj = ''; // persiste el filtro aunque se reconstruya el select
+let calFilterAloj = '';
+
+window.calNav = function(dir) {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  renderCalendar();
+};
 
 window.onCalFilterChange = function() {
   calFilterAloj = document.getElementById('cal-filter-aloj')?.value || '';
