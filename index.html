@@ -2038,7 +2038,7 @@ window.openHuespedModal = function(tel=null) {
     telInput.style.background = '';
     telInput.style.cursor     = '';
     telInput.title            = '';
-    telInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g,''); };
+    telInput.oninput = function() { this.value = this.value.replace(/[^0-9+]/g,'').replace(/(?!^)\+/g,''); };
     telLabel.innerHTML = 'Teléfono (clave) *';
   } else {
     telInput.readOnly         = true;
@@ -2072,7 +2072,7 @@ window.saveHuesped = async function() {
   const ev    =document.getElementById('huesped-eval').value;
   const obs   =document.getElementById('huesped-obs').value.trim();
   if(!nombre||!tel){toast('Nombre y teléfono requeridos','error');return;}
-  if(!/^[0-9]+$/.test(tel)){toast('El teléfono solo puede contener números','error');return;}
+  if(!/^\+?[0-9]+$/.test(tel)){toast('El teléfono solo puede contener números (y + al inicio)','error');return;}
   const docId    = telId||tel;
   const telFinal = (telId && !currentUser?.isAdmin) ? telId : tel;
   if(!telId&&huespedes.find(h=>h.id===tel||h.tel===tel)){toast('Ya existe un huésped con ese teléfono','error');return;}
