@@ -524,6 +524,7 @@ tr:hover td{background:#f9f7ff;}
     <div class="nav-label">Administración</div>
     <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
     <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
+    <div class="nav-item" id="nav-exportar" onclick="showPage('exportar')"><span class="icon">📥</span> Exportar datos</div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
     <div id="sidebar-avatar" class="sidebar-user-av">?</div>
@@ -593,6 +594,7 @@ tr:hover td{background:#f9f7ff;}
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
     <div id="page-mensajes" class="page"><div id="mensajes-content"></div></div>
+    <div id="page-exportar" class="page"><div id="exportar-content"></div></div>
   </div>
 </div>
 
@@ -1379,7 +1381,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1397,6 +1399,7 @@ window.showPage = function(page) {
     if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-primary" onclick="openPlantillaModal()">+ Nueva Plantilla</button>`;
     renderMensajes();
   }
+  else if(page==='exportar') renderExportar();
 };
 window.toggleSidebar = ()=>{ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); };
 window.closeSidebar  = ()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); };
@@ -2671,22 +2674,181 @@ window.savePermisos = async function() {
 // ══════════════════════════════════════════
 // EXPORTAR
 // ══════════════════════════════════════════
-window.exportToSheets = function() {
-  if(!hasPerm('fin-export')){toast('Sin permiso para exportar','error');return;}
-  const activeRes=reservas.filter(r=>r.estado!=='cancelada');
-  let csv='RESERVAS\n';
-  csv+='Alojamiento,Huésped,Teléfono,DNI,Entrada,Salida,Noches,Personas,Costo,Origen,Mascota,Estado\n';
-  activeRes.forEach(r=>{const a=getAloj(r.alojId);csv+=`"${a?.nombre||'?'}","${r.nombre}","${r.tel}","${r.dni||''}","${r.entrada}","${r.salida}",${daysBetween(r.entrada,r.salida)},${r.personas},${r.costo||0},"${r.origen}","${r.mascota}","${r.estado}"\n`;});
-  csv+='\nGASTOS\nFecha,Alojamiento,Concepto,Categoría,Monto\n';
-  gastos.forEach(g=>{const a=g.alojId==='general'?{nombre:'General'}:getAloj(g.alojId)||{nombre:'?'};csv+=`"${g.fecha}","${a.nombre}","${g.concepto}","${g.cat}",${g.monto}\n`;});
-  csv+='\nRESUMEN\nAlojamiento,Ingresos,Gastos,Ganancia\n';
-  alojamientos.forEach(a=>{const i=activeRes.filter(r=>r.alojId===a.id).reduce((s,r)=>s+(r.costo||0),0);const g=gastos.filter(g=>g.alojId===a.id).reduce((s,g)=>s+(g.monto||0),0);csv+=`"${a.nombre}",${i},${g},${i-g}\n`;});
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`AlojApp_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+// ══════════════════════════════════════════
+// EXPORTAR DATOS
+// ══════════════════════════════════════════
+function esc(val) {
+  // Escapar valor para CSV con ; como separador
+  const s = String(val ?? '').replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+function descargarCSV(contenido, nombre) {
+  const blob = new Blob(['\ufeff' + contenido], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nombre;
+  a.click();
   URL.revokeObjectURL(url);
-  setTimeout(()=>{window.open('https://sheets.new','_blank');toast('CSV descargado. Importalo con Archivo → Importar en Google Sheets','info');},500);
+}
+
+window.exportarReservas = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  const desde = document.getElementById('exp-desde')?.value || '';
+  const hasta = document.getElementById('exp-hasta')?.value || '';
+  const estado = document.getElementById('exp-estado')?.value || '';
+
+  let list = [...reservas];
+  if (desde) list = list.filter(r => r.entrada >= desde + '-01');
+  if (hasta) {
+    const lastDay = new Date(parseInt(hasta.split('-')[0]), parseInt(hasta.split('-')[1]), 0).getDate();
+    list = list.filter(r => r.salida <= hasta + '-' + String(lastDay).padStart(2,'0'));
+  }
+  if (estado) list = list.filter(r => r.estado === estado);
+  list.sort((a,b) => a.entrada > b.entrada ? 1 : -1);
+
+  let csv = 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
+  list.forEach(r => {
+    const a = getAloj(r.alojId);
+    const noches = daysBetween(r.entrada, r.salida);
+    csv += [
+      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
+      esc(r.entrada), esc(r.salida), esc(noches), esc(r.personas),
+      esc(r.mascota==='si'?'Sí':'No'),
+      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
+      esc(r.origen), esc(r.estado), esc(r.obs||'')
+    ].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `reservas_${fecha}.csv`);
+  toast(`${list.length} reservas exportadas ✓`, 'success');
 };
+
+window.exportarHuespedes = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  const list = [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
+
+  let csv = 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
+  list.forEach(h => {
+    const tel = h.tel || h.id;
+    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
+    csv += [
+      esc(h.nombre), esc(tel), esc(h.dni||''),
+      esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')
+    ].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `huespedes_${fecha}.csv`);
+  toast(`${list.length} huéspedes exportados ✓`, 'success');
+};
+
+window.exportarTodo = function() {
+  if (!hasPerm('fin-export')) { toast('Sin permiso para exportar', 'error'); return; }
+  // Reservas
+  const activeRes = reservas.filter(r => r.estado !== 'cancelada')
+    .sort((a,b) => a.entrada > b.entrada ? 1 : -1);
+  let csv = 'RESERVAS\n';
+  csv += 'Alojamiento;Huésped;Teléfono;DNI;Entrada;Salida;Noches;Personas;Mascota;Costo $;Seña $;Valor USD;Origen;Estado;Observaciones\n';
+  activeRes.forEach(r => {
+    const a = getAloj(r.alojId);
+    csv += [
+      esc(a?.nombre||'?'), esc(r.nombre), esc(r.tel), esc(r.dni||''),
+      esc(r.entrada), esc(r.salida), esc(daysBetween(r.entrada,r.salida)),
+      esc(r.personas), esc(r.mascota==='si'?'Sí':'No'),
+      esc(r.costo||0), esc(r.senia||0), esc(r.costoUsd||0),
+      esc(r.origen), esc(r.estado), esc(r.obs||'')
+    ].join(';') + '\n';
+  });
+
+  // Huéspedes
+  csv += '\nHUÉSPEDES\n';
+  csv += 'Nombre;Teléfono;DNI;Evaluación;Cant. Reservas;Observaciones\n';
+  [...huespedes].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es')).forEach(h => {
+    const tel = h.tel || h.id;
+    const rc  = reservas.filter(r => r.tel === tel && r.estado !== 'cancelada').length;
+    csv += [esc(h.nombre), esc(tel), esc(h.dni||''), esc(h.eval||'bueno'), esc(rc), esc(h.obs||'')].join(';') + '\n';
+  });
+
+  // Gastos
+  csv += '\nGASTOS\n';
+  csv += 'Fecha;Alojamiento;Concepto;Categoría;Monto $\n';
+  [...gastos].sort((a,b) => a.fecha > b.fecha ? 1 : -1).forEach(g => {
+    const a = g.alojId==='general' ? {nombre:'General'} : getAloj(g.alojId)||{nombre:'?'};
+    csv += [esc(g.fecha), esc(a.nombre), esc(g.concepto), esc(g.cat), esc(g.monto||0)].join(';') + '\n';
+  });
+
+  const fecha = new Date().toISOString().split('T')[0];
+  descargarCSV(csv, `alojapp_completo_${fecha}.csv`);
+  toast('Exportación completa descargada ✓', 'success');
+};
+
+function renderExportar() {
+  const now   = new Date();
+  const thisM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const firstM= reservas.length
+    ? reservas.reduce((min,r) => r.entrada < min ? r.entrada : min, reservas[0].entrada||thisM).substring(0,7)
+    : thisM;
+
+  document.getElementById('exportar-content').innerHTML = `
+
+  <!-- EXPORTAR RESERVAS -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">📋 Exportar Reservas</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Filtrá por período y estado antes de exportar. El archivo CSV usa <strong>;</strong> como separador.</p>
+    <div class="filter-row" style="flex-wrap:wrap;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="font-size:.82rem;color:var(--text2);">Desde</label>
+        <input type="month" class="form-control" id="exp-desde" value="${firstM}" style="width:auto;">
+        <label style="font-size:.82rem;color:var(--text2);">Hasta</label>
+        <input type="month" class="form-control" id="exp-hasta" value="${thisM}" style="width:auto;">
+      </div>
+      <select class="form-control" id="exp-estado" style="width:auto;">
+        <option value="">Todos los estados</option>
+        <option value="confirmada">Confirmada</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="cancelada">Cancelada</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="exportarReservas()">⬇️ Descargar reservas.csv</button>
+      <span style="font-size:.8rem;color:var(--text2);">${reservas.length} reservas en total</span>
+    </div>
+    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
+      <strong>Columnas incluidas:</strong> Alojamiento · Huésped · Teléfono · DNI · Entrada · Salida · Noches · Personas · Mascota · Costo $ · Seña $ · Valor USD · Origen · Estado · Observaciones
+    </div>
+  </div>
+
+  <!-- EXPORTAR HUÉSPEDES -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><span class="card-title">👥 Exportar Huéspedes</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Exporta el listado completo de huéspedes con su historial de estancias.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="exportarHuespedes()">⬇️ Descargar huespedes.csv</button>
+      <span style="font-size:.8rem;color:var(--text2);">${huespedes.length} huéspedes en total</span>
+    </div>
+    <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--text2);">
+      <strong>Columnas incluidas:</strong> Nombre · Teléfono · DNI · Evaluación · Cant. Reservas · Observaciones
+    </div>
+  </div>
+
+  <!-- EXPORTAR TODO -->
+  <div class="card" style="border:2px solid var(--accent);">
+    <div class="card-header"><span class="card-title">📦 Exportación Completa</span></div>
+    <p style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Descarga un único archivo con todas las reservas activas, huéspedes y gastos en hojas separadas.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="background:var(--accent);" onclick="exportarTodo()">⬇️ Descargar todo (completo.csv)</button>
+    </div>
+    <div style="margin-top:14px;background:#f5f3ff;border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--accent);">
+      💡 Para abrirlo en Excel o LibreOffice: Archivo → Abrir → elegí el CSV → seleccioná <strong>;</strong> como separador → Finalizar.
+    </div>
+  </div>`;
+}
+
+// Mantener acceso desde finanzas
+window.exportToSheets = exportarTodo;
 
 // ── Exponer renderFinanzas para onchange en HTML dinámico
 window.renderFinanzas = renderFinanzas;
