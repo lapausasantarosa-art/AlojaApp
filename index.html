@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"> 
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -788,7 +788,13 @@ tr:hover td{background:#f9f7ff;}
       <div class="perm-block"><div class="perm-block-title">💰 Finanzas</div>
         <div class="perm-item"><label for="p-fin-ver">Ver</label><label class="toggle"><input type="checkbox" id="p-fin-ver"><span class="toggle-slider"></span></label></div>
         <div class="perm-item"><label for="p-fin-edit">Agregar / Editar gastos</label><label class="toggle"><input type="checkbox" id="p-fin-edit"><span class="toggle-slider"></span></label></div>
-        <div class="perm-item"><label for="p-fin-export">Exportar a Sheets</label><label class="toggle"><input type="checkbox" id="p-fin-export"><span class="toggle-slider"></span></label></div>
+        <div class="perm-item"><label for="p-fin-export">Exportar datos</label><label class="toggle"><input type="checkbox" id="p-fin-export"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="perm-block"><div class="perm-block-title">⚙️ Administración</div>
+        <div class="perm-item">
+          <label for="p-admin-ver">Ver menú de Administración<br><span style="font-size:.72rem;color:var(--text2);">Usuarios, Mensajes WhatsApp, Exportar</span></label>
+          <label class="toggle"><input type="checkbox" id="p-admin-ver"><span class="toggle-slider"></span></label>
+        </div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-permisos')">Cancelar</button><button class="btn btn-primary" onclick="savePermisos()">💾 Guardar Permisos</button></div>
@@ -825,7 +831,7 @@ tr:hover td{background:#f9f7ff;}
       <div class="form-group">
         <label class="form-label">Mensaje *</label>
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">
-          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
+          Variables disponibles: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code> <code>{senia}</code> <code>{saldo}</code>
         </div>
         <textarea class="form-control" id="plantilla-texto" rows="10" placeholder="Escribí el mensaje..."></textarea>
       </div>
@@ -899,7 +905,8 @@ const ADMIN_PERMS = {
   'aloj-ver':true,'aloj-edit':true,'aloj-del':true,
   'res-ver':true,'res-edit':true,'res-del':true,
   'hues-ver':true,'hues-edit':true,'hues-del':true,
-  'fin-ver':true,'fin-edit':true,'fin-export':true,admin:true
+  'fin-ver':true,'fin-edit':true,'fin-export':true,
+  'admin-ver':true, admin:true
 };
 
 // ══════════════════════════════════════════
@@ -1354,10 +1361,17 @@ function hasPerm(p) {
   return userPerms?.[p]===true;
 }
 function applyPermissions() {
-  const map={'nav-dashboard':'dashboard','nav-calendario':'calendario','nav-alojamientos':'aloj-ver','nav-reservas':'res-ver','nav-huespedes':'hues-ver','nav-finanzas':'fin-ver'};
+  const map={
+    'nav-dashboard':'dashboard','nav-calendario':'calendario',
+    'nav-alojamientos':'aloj-ver','nav-reservas':'res-ver',
+    'nav-huespedes':'hues-ver','nav-finanzas':'fin-ver',
+    'nav-usuarios':'admin-ver','nav-mensajes':'admin-ver',
+    'nav-exportar':'fin-export'
+  };
   Object.entries(map).forEach(([id,p])=>{ const el=document.getElementById(id); if(el) el.style.display=hasPerm(p)?'':'none'; });
+  // Sección de administración: visible si es admin O tiene permiso admin-ver
   const adm=document.getElementById('nav-admin-section');
-  if(adm) adm.style.display=currentUser?.isAdmin?'':'none';
+  if(adm) adm.style.display=(currentUser?.isAdmin||hasPerm('admin-ver'))?'':'none';
 }
 
 // ══════════════════════════════════════════
@@ -1793,7 +1807,9 @@ window.showReservaDetail = function(id) {
     salida: fmt(r.salida),
     noches,
     personas: r.personas,
-    costo: r.costo
+    costo: r.costo,
+    senia: r.senia||0,
+    saldo: (r.costo||0) - (r.senia||0)
   };
 
   document.getElementById('res-detail-body').innerHTML=`
@@ -1837,13 +1853,15 @@ window.showReservaDetail = function(id) {
 // ══════════════════════════════════════════
 function buildWAMsg(texto, w) {
   return texto
-    .replace(/{nombre}/g, w.nombre)
-    .replace(/{aloj}/g, w.aloj)
-    .replace(/{clave}/g, w.clave || '—')
-    .replace(/{entrada}/g, w.entrada)
-    .replace(/{salida}/g, w.salida)
-    .replace(/{noches}/g, w.noches + (w.noches!==1?' noches':' noche'))
-    .replace(/{personas}/g, w.personas + (w.personas!==1?' personas':' persona'));
+    .replace(/{nombre}/g,   w.nombre)
+    .replace(/{aloj}/g,     w.aloj)
+    .replace(/{clave}/g,    w.clave || '—')
+    .replace(/{entrada}/g,  w.entrada)
+    .replace(/{salida}/g,   w.salida)
+    .replace(/{noches}/g,   w.noches + (w.noches!==1?' noches':' noche'))
+    .replace(/{personas}/g, w.personas + (w.personas!==1?' personas':' persona'))
+    .replace(/{senia}/g,    w.senia ? '$'+Number(w.senia).toLocaleString('es-AR') : '—')
+    .replace(/{saldo}/g,    w.saldo > 0 ? '$'+Number(w.saldo).toLocaleString('es-AR') : 'Saldo cancelado');
 }
 
 function formatTelWA(tel) {
@@ -1948,7 +1966,7 @@ function renderMensajes() {
       </div>
       <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.85rem;white-space:pre-wrap;line-height:1.6;color:var(--text);border:1px solid var(--border);">${p.texto}</div>
       <div style="margin-top:10px;font-size:.75rem;color:var(--text2);">
-        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code>
+        Variables: <code>{nombre}</code> <code>{aloj}</code> <code>{entrada}</code> <code>{salida}</code> <code>{noches}</code> <code>{personas}</code> <code>{clave}</code> <code>{senia}</code> <code>{saldo}</code>
       </div>
     </div>`).join('');
 }
@@ -2806,14 +2824,15 @@ window.openPermisosModal = function(email) {
   document.getElementById('perm-name').textContent=u.name||email;
   document.getElementById('perm-email-show').textContent=email;
   document.getElementById('modal-permisos-title').textContent=`Permisos — ${u.name||email}`;
+  const PERM_LIST = ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export','admin-ver'];
   const p=u.perms||{};
-  ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'].forEach(id=>{const el=document.getElementById('p-'+id);if(el)el.checked=!!p[id];});
+  PERM_LIST.forEach(id=>{const el=document.getElementById('p-'+id);if(el)el.checked=!!p[id];});
   openModal('modal-permisos');
 };
 window.savePermisos = async function() {
   const email=document.getElementById('perm-email-id').value;
   const newPerms={};
-  ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export'].forEach(id=>{const el=document.getElementById('p-'+id);if(el)newPerms[id]=el.checked;});
+  ['dashboard','calendario','aloj-ver','aloj-edit','aloj-del','res-ver','res-edit','res-del','hues-ver','hues-edit','hues-del','fin-ver','fin-edit','fin-export','admin-ver'].forEach(id=>{const el=document.getElementById('p-'+id);if(el)newPerms[id]=el.checked;});
   await upsertDoc('usuarios',email,{perms:newPerms});
   toast('Permisos guardados','success');
   closeModal('modal-permisos');
