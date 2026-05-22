@@ -2439,9 +2439,18 @@ function calcFinanzasData(fa, fDesde, fHasta) {
 
   // Orígenes
   const origenCount = {};
-  activeRes.forEach(r => { const o=r.origen||'otros'; origenCount[o]=(origenCount[o]||0)+1; });
+  const origenDias  = {};
+  activeRes.forEach(r => {
+    const o = r.origen||'otros';
+    origenCount[o] = (origenCount[o]||0) + 1;
+    // Días dentro del período
+    const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
+    const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
+    const dd  = Math.round((new Date(fin) - new Date(ini)) / 86400000);
+    origenDias[o] = (origenDias[o]||0) + Math.max(0, dd);
+  });
 
-  return { activeRes, activeGas, ingTotal, gasTotal, gan: ingTotal-gasTotal, diasPeriodo, meses, catMap, byAloj, origenCount, fechaDesde, fechaHasta };
+  return { activeRes, activeGas, ingTotal, gasTotal, gan: ingTotal-gasTotal, diasPeriodo, meses, catMap, byAloj, origenCount, origenDias, fechaDesde, fechaHasta };
 }
 
 function renderFinanzas() {
@@ -2523,15 +2532,20 @@ function renderFinanzas() {
       ${(()=>{
         if(D.activeRes.length===0) return '<div style="text-align:center;color:var(--text2);padding:20px;">Sin reservas en el período</div>';
         const origenItems = Object.entries(origenMap).map(([key,label]) => {
-          const cnt=D.origenCount[key]||0, pct=Math.round(cnt/totalRes*100);
-          const cols={particular:'#6d40c4',booking:'#2563eb',airbnb:'#f97316',otros:'#6b7280'};
-          const col=cols[key]||'#888';
+          const cnt  = D.origenCount[key]||0;
+          const dias = D.origenDias[key]||0;
+          const pct  = Math.round(cnt/totalRes*100);
+          const cols = {particular:'#6d40c4',booking:'#2563eb',airbnb:'#f97316',otros:'#6b7280'};
+          const col  = cols[key]||'#888';
           return '<div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border);">'
             +'<div style="font-size:.85rem;font-weight:600;margin-bottom:6px;">'+label+'</div>'
-            +'<div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;">'
+            +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;">'
             +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:4px;"></div></div>'
             +'<span style="font-size:.85rem;font-weight:700;color:'+col+';">'+pct+'%</span></div>'
-            +'<div style="font-size:.75rem;color:var(--text2);margin-top:3px;">'+cnt+' reserva'+(cnt!==1?'s':'')+'</div></div>';
+            +'<div style="font-size:.75rem;color:var(--text2);">'
+            +cnt+' reserva'+(cnt!==1?'s':'')+' · '
+            +'<strong style="color:'+col+';">'+dias+' día'+(dias!==1?'s':'')+'</strong>'
+            +'</div></div>';
         }).join('');
         return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">'+origenItems+'</div>';
       })()}
