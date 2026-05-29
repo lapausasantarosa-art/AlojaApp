@@ -2403,16 +2403,36 @@ function calcFinanzasData(fa, fDesde, fHasta) {
   activeRes = activeRes.filter(r => r.entrada <= fechaHasta && r.salida > fechaDesde);
   activeGas = activeGas.filter(g => g.fecha >= fechaDesde && g.fecha <= fechaHasta);
 
-  const ingTotal = activeRes.reduce((s,r) => s+(r.costo||0), 0);
+  // ── Helper: días de una reserva dentro de un rango de fechas ──
+  function diasEnRango(entrada, salida, desde, hasta) {
+    const ini = entrada < desde ? desde : entrada;
+    const fin = salida  > hasta ? hasta  : salida;
+    return Math.max(0, Math.round((new Date(fin) - new Date(ini)) / 86400000));
+  }
+
+  // ── Helper: ingreso prorrateado de una reserva dentro de un rango ──
+  function ingEnRango(r, desde, hasta) {
+    const totalDias = Math.round((new Date(r.salida) - new Date(r.entrada)) / 86400000);
+    if (totalDias <= 0) return 0;
+    const diasRango = diasEnRango(r.entrada, r.salida, desde, hasta);
+    return Math.round((r.costo||0) * diasRango / totalDias);
+  }
+
+  const ingTotal = activeRes.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
   const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
 
-  // Por mes (para gráfico de barras)
+  // Por mes — ingreso y días prorrateados por mes
   const meses = [];
   const d0 = new Date(desde + '-01');
   const d1 = new Date(hasta + '-01');
   for (let d = new Date(d0); d <= d1; d.setMonth(d.getMonth()+1)) {
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const ing = activeRes.filter(r => r.entrada?.startsWith(key)||r.salida?.startsWith(key)).reduce((s,r)=>s+(r.costo||0),0);
+    const mesDesde = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+    const lastD    = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    const mesHasta = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(lastD).padStart(2,'0')}`;
+    const key      = mesDesde.substring(0,7);
+    const ing = activeRes
+      .filter(r => r.entrada <= mesHasta && r.salida > mesDesde)
+      .reduce((s,r) => s + ingEnRango(r, mesDesde, mesHasta), 0);
     const gas = activeGas.filter(g => g.fecha?.startsWith(key)).reduce((s,g)=>s+(g.monto||0),0);
     meses.push({ key, label: MONTHS_ES[d.getMonth()].substring(0,3)+' '+d.getFullYear().toString().slice(2), ing, gas });
   }
@@ -2421,33 +2441,23 @@ function calcFinanzasData(fa, fDesde, fHasta) {
   const catMap = {};
   activeGas.forEach(g => { catMap[g.cat||'Otros'] = (catMap[g.cat||'Otros']||0) + (g.monto||0); });
 
-  // Por alojamiento
+  // Por alojamiento — ingresos y días prorrateados
   const byAloj = alojamientos.map(a => {
     const resA = activeRes.filter(r => r.alojId === a.id);
     const gasA = activeGas.filter(g => g.alojId === a.id);
-    const ing  = resA.reduce((s,r) => s+(r.costo||0), 0);
+    const ing  = resA.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
     const gas  = gasA.reduce((s,g) => s+(g.monto||0), 0);
-    let diasOcup = 0;
-    resA.forEach(r => {
-      const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
-      const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
-      const dd  = Math.round((new Date(fin) - new Date(ini)) / 86400000);
-      if (dd > 0) diasOcup += dd;
-    });
+    const diasOcup = resA.reduce((s,r) => s + diasEnRango(r.entrada, r.salida, fechaDesde, fechaHasta), 0);
     return { ...a, ing, gas, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
   });
 
-  // Orígenes
+  // Orígenes — días prorrateados dentro del período
   const origenCount = {};
   const origenDias  = {};
   activeRes.forEach(r => {
     const o = r.origen||'otros';
     origenCount[o] = (origenCount[o]||0) + 1;
-    // Días dentro del período
-    const ini = r.entrada < fechaDesde ? fechaDesde : r.entrada;
-    const fin = r.salida  > fechaHasta ? fechaHasta : r.salida;
-    const dd  = Math.round((new Date(fin) - new Date(ini)) / 86400000);
-    origenDias[o] = (origenDias[o]||0) + Math.max(0, dd);
+    origenDias[o]  = (origenDias[o]||0) + diasEnRango(r.entrada, r.salida, fechaDesde, fechaHasta);
   });
 
   return { activeRes, activeGas, ingTotal, gasTotal, gan: ingTotal-gasTotal, diasPeriodo, meses, catMap, byAloj, origenCount, origenDias, fechaDesde, fechaHasta };
