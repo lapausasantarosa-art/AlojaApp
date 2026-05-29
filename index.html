@@ -1292,16 +1292,18 @@ async function syncReservaToCalendar(r) {
     end:   {date: r.salida},
     colorId: getGCalColorId(aloj?.color),
     extendedProperties: {private: {alojappId: r.id}},
-    // Alerta a las 10:00 AM del día de entrada, solo si es más de 1 noche
-    reminders: noches > 1 ? {
+    // Alertas:
+    // 1) Día anterior a las 18:00 hs = 360 min antes de medianoche del día de entrada
+    //    = (24-18)*60 + 0 = 360 min antes del inicio del evento (que es medianoche)
+    //    En Google Calendar los eventos de día completo empiezan a las 00:00,
+    //    así que 18:00 del día anterior = 360 min antes del inicio
+    // 2) Día de entrada a las 10:00 AM = 600 min desde medianoche (solo si >1 noche)
+    reminders: {
       useDefault: false,
-      overrides: [{
-        method: 'popup',
-        // minutos desde el inicio del evento (medianoche) hasta las 10:00 AM = 600 min
-        minutes: 600
-      }]
-    } : {
-      useDefault: true
+      overrides: [
+        { method: 'popup', minutes: 360 },   // día anterior 18:00 hs
+        ...(noches > 1 ? [{ method: 'popup', minutes: 600 }] : [])  // día entrada 10:00 AM
+      ]
     }
   };
   try {
