@@ -518,6 +518,7 @@ tr:hover td{background:#f9f7ff;}
   <div class="nav-section">
     <div class="nav-label">Finanzas</div>
     <div class="nav-item" id="nav-finanzas" onclick="showPage('finanzas')"><span class="icon">💰</span> Ingresos & Gastos</div>
+    <div class="nav-item" id="nav-anual" onclick="showPage('anual')"><span class="icon">📅</span> Comparativa Anual</div>
     <div class="nav-item" onclick="exportToSheets()"><span class="icon">📊</span> Exportar a Sheets</div>
   </div>
   <div class="nav-section" id="nav-admin-section" style="display:none;">
@@ -592,6 +593,7 @@ tr:hover td{background:#f9f7ff;}
       <div id="huespedes-list"></div>
     </div>
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
+    <div id="page-anual"   class="page"><div id="anual-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
     <div id="page-mensajes" class="page"><div id="mensajes-content"></div></div>
     <div id="page-exportar" class="page"><div id="exportar-content"></div></div>
@@ -1366,7 +1368,7 @@ function applyPermissions() {
   const map={
     'nav-dashboard':'dashboard','nav-calendario':'calendario',
     'nav-alojamientos':'aloj-ver','nav-reservas':'res-ver',
-    'nav-huespedes':'hues-ver','nav-finanzas':'fin-ver',
+    'nav-huespedes':'hues-ver','nav-finanzas':'fin-ver','nav-anual':'fin-ver',
     'nav-usuarios':'admin-ver','nav-mensajes':'admin-ver',
     'nav-exportar':'fin-export'
   };
@@ -1428,7 +1430,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',anual:'Comparativa Anual',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1441,6 +1443,7 @@ window.showPage = function(page) {
   else if(page==='calendario'){renderCalendar();renderCalFilterOptions();}
   else if(page==='dashboard') renderDashboard();
   else if(page==='finanzas'){ renderFinanzas(); }
+  else if(page==='anual')   { renderAnual(); }
   else if(page==='usuarios')   renderUsuarios();
   else if(page==='mensajes'){
     if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-primary" onclick="openPlantillaModal()">+ Nueva Plantilla</button>`;
@@ -2523,7 +2526,6 @@ function renderFinanzas() {
   <div class="tabs fin-tabs" style="margin-bottom:14px;">
     <button class="tab-btn ${tab==='resumen'?'active':''}" onclick="switchFinTab('resumen')">📋 Resumen</button>
     <button class="tab-btn ${tab==='graficos'?'active':''}" onclick="switchFinTab('graficos')">📊 Gráficos</button>
-    <button class="tab-btn ${tab==='anual'?'active':''}" onclick="switchFinTab('anual')">📅 Comparativa Anual</button>
   </div>
 
   <!-- TAB RESUMEN -->
@@ -2597,110 +2599,6 @@ function renderFinanzas() {
       })()}
     </div>
   </div>
-  </div>
-
-  <!-- TAB ANUAL -->
-  <div id="fin-panel-anual" style="${tab!=='anual'?'display:none':''}">
-    ${(()=>{
-      const anioSel = document.getElementById('fin-anio-sel')?.value || String(new Date().getFullYear());
-      const anio    = parseInt(anioSel);
-      const anios   = [...new Set([
-        ...reservas.map(r=>r.entrada?.substring(0,4)),
-        ...gastos.map(g=>g.fecha?.substring(0,4)),
-        String(new Date().getFullYear())
-      ])].filter(Boolean).sort((a,b)=>b-a);
-
-      // Calcular los 12 meses del año seleccionado
-      const filas = [];
-      let totIng=0, totGas=0;
-      for(let m=1; m<=12; m++){
-        const mesStr  = `${anio}-${String(m).padStart(2,'0')}`;
-        const mDesde  = mesStr+'-01';
-        const lastD   = new Date(anio, m, 0).getDate();
-        const mHasta  = mesStr+'-'+String(lastD).padStart(2,'0');
-        const resM    = reservas.filter(r=>r.estado!=='cancelada'&&r.entrada<=mHasta&&r.salida>mDesde);
-        const gasM    = gastos.filter(g=>g.fecha?.startsWith(mesStr));
-        // Prorrateo de ingresos
-        const ing = resM.reduce((s,r)=>{
-          const tot=Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)||1;
-          const ini=r.entrada<mDesde?mDesde:r.entrada;
-          const fin=r.salida>mHasta?mHasta:r.salida;
-          const dd=Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
-          return s+Math.round((r.costo||0)*dd/tot);
-        },0);
-        const gas = gasM.reduce((s,g)=>s+(g.monto||0),0);
-        const gan = ing - gas;
-        totIng+=ing; totGas+=gas;
-        filas.push({mes:MONTHS_ES[m-1], ing, gas, gan, resM:resM.length});
-      }
-      const maxV = Math.max(...filas.map(f=>Math.max(f.ing,f.gas)),1);
-
-      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'
-        +'<label style="font-size:.85rem;color:var(--text2);font-weight:500;">Año:</label>'
-        +'<select class="form-control" id="fin-anio-sel" onchange="switchFinTab(\'anual\')" style="width:auto;">'
-        +anios.map(a=>`<option value="${a}" ${a===anioSel?'selected':''}>${a}</option>`).join('')
-        +'</select>'
-        +'<div style="font-size:.82rem;color:var(--text2);margin-left:auto;">Total ingresos: <strong style="color:#059669;">'+fmtMoney(totIng)+'</strong>'
-        +' · Total gastos: <strong style="color:var(--danger);">'+fmtMoney(totGas)+'</strong>'
-        +' · Ganancia: <strong style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</strong></div>'
-        +'</div>'
-
-        // Gráfico de barras agrupadas
-        +'<div class="card" style="margin-bottom:14px;">'
-        +'<div class="card-header"><span class="card-title">📈 Ingresos y Gastos '+anio+'</span></div>'
-        +'<div style="overflow-x:auto;padding:10px 0;">'
-        +'<div style="display:flex;align-items:flex-end;gap:4px;height:160px;min-width:600px;padding:0 8px;">'
-        +filas.map(f=>{
-          const hIng=Math.round(f.ing/maxV*130);
-          const hGas=Math.round(f.gas/maxV*130);
-          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:40px;">'
-            +'<div style="display:flex;align-items:flex-end;gap:2px;height:130px;">'
-            +'<div style="width:14px;background:#059669;border-radius:3px 3px 0 0;height:'+hIng+'px;min-height:'+(f.ing>0?2:0)+'px;" title="Ing: '+fmtMoney(f.ing)+'"></div>'
-            +'<div style="width:14px;background:#dc2626;border-radius:3px 3px 0 0;height:'+hGas+'px;min-height:'+(f.gas>0?2:0)+'px;" title="Gas: '+fmtMoney(f.gas)+'"></div>'
-            +'</div>'
-            +'<div style="font-size:.6rem;color:var(--text2);text-align:center;">'+f.mes.substring(0,3)+'</div>'
-            +'</div>';
-        }).join('')
-        +'</div>'
-        +'<div style="display:flex;gap:16px;justify-content:center;margin-top:4px;padding-bottom:4px;">'
-        +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>'
-        +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>'
-        +'</div>'
-        +'</div>'
-        +'</div>'
-
-        // Tabla mes a mes
-        +'<div class="card"><div class="card-header"><span class="card-title">🗓️ Detalle Mensual '+anio+'</span></div>'
-        +'<div class="table-wrap"><table>'
-        +'<thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Reservas</th><th>%Margen</th></tr></thead>'
-        +'<tbody>'
-        +filas.map((f,i)=>{
-          const margen = f.ing>0 ? Math.round(f.gan/f.ing*100) : 0;
-          const mc     = f.gan>=0?'#059669':'var(--danger)';
-          const bg     = i%2===0?'':'background:#fafafa;';
-          return '<tr style="'+bg+'">'
-            +'<td style="font-weight:600;">'+f.mes+'</td>'
-            +'<td style="color:#059669;font-weight:600;">'+fmtMoney(f.ing)+'</td>'
-            +'<td style="color:var(--danger);">'+fmtMoney(f.gas)+'</td>'
-            +'<td style="font-weight:700;color:'+mc+';">'+fmtMoney(f.gan)+'</td>'
-            +'<td style="color:var(--text2);">'+f.resM+' res.</td>'
-            +'<td><div style="display:flex;align-items:center;gap:6px;">'
-            +(f.ing>0?'<div style="width:60px;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;">'
-              +'<div style="width:'+Math.min(100,Math.abs(margen))+'%;height:100%;background:'+mc+';border-radius:4px;"></div>'
-              +'</div><span style="font-size:.8rem;color:'+mc+';font-weight:600;">'+margen+'%</span>':'<span style="font-size:.78rem;color:var(--text2);">—</span>')
-            +'</div></td>'
-            +'</tr>';
-        }).join('')
-        +'<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
-        +'<td>TOTAL '+anio+'</td>'
-        +'<td style="color:#059669;">'+fmtMoney(totIng)+'</td>'
-        +'<td style="color:var(--danger);">'+fmtMoney(totGas)+'</td>'
-        +'<td style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</td>'
-        +'<td style="color:var(--text2);">'+filas.reduce((s,f)=>s+f.resM,0)+' res.</td>'
-        +'<td>'+(totIng>0?'<span style="font-weight:700;color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+Math.round((totIng-totGas)/totIng*100)+'%</span>':'—')+'</td>'
-        +'</tr>'
-        +'</tbody></table></div></div>';
-    })()}
   </div>
     <!-- Ingresos vs Gastos por mes -->
     <div class="card" style="margin-bottom:14px;">
@@ -2790,12 +2688,113 @@ window.switchFinTab = function(tab) {
   document.getElementById('fin-tab-active').value = tab;
   document.getElementById('fin-panel-resumen').style.display  = tab==='resumen'  ? '' : 'none';
   document.getElementById('fin-panel-graficos').style.display = tab==='graficos' ? '' : 'none';
-  document.getElementById('fin-panel-anual').style.display    = tab==='anual'    ? '' : 'none';
-  document.querySelectorAll('.fin-tabs .tab-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.includes(
-      tab==='resumen'?'Resumen':tab==='graficos'?'Gráficos':'Anual'));
+  document.querySelectorAll('.fin-tabs .tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active', (i===0&&tab==='resumen')||(i===1&&tab==='graficos'));
   });
 };
+
+function renderAnual() {
+  const el = document.getElementById('anual-content');
+  if (!el) return;
+
+  const anioSel = document.getElementById('fin-anio-sel')?.value || String(new Date().getFullYear());
+  const anio    = parseInt(anioSel);
+  const anios   = [...new Set([
+    ...reservas.map(r=>r.entrada?.substring(0,4)),
+    ...gastos.map(g=>g.fecha?.substring(0,4)),
+    String(new Date().getFullYear())
+  ])].filter(Boolean).sort((a,b)=>b-a);
+
+  const filas = [];
+  let totIng=0, totGas=0;
+  for(let m=1; m<=12; m++){
+    const mesStr = `${anio}-${String(m).padStart(2,'0')}`;
+    const mDesde = mesStr+'-01';
+    const lastD  = new Date(anio, m, 0).getDate();
+    const mHasta = mesStr+'-'+String(lastD).padStart(2,'0');
+    const resM   = reservas.filter(r=>r.estado!=='cancelada'&&r.entrada<=mHasta&&r.salida>mDesde);
+    const gasM   = gastos.filter(g=>g.fecha?.startsWith(mesStr));
+    const ing = resM.reduce((s,r)=>{
+      const tot=Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)||1;
+      const ini=r.entrada<mDesde?mDesde:r.entrada;
+      const fin=r.salida>mHasta?mHasta:r.salida;
+      const dd=Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
+      return s+Math.round((r.costo||0)*dd/tot);
+    },0);
+    const gas = gasM.reduce((s,g)=>s+(g.monto||0),0);
+    totIng+=ing; totGas+=gas;
+    filas.push({mes:MONTHS_ES[m-1], ing, gas, gan:ing-gas, resM:resM.length});
+  }
+  const maxV = Math.max(...filas.map(f=>Math.max(f.ing,f.gas)),1);
+
+  el.innerHTML =
+    // Selector de año
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'
+    +'<label style="font-size:.85rem;color:var(--text2);font-weight:500;">Año:</label>'
+    +'<select class="form-control" id="fin-anio-sel" onchange="renderAnual()" style="width:auto;">'
+    +anios.map(a=>`<option value="${a}" ${a===anioSel?'selected':''}>${a}</option>`).join('')
+    +'</select>'
+    +'<div style="font-size:.82rem;color:var(--text2);margin-left:auto;">'
+    +'Total ingresos: <strong style="color:#059669;">'+fmtMoney(totIng)+'</strong>'
+    +' · Total gastos: <strong style="color:var(--danger);">'+fmtMoney(totGas)+'</strong>'
+    +' · Ganancia: <strong style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</strong>'
+    +'</div></div>'
+
+    // Gráfico de barras
+    +'<div class="card" style="margin-bottom:16px;">'
+    +'<div class="card-header"><span class="card-title">📈 Ingresos y Gastos '+anio+'</span></div>'
+    +'<div style="overflow-x:auto;padding:10px 0;">'
+    +'<div style="display:flex;align-items:flex-end;gap:4px;height:170px;min-width:560px;padding:0 8px;">'
+    +filas.map(f=>{
+      const hIng=Math.round(f.ing/maxV*140);
+      const hGas=Math.round(f.gas/maxV*140);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:40px;">'
+        +'<div style="display:flex;align-items:flex-end;gap:2px;height:140px;">'
+        +'<div style="width:16px;background:#059669;border-radius:3px 3px 0 0;height:'+hIng+'px;min-height:'+(f.ing>0?3:0)+'px;" title="Ing: '+fmtMoney(f.ing)+'"></div>'
+        +'<div style="width:16px;background:#dc2626;border-radius:3px 3px 0 0;height:'+hGas+'px;min-height:'+(f.gas>0?3:0)+'px;" title="Gas: '+fmtMoney(f.gas)+'"></div>'
+        +'</div>'
+        +'<div style="font-size:.6rem;color:var(--text2);text-align:center;">'+f.mes.substring(0,3)+'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:16px;justify-content:center;margin-top:6px;padding-bottom:4px;">'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>'
+    +'</div></div></div>'
+
+    // Tabla mensual
+    +'<div class="card">'
+    +'<div class="card-header"><span class="card-title">🗓️ Detalle Mensual '+anio+'</span></div>'
+    +'<div class="table-wrap"><table>'
+    +'<thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Reservas</th><th>% Margen</th></tr></thead>'
+    +'<tbody>'
+    +filas.map((f,i)=>{
+      const margen = f.ing>0?Math.round(f.gan/f.ing*100):0;
+      const mc     = f.gan>=0?'#059669':'var(--danger)';
+      return '<tr style="'+(i%2===0?'':'background:#fafafa;')+'">'
+        +'<td style="font-weight:600;">'+f.mes+'</td>'
+        +'<td style="color:#059669;font-weight:600;">'+fmtMoney(f.ing)+'</td>'
+        +'<td style="color:var(--danger);">'+fmtMoney(f.gas)+'</td>'
+        +'<td style="font-weight:700;color:'+mc+';">'+fmtMoney(f.gan)+'</td>'
+        +'<td style="color:var(--text2);">'+f.resM+' res.</td>'
+        +'<td><div style="display:flex;align-items:center;gap:6px;">'
+        +(f.ing>0
+          ?'<div style="width:60px;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;">'
+           +'<div style="width:'+Math.min(100,Math.abs(margen))+'%;height:100%;background:'+mc+';border-radius:4px;"></div>'
+           +'</div><span style="font-size:.8rem;font-weight:600;color:'+mc+';">'+margen+'%</span>'
+          :'<span style="font-size:.78rem;color:var(--text2);">—</span>')
+        +'</div></td></tr>';
+    }).join('')
+    +'<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
+    +'<td>TOTAL '+anio+'</td>'
+    +'<td style="color:#059669;">'+fmtMoney(totIng)+'</td>'
+    +'<td style="color:var(--danger);">'+fmtMoney(totGas)+'</td>'
+    +'<td style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</td>'
+    +'<td style="color:var(--text2);">'+filas.reduce((s,f)=>s+f.resM,0)+' res.</td>'
+    +'<td>'+(totIng>0?'<span style="font-weight:700;color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+Math.round((totIng-totGas)/totIng*100)+'%</span>':'—')+'</td>'
+    +'</tr>'
+    +'</tbody></table></div></div>';
+}
 
 window.exportToSheets = function() {
   if (!hasPerm('fin-export')) { toast('Sin permiso para exportar','error'); return; }
