@@ -2443,14 +2443,21 @@ function calcFinanzasData(fa, fDesde, fHasta) {
   const catMap = {};
   activeGas.forEach(g => { catMap[g.cat||'Otros'] = (catMap[g.cat||'Otros']||0) + (g.monto||0); });
 
-  // Por alojamiento — ingresos y días prorrateados
+  // Por alojamiento — ingresos y días prorrateados, gastos directos + generales prorrateados
+  const gasGenerales = activeGas.filter(g => g.alojId === 'general');
+  const gasGenTotal  = gasGenerales.reduce((s,g) => s+(g.monto||0), 0);
+  const cantAloj     = alojamientos.length || 1;
+
   const byAloj = alojamientos.map(a => {
-    const resA = activeRes.filter(r => r.alojId === a.id);
-    const gasA = activeGas.filter(g => g.alojId === a.id);
-    const ing  = resA.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
-    const gas  = gasA.reduce((s,g) => s+(g.monto||0), 0);
+    const resA    = activeRes.filter(r => r.alojId === a.id);
+    const gasDir  = activeGas.filter(g => g.alojId === a.id);
+    const ing     = resA.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
+    const gasD    = gasDir.reduce((s,g) => s+(g.monto||0), 0);
+    // Gastos generales prorrateados en partes iguales entre departamentos
+    const gasProrr= Math.round(gasGenTotal / cantAloj);
+    const gas     = gasD + gasProrr;
     const diasOcup = resA.reduce((s,r) => s + diasEnRango(r.entrada, r.salida, fechaDesde, fechaHasta), 0);
-    return { ...a, ing, gas, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
+    return { ...a, ing, gas, gasD, gasProrr, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
   });
 
   // Orígenes — días prorrateados dentro del período
@@ -2513,9 +2520,10 @@ function renderFinanzas() {
   </div>
 
   <!-- TABS -->
-  <div class="tabs" style="margin-bottom:14px;">
+  <div class="tabs fin-tabs" style="margin-bottom:14px;">
     <button class="tab-btn ${tab==='resumen'?'active':''}" onclick="switchFinTab('resumen')">📋 Resumen</button>
     <button class="tab-btn ${tab==='graficos'?'active':''}" onclick="switchFinTab('graficos')">📊 Gráficos</button>
+    <button class="tab-btn ${tab==='anual'?'active':''}" onclick="switchFinTab('anual')">📅 Comparativa Anual</button>
   </div>
 
   <!-- TAB RESUMEN -->
@@ -2527,7 +2535,7 @@ function renderFinanzas() {
         <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
           <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
           <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}</td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?`<div style="font-size:.7rem;color:var(--text2);font-weight:400;">${fmtMoney(a.gasD)} propio + ${fmtMoney(a.gasProrr)} gral.</div>`:''}</td>
           <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
           <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
           <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
@@ -2536,7 +2544,15 @@ function renderFinanzas() {
             </div>
             <span style="font-size:.8rem;font-weight:700;color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</span>
           </div></td>
-        </tr>`).join('')}</tbody>
+        </tr>`).join('')}
+        <tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">
+          <td>TOTAL</td>
+          <td style="color:#059669;">${fmtMoney(D.byAloj.reduce((s,a)=>s+a.ing,0))}</td>
+          <td style="color:var(--danger);">${fmtMoney(D.gasTotal)}</td>
+          <td style="color:${D.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(D.gan)}</td>
+          <td colspan="2"></td>
+        </tr>
+        </tbody>
       </table></div>
     </div>
     <div class="card" style="margin-bottom:14px;">
@@ -2574,14 +2590,118 @@ function renderFinanzas() {
           const btns = hasPerm('fin-edit') ? '<button class="btn btn-ghost btn-sm" onclick="openGastoModal(\''+g.id+'\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto(\''+g.id+'\')">🗑️</button>' : '';
           return '<tr><td>'+fmt(g.fecha)+'</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:'+a.color+'"></div>'+a.nombre+'</div></td><td>'+g.concepto+'</td><td><span class="badge badge-blue">'+g.cat+'</span></td><td style="color:var(--danger);font-weight:600;">'+fmtMoney(g.monto)+'</td><td><div style="display:flex;gap:5px;">'+btns+'</div></td></tr>';
         }).join('');
-        return '<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Departamento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+        const totalRow = '<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
+          +'<td colspan="4" style="text-align:right;color:var(--text2);">TOTAL GASTOS</td>'
+          +'<td style="color:var(--danger);">'+fmtMoney(D.gasTotal)+'</td><td></td></tr>';
+        return '<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Departamento</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th></th></tr></thead><tbody>'+rows+totalRow+'</tbody></table></div>';
       })()}
     </div>
   </div>
   </div>
 
-  <!-- TAB GRÁFICOS -->
-  <div id="fin-panel-graficos" style="${tab!=='graficos'?'display:none':''}">
+  <!-- TAB ANUAL -->
+  <div id="fin-panel-anual" style="${tab!=='anual'?'display:none':''}">
+    ${(()=>{
+      const anioSel = document.getElementById('fin-anio-sel')?.value || String(new Date().getFullYear());
+      const anio    = parseInt(anioSel);
+      const anios   = [...new Set([
+        ...reservas.map(r=>r.entrada?.substring(0,4)),
+        ...gastos.map(g=>g.fecha?.substring(0,4)),
+        String(new Date().getFullYear())
+      ])].filter(Boolean).sort((a,b)=>b-a);
+
+      // Calcular los 12 meses del año seleccionado
+      const filas = [];
+      let totIng=0, totGas=0;
+      for(let m=1; m<=12; m++){
+        const mesStr  = `${anio}-${String(m).padStart(2,'0')}`;
+        const mDesde  = mesStr+'-01';
+        const lastD   = new Date(anio, m, 0).getDate();
+        const mHasta  = mesStr+'-'+String(lastD).padStart(2,'0');
+        const resM    = reservas.filter(r=>r.estado!=='cancelada'&&r.entrada<=mHasta&&r.salida>mDesde);
+        const gasM    = gastos.filter(g=>g.fecha?.startsWith(mesStr));
+        // Prorrateo de ingresos
+        const ing = resM.reduce((s,r)=>{
+          const tot=Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)||1;
+          const ini=r.entrada<mDesde?mDesde:r.entrada;
+          const fin=r.salida>mHasta?mHasta:r.salida;
+          const dd=Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
+          return s+Math.round((r.costo||0)*dd/tot);
+        },0);
+        const gas = gasM.reduce((s,g)=>s+(g.monto||0),0);
+        const gan = ing - gas;
+        totIng+=ing; totGas+=gas;
+        filas.push({mes:MONTHS_ES[m-1], ing, gas, gan, resM:resM.length});
+      }
+      const maxV = Math.max(...filas.map(f=>Math.max(f.ing,f.gas)),1);
+
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'
+        +'<label style="font-size:.85rem;color:var(--text2);font-weight:500;">Año:</label>'
+        +'<select class="form-control" id="fin-anio-sel" onchange="switchFinTab(\'anual\')" style="width:auto;">'
+        +anios.map(a=>`<option value="${a}" ${a===anioSel?'selected':''}>${a}</option>`).join('')
+        +'</select>'
+        +'<div style="font-size:.82rem;color:var(--text2);margin-left:auto;">Total ingresos: <strong style="color:#059669;">'+fmtMoney(totIng)+'</strong>'
+        +' · Total gastos: <strong style="color:var(--danger);">'+fmtMoney(totGas)+'</strong>'
+        +' · Ganancia: <strong style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</strong></div>'
+        +'</div>'
+
+        // Gráfico de barras agrupadas
+        +'<div class="card" style="margin-bottom:14px;">'
+        +'<div class="card-header"><span class="card-title">📈 Ingresos y Gastos '+anio+'</span></div>'
+        +'<div style="overflow-x:auto;padding:10px 0;">'
+        +'<div style="display:flex;align-items:flex-end;gap:4px;height:160px;min-width:600px;padding:0 8px;">'
+        +filas.map(f=>{
+          const hIng=Math.round(f.ing/maxV*130);
+          const hGas=Math.round(f.gas/maxV*130);
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:40px;">'
+            +'<div style="display:flex;align-items:flex-end;gap:2px;height:130px;">'
+            +'<div style="width:14px;background:#059669;border-radius:3px 3px 0 0;height:'+hIng+'px;min-height:'+(f.ing>0?2:0)+'px;" title="Ing: '+fmtMoney(f.ing)+'"></div>'
+            +'<div style="width:14px;background:#dc2626;border-radius:3px 3px 0 0;height:'+hGas+'px;min-height:'+(f.gas>0?2:0)+'px;" title="Gas: '+fmtMoney(f.gas)+'"></div>'
+            +'</div>'
+            +'<div style="font-size:.6rem;color:var(--text2);text-align:center;">'+f.mes.substring(0,3)+'</div>'
+            +'</div>';
+        }).join('')
+        +'</div>'
+        +'<div style="display:flex;gap:16px;justify-content:center;margin-top:4px;padding-bottom:4px;">'
+        +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>'
+        +'<div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>'
+        +'</div>'
+        +'</div>'
+        +'</div>'
+
+        // Tabla mes a mes
+        +'<div class="card"><div class="card-header"><span class="card-title">🗓️ Detalle Mensual '+anio+'</span></div>'
+        +'<div class="table-wrap"><table>'
+        +'<thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Reservas</th><th>%Margen</th></tr></thead>'
+        +'<tbody>'
+        +filas.map((f,i)=>{
+          const margen = f.ing>0 ? Math.round(f.gan/f.ing*100) : 0;
+          const mc     = f.gan>=0?'#059669':'var(--danger)';
+          const bg     = i%2===0?'':'background:#fafafa;';
+          return '<tr style="'+bg+'">'
+            +'<td style="font-weight:600;">'+f.mes+'</td>'
+            +'<td style="color:#059669;font-weight:600;">'+fmtMoney(f.ing)+'</td>'
+            +'<td style="color:var(--danger);">'+fmtMoney(f.gas)+'</td>'
+            +'<td style="font-weight:700;color:'+mc+';">'+fmtMoney(f.gan)+'</td>'
+            +'<td style="color:var(--text2);">'+f.resM+' res.</td>'
+            +'<td><div style="display:flex;align-items:center;gap:6px;">'
+            +(f.ing>0?'<div style="width:60px;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;">'
+              +'<div style="width:'+Math.min(100,Math.abs(margen))+'%;height:100%;background:'+mc+';border-radius:4px;"></div>'
+              +'</div><span style="font-size:.8rem;color:'+mc+';font-weight:600;">'+margen+'%</span>':'<span style="font-size:.78rem;color:var(--text2);">—</span>')
+            +'</div></td>'
+            +'</tr>';
+        }).join('')
+        +'<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
+        +'<td>TOTAL '+anio+'</td>'
+        +'<td style="color:#059669;">'+fmtMoney(totIng)+'</td>'
+        +'<td style="color:var(--danger);">'+fmtMoney(totGas)+'</td>'
+        +'<td style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</td>'
+        +'<td style="color:var(--text2);">'+filas.reduce((s,f)=>s+f.resM,0)+' res.</td>'
+        +'<td>'+(totIng>0?'<span style="font-weight:700;color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+Math.round((totIng-totGas)/totIng*100)+'%</span>':'—')+'</td>'
+        +'</tr>'
+        +'</tbody></table></div></div>';
+    })()}
+  </div>
     <!-- Ingresos vs Gastos por mes -->
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">📈 Ingresos vs Gastos por Mes</span></div>
@@ -2670,8 +2790,10 @@ window.switchFinTab = function(tab) {
   document.getElementById('fin-tab-active').value = tab;
   document.getElementById('fin-panel-resumen').style.display  = tab==='resumen'  ? '' : 'none';
   document.getElementById('fin-panel-graficos').style.display = tab==='graficos' ? '' : 'none';
-  document.querySelectorAll('.tabs .tab-btn').forEach((b,i)=>{
-    b.classList.toggle('active', (i===0&&tab==='resumen')||(i===1&&tab==='graficos'));
+  document.getElementById('fin-panel-anual').style.display    = tab==='anual'    ? '' : 'none';
+  document.querySelectorAll('.fin-tabs .tab-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(
+      tab==='resumen'?'Resumen':tab==='graficos'?'Gráficos':'Anual'));
   });
 };
 
