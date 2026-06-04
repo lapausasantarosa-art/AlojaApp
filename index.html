@@ -363,7 +363,19 @@ tr:hover td{background:#f9f7ff;}
 .confirm-msg{color:var(--text2);font-size:.9rem;margin-bottom:20px;}
 .confirm-btns{display:flex;gap:10px;justify-content:center;}
 
-/* ── GCAL BADGE ── */
+.badge-blocked{background:#fff0f0;color:#991b1b;border:1px solid #fecaca;}
+/* Evento bloqueado en calendario: color del depto + rayas rojas diagonales */
+.cal-event-blocked{
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(220,38,38,.55) 0px, rgba(220,38,38,.55) 3px,
+    transparent 3px, transparent 8px
+  ) !important;
+  border: 1px solid rgba(220,38,38,.5);
+  color: #fff !important;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0,0,0,.5);
+}
 .gcal-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
 .gcal-badge.error{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
 .gcal-badge.syncing{background:#eff6ff;color:#1e40af;border-color:#bfdbfe;}
@@ -575,6 +587,7 @@ tr:hover td{background:#f9f7ff;}
         <select class="form-control" id="res-filter-estado" onchange="renderReservas()">
           <option value="">Todos los estados</option><option value="confirmada">Confirmada</option>
           <option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option>
+          <option value="bloqueado">Bloqueado</option>
         </select>
         <select class="form-control" id="res-filter-periodo" onchange="renderReservas()" style="width:auto;">
           <option value="activas">Actuales y futuras</option>
@@ -636,7 +649,7 @@ tr:hover td{background:#f9f7ff;}
           <small id="res-aloj-info" style="color:var(--text2);font-size:.78rem;"></small>
         </div>
         <div class="form-group"><label class="form-label">Estado</label>
-          <select class="form-control" id="res-estado"><option value="confirmada">Confirmada</option><option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option></select>
+          <select class="form-control" id="res-estado" onchange="onEstadoChange()"><option value="confirmada">Confirmada</option><option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option><option value="bloqueado">🔒 Bloqueado</option></select>
         </div>
       </div>
       <div class="form-row">
@@ -700,7 +713,12 @@ tr:hover td{background:#f9f7ff;}
         <div class="form-group"><label class="form-label">¿Con mascota?</label><select class="form-control" id="res-mascota"><option value="no">No</option><option value="si">Sí</option></select></div>
         <div class="form-group"></div>
       </div>
-      <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="res-obs"></textarea></div>
+      <!-- Motivo (solo visible cuando estado=bloqueado) -->
+      <div class="form-group" id="res-motivo-group" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;">
+        <label class="form-label" style="color:#991b1b;">🔒 Motivo del bloqueo *</label>
+        <input type="text" class="form-control" id="res-motivo" placeholder="Ej: Mantenimiento, Reserva propia, Pintura...">
+      </div>
+      <div class="form-group" id="res-obs-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="res-obs"></textarea></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-reserva')">Cancelar</button><button class="btn btn-primary" onclick="saveReserva()">💾 Guardar Reserva</button></div>
   </div>
@@ -1584,6 +1602,7 @@ window.openReservaModal = function(id=null) {
   document.getElementById('res-id').value      =id||'';
   document.getElementById('res-aloj').value    =r?.alojId||'';
   document.getElementById('res-estado').value  =r?.estado||'confirmada';
+  document.getElementById('res-motivo').value  =r?.motivo||'';
   document.getElementById('res-entrada').value =r?.entrada||'';
   document.getElementById('res-salida').value  =r?.salida||'';
   document.getElementById('res-nombre').value  =r?.nombre||'';
@@ -1610,6 +1629,7 @@ window.openReservaModal = function(id=null) {
   // Ocultar buscador si es edición (ya tiene huésped cargado)
   document.getElementById('huesped-search-group').style.display = id ? 'none' : '';
   updateResAlojInfo();
+  onEstadoChange();
   openModal('modal-reserva');
 };
 
@@ -1726,7 +1746,18 @@ document.addEventListener('click', e => {
   }
 });
 
-function checkConflictos(alojId,entrada,salida,excludeId=null) {
+window.onEstadoChange = function() {
+  const estado = document.getElementById('res-estado').value;
+  const esBloqueado = estado === 'bloqueado';
+  // Mostrar/ocultar secciones según estado
+  document.getElementById('res-motivo-group').style.display  = esBloqueado ? '' : 'none';
+  document.getElementById('huesped-search-group').style.display = esBloqueado ? 'none' : (document.getElementById('res-id').value ? 'none' : '');
+  // Campos de huésped — ocultar si es bloqueo
+  ['res-nombre','res-tel','res-dni','res-personas','res-costo','res-costo-usd','res-senia','res-origen','res-mascota'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.closest('.form-group,.form-row')?.style && (el.parentElement.style.opacity = esBloqueado ? '.4' : '');
+  });
+};
   return reservas.filter(r=>{
     if(r.alojId!==alojId||r.estado==='cancelada') return false;
     if(excludeId&&r.id===excludeId) return false;
@@ -1749,23 +1780,42 @@ window.saveReserva = async function() {
   const mascota =document.getElementById('res-mascota').value;
   const senia   =parseFloat(document.getElementById('res-senia').value)||0;
   const obs     =document.getElementById('res-obs').value.trim();
-  if(!alojId||!entrada||!salida||!nombre||!tel){toast('Completá los campos obligatorios (*)','error');return;}
+  const motivo  =document.getElementById('res-motivo').value.trim();
+  const esBloqueado = estado === 'bloqueado';
+
+  if(!alojId||!entrada||!salida){toast('Completá alojamiento, entrada y salida (*)','error');return;}
+  if(!esBloqueado && (!nombre||!tel)){toast('Completá los campos obligatorios (*)','error');return;}
+  if(esBloqueado && !motivo){toast('Ingresá el motivo del bloqueo','error');return;}
   if(entrada>=salida){toast('La salida debe ser posterior a la entrada','error');return;}
   const aloj=getAloj(alojId);
-  if(personas>aloj.maxHuespedes){toast(`Máx. ${aloj.maxHuespedes} huéspedes para ${aloj.nombre}`,'error');return;}
+  if(!esBloqueado && personas>aloj.maxHuespedes){toast(`Máx. ${aloj.maxHuespedes} huéspedes para ${aloj.nombre}`,'error');return;}
   if(estado!=='cancelada'){
     const conf=checkConflictos(alojId,entrada,salida,id||null);
-    if(conf.length){toast(`Conflicto de fechas con reserva de ${conf[0].nombre}`,'error');return;}
+    if(conf.length){
+      const confNombre = conf[0].estado==='bloqueado' ? `bloqueo (${conf[0].motivo||'sin motivo'})` : `reserva de ${conf[0].nombre}`;
+      toast(`Conflicto de fechas con ${confNombre}`,'error');return;
+    }
   }
   const docId=id||getId();
   const existing=id?reservas.find(r=>r.id===id):null;
-  const data={alojId,estado,entrada,salida,nombre,tel,dni,personas,costo,costoUsd,senia,origen,mascota,obs,gcalEventId:existing?.gcalEventId||null};
+  const data={alojId,estado,entrada,salida,
+    nombre: esBloqueado ? '🔒 Bloqueado' : nombre,
+    tel: esBloqueado ? '' : tel,
+    dni: esBloqueado ? '' : dni,
+    personas: esBloqueado ? 0 : personas,
+    costo: esBloqueado ? 0 : costo,
+    costoUsd: esBloqueado ? 0 : costoUsd,
+    senia: esBloqueado ? 0 : senia,
+    origen: esBloqueado ? 'bloqueado' : origen,
+    mascota: esBloqueado ? 'no' : mascota,
+    motivo: esBloqueado ? motivo : '',
+    obs, gcalEventId:existing?.gcalEventId||null};
   setDbStatus('ing','Guardando…');
   await upsertDoc('reservas',docId,data);
   setDbStatus('ok','☁️ En línea');
   toast(id?'Reserva actualizada':'Reserva creada','success');
-  // Upsert huésped
-  await upsertHuespedCloud({nombre,tel,dni});
+  // Upsert huésped solo si no es bloqueo
+  if(!esBloqueado) await upsertHuespedCloud({nombre,tel,dni});
   closeModal('modal-reserva');
   // Sync Calendar
   const saved={id:docId,...data};
@@ -1797,9 +1847,10 @@ window.deleteReserva = async function(id) {
 window.showReservaDetail = function(id) {
   const r=reservas.find(r=>r.id===id);if(!r) return;
   const a=getAloj(r.alojId);
-  const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+  const eb={confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red',bloqueado:'badge-blocked'}[r.estado]||'badge-blue';
   const oi={particular:'👤',booking:'🌐',airbnb:'🏠',otros:'📌'}[r.origen]||'📌';
   const noches=daysBetween(r.entrada,r.salida);
+  const esBloqueado = r.estado === 'bloqueado';
 
   // Guardar datos para WhatsApp
   window._waReservaId = id;
@@ -1817,7 +1868,23 @@ window.showReservaDetail = function(id) {
     saldo: (r.costo||0) - (r.senia||0)
   };
 
-  document.getElementById('res-detail-body').innerHTML=`
+  document.getElementById('res-detail-body').innerHTML = esBloqueado ? `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div class="color-dot" style="background:${a?.color||'#888'}"></div>
+      <strong style="font-size:1.05rem;">${a?.nombre||'—'}</strong>
+      <span class="badge badge-blocked">🔒 Bloqueado</span>
+    </div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:.78rem;color:#991b1b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Motivo del bloqueo</div>
+      <div style="font-size:1rem;font-weight:600;color:#7f1d1d;">${r.motivo||'Sin motivo especificado'}</div>
+    </div>
+    <div class="grid-2" style="gap:12px;">
+      <div><div style="color:var(--text2);font-size:.78rem;">DESDE</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
+      <div><div style="color:var(--text2);font-size:.78rem;">HASTA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
+      <div><div style="color:var(--text2);font-size:.78rem;">DÍAS</div><div style="font-weight:600;">${noches}</div></div>
+    </div>
+    ${r.obs?'<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>':''}
+  ` : `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
       <div class="color-dot" style="background:${a?.color||'#888'}"></div>
       <strong style="font-size:1.05rem;">${a?.nombre||'—'}</strong>
@@ -1828,7 +1895,7 @@ window.showReservaDetail = function(id) {
       <div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
       <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${noches}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}${r.costoUsd?` <span style="font-size:.75rem;color:#16a34a;font-weight:600;">(USD ${r.costoUsd.toLocaleString('es-AR')})</span>`:''}</div></div>
+      <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}${r.costoUsd?' <span style="font-size:.75rem;color:#16a34a;font-weight:600;">(USD '+r.costoUsd.toLocaleString('es-AR')+')</span>':''}</div></div>
       ${r.senia?'<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">'+fmtMoney(r.senia)+' <span style="font-size:.72rem;color:var(--text2);">(resta '+fmtMoney((r.costo||0)-(r.senia||0))+')</span></div></div>':''}
     </div>
     <hr style="border-color:var(--border);margin-bottom:14px;">
@@ -1849,7 +1916,11 @@ window.showReservaDetail = function(id) {
           <span style="color:#065f46;font-weight:500;">💬 ${m.titulo}</span>
           <span style="color:var(--text2);font-size:.75rem;">${m.fecha}</span>
         </div>`).join('')}
-    </div>`:''}`;
+    </div>`:''}
+  `;
+  // Ocultar botón WhatsApp si es bloqueo
+  const waBtn = document.getElementById('btn-whatsapp-detail');
+  if (waBtn) waBtn.style.display = esBloqueado ? 'none' : '';
   openModal('modal-res-detail');
 };
 
@@ -2007,7 +2078,7 @@ function renderReservas() {
     // ── VISTA TARJETAS para celular ──
     el.innerHTML = list.map(r => {
       const a = getAloj(r.alojId);
-      const eb = {confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red'}[r.estado]||'badge-blue';
+      const eb = {confirmada:'badge-green',pendiente:'badge-yellow',cancelada:'badge-red',bloqueado:'badge-blocked'}[r.estado]||'badge-blue';
       const noches = daysBetween(r.entrada, r.salida);
       return `<div class="res-card" style="--rc:${a?.color||'#888'}">
         <div class="res-card-top">
@@ -2275,9 +2346,15 @@ function renderCalendar() {
     fRes.forEach(r => {
       if (date >= r.entrada && date < r.salida) {
         const a = getAloj(r.alojId);
+        const esBloqueado = r.estado === 'bloqueado';
         const mascota = r.mascota==='si' ? ' 🐾' : '';
         const personas = `${r.personas}p`;
-        if (isMobile) {
+        if (esBloqueado) {
+          const isEntrada = date === r.entrada;
+          events += `<div class="cal-event cal-event-blocked" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="🔒 Bloqueado: ${r.motivo||''}">
+            ${isEntrada ? '🔒 ' : '//'}${isMobile ? '' : (r.motivo||'Bloqueado').substring(0,10)}
+          </div>`;
+        } else if (isMobile) {
           const nombreCorto = r.nombre.split(' ')[0].substring(0,7);
           const isEntrada = date === r.entrada;
           events += `<div class="cal-event" style="background:${a?.color||'#888'};" onclick="showReservaDetail('${r.id}')" title="${r.nombre} · ${r.personas} pers.${mascota}">${isEntrada?'🔑 ':''}${nombreCorto} ${personas}${mascota}</div>`;
