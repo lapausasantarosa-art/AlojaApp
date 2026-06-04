@@ -3298,57 +3298,15 @@ loadScript('https://apis.google.com/js/api.js', () => {
 });
 </script>
 
-<!-- PWA Service Worker — generado inline, sin archivo externo -->
+<!-- PWA Service Worker — registro con ruta dinámica -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swCode = `
-const CACHE = 'alojapp-v2';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = e.request.url;
-  if (
-    url.includes('firestore.googleapis.com') ||
-    url.includes('firebase') ||
-    url.includes('googleapis.com') ||
-    url.includes('accounts.google.com') ||
-    url.includes('fonts.googleapis.com') ||
-    url.includes('gstatic.com')
-  ) return;
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      })
-      .catch(() => caches.match(e.request))
-  );
-});`;
-    const blob = new Blob([swCode], {type: 'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl, {scope: './'})
-      .then(r => console.log('SW ok', r.scope))
-      .catch(e => {
-        // Fallback: intentar con archivo externo si existe
-        const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
-        navigator.serviceWorker.register(base + 'sw.js')
-          .then(r2 => console.log('SW externo ok', r2.scope))
-          .catch(e2 => console.log('SW no disponible'));
-      });
+    // Usar ruta relativa para que funcione con cualquier nombre de repositorio
+    const swUrl = new URL('sw.js', window.location.href).href;
+    navigator.serviceWorker.register(swUrl)
+      .then(r => console.log('SW registrado:', r.scope))
+      .catch(e => console.log('SW no disponible:', e));
   });
 }
 </script>
