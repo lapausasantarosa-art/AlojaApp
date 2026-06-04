@@ -1749,15 +1749,23 @@ document.addEventListener('click', e => {
 window.onEstadoChange = function() {
   const estado = document.getElementById('res-estado').value;
   const esBloqueado = estado === 'bloqueado';
-  // Mostrar/ocultar secciones según estado
   document.getElementById('res-motivo-group').style.display  = esBloqueado ? '' : 'none';
   document.getElementById('huesped-search-group').style.display = esBloqueado ? 'none' : (document.getElementById('res-id').value ? 'none' : '');
-  // Campos de huésped — ocultar si es bloqueo
   ['res-nombre','res-tel','res-dni','res-personas','res-costo','res-costo-usd','res-senia','res-origen','res-mascota'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.closest('.form-group,.form-row')?.style && (el.parentElement.style.opacity = esBloqueado ? '.4' : '');
+    if (el) el.parentElement.style.opacity = esBloqueado ? '.4' : '';
   });
 };
+
+function checkConflictos(alojId, entrada, salida, excludeId=null) {
+  return reservas.filter(r =>
+    r.alojId === alojId &&
+    r.id !== excludeId &&
+    r.estado !== 'cancelada' &&
+    r.entrada < salida &&
+    r.salida  > entrada
+  );
+}
   return reservas.filter(r=>{
     if(r.alojId!==alojId||r.estado==='cancelada') return false;
     if(excludeId&&r.id===excludeId) return false;
