@@ -713,6 +713,11 @@ tr:hover td{background:#f9f7ff;}
         <label class="form-label" style="color:#991b1b;">🔒 Motivo del bloqueo *</label>
         <input type="text" class="form-control" id="res-motivo" placeholder="Ej: Mantenimiento, Reserva propia, Pintura...">
       </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reserva')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveReserva()">💾 Guardar Reserva</button>
+    </div>
   </div>
 </div>
 
@@ -1861,56 +1866,60 @@ window.showReservaDetail = function(id) {
 
   const esBloq = r.estado === 'bloqueado';
 
-  document.getElementById('res-detail-body').innerHTML = esBloq ? `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <div class="color-dot" style="background:${a?.color||'#888'}"></div>
-      <strong style="font-size:1.05rem;">${a?.nombre||'—'}</strong>
-      <span class="badge badge-blocked">🔒 Bloqueado</span>
-    </div>
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:16px;">
-      <div style="font-size:.78rem;color:#991b1b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Motivo del bloqueo</div>
-      <div style="font-size:1rem;font-weight:600;color:#7f1d1d;">${r.motivo||'Sin motivo especificado'}</div>
-    </div>
-    <div class="grid-2" style="gap:12px;">
-      <div><div style="color:var(--text2);font-size:.78rem;">DESDE</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">HASTA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">DÍAS</div><div style="font-weight:600;">${noches}</div></div>
-    </div>
-    ${r.obs?'<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>':''}
-  ` : `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <div class="color-dot" style="background:${a?.color||'#888'}"></div>
-      <strong style="font-size:1.05rem;">${a?.nombre||'—'}</strong>
-      <span class="badge ${eb}">${r.estado}</span>
-      ${r.gcalEventId?'<span class="gcal-badge btn-sm"><span class="gcal-dot"></span>En GCal</span>':''}
-    </div>
-    <div class="grid-2" style="gap:12px;margin-bottom:16px;">
-      <div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">${fmt(r.entrada)}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">${fmt(r.salida)}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">${noches}</div></div>
-      <div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">${fmtMoney(r.costo)}${r.costoUsd?` <span style="font-size:.75rem;color:#16a34a;font-weight:600;">(USD ${r.costoUsd.toLocaleString('es-AR')})</span>`:''}</div></div>
-      ${r.senia?'<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">'+fmtMoney(r.senia)+' <span style="font-size:.72rem;color:var(--text2);">(resta '+fmtMoney((r.costo||0)-(r.senia||0))+')</span></div></div>':''}
-    </div>
-    <hr style="border-color:var(--border);margin-bottom:14px;">
-    <div class="grid-2" style="gap:10px;font-size:.9rem;">
-      <div><span style="color:var(--text2);">Huésped:</span> <strong>${r.nombre}</strong></div>
-      <div><span style="color:var(--text2);">Teléfono:</span> ${r.tel}</div>
-      <div><span style="color:var(--text2);">DNI:</span> ${r.dni||'—'}</div>
-      <div><span style="color:var(--text2);">Personas:</span> 👥 ${r.personas}</div>
-      <div><span style="color:var(--text2);">Origen:</span> ${oi} ${r.origen}</div>
-      <div><span style="color:var(--text2);">Mascota:</span> ${r.mascota==='si'?'🐾 Sí':'No'}</div>
-    </div>
-    ${r.obs?'<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>':''}
-    ${(r.mensajesEnviados&&r.mensajesEnviados.length)?`
-    <div style="margin-top:14px;">
-      <div style="font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📨 Mensajes enviados</div>
-      ${r.mensajesEnviados.map(m=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:4px;font-size:.82rem;">
-          <span style="color:#065f46;font-weight:500;">💬 ${m.titulo}</span>
-          <span style="color:var(--text2);font-size:.75rem;">${m.fecha}</span>
-        </div>`).join('')}
-    </div>`:''}
-  `;
+  if (esBloq) {
+    document.getElementById('res-detail-body').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+      +'<div class="color-dot" style="background:'+(a?.color||'#888')+'"></div>'
+      +'<strong style="font-size:1.05rem;">'+(a?.nombre||'—')+'</strong>'
+      +'<span class="badge badge-blocked">🔒 Bloqueado</span>'
+      +'</div>'
+      +'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:16px;">'
+      +'<div style="font-size:.78rem;color:#991b1b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Motivo del bloqueo</div>'
+      +'<div style="font-size:1rem;font-weight:600;color:#7f1d1d;">'+(r.motivo||'Sin motivo especificado')+'</div>'
+      +'</div>'
+      +'<div class="grid-2" style="gap:12px;">'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">DESDE</div><div style="font-weight:600;">'+fmt(r.entrada)+'</div></div>'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">HASTA</div><div style="font-weight:600;">'+fmt(r.salida)+'</div></div>'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">DÍAS</div><div style="font-weight:600;">'+noches+'</div></div>'
+      +'</div>'
+      +(r.obs?'<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>':'');
+  } else {
+    const usdHTML   = r.costoUsd ? ' <span style="font-size:.75rem;color:#16a34a;font-weight:600;">(USD '+r.costoUsd.toLocaleString('es-AR')+')</span>' : '';
+    const seniaHTML = r.senia ? '<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">'+fmtMoney(r.senia)+' <span style="font-size:.72rem;color:var(--text2);">(resta '+fmtMoney((r.costo||0)-(r.senia||0))+')</span></div></div>' : '';
+    const gcalHTML  = r.gcalEventId ? '<span class="gcal-badge btn-sm"><span class="gcal-dot"></span>En GCal</span>' : '';
+    const obsHTML   = r.obs ? '<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>' : '';
+    const msgsHTML  = (r.mensajesEnviados&&r.mensajesEnviados.length)
+      ? '<div style="margin-top:14px;"><div style="font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📨 Mensajes enviados</div>'
+        + r.mensajesEnviados.map(m =>
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:4px;font-size:.82rem;">'
+          +'<span style="color:#065f46;font-weight:500;">💬 '+m.titulo+'</span>'
+          +'<span style="color:var(--text2);font-size:.75rem;">'+m.fecha+'</span>'
+          +'</div>'
+        ).join('')+'</div>'
+      : '';
+    document.getElementById('res-detail-body').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+      +'<div class="color-dot" style="background:'+(a?.color||'#888')+'"></div>'
+      +'<strong style="font-size:1.05rem;">'+(a?.nombre||'—')+'</strong>'
+      +'<span class="badge '+eb+'">'+r.estado+'</span>'
+      +gcalHTML+'</div>'
+      +'<div class="grid-2" style="gap:12px;margin-bottom:16px;">'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">ENTRADA</div><div style="font-weight:600;">'+fmt(r.entrada)+'</div></div>'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">SALIDA</div><div style="font-weight:600;">'+fmt(r.salida)+'</div></div>'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">NOCHES</div><div style="font-weight:600;">'+noches+'</div></div>'
+      +'<div><div style="color:var(--text2);font-size:.78rem;">COSTO</div><div style="font-weight:600;color:var(--accent3);">'+fmtMoney(r.costo)+usdHTML+'</div></div>'
+      +seniaHTML+'</div>'
+      +'<hr style="border-color:var(--border);margin-bottom:14px;">'
+      +'<div class="grid-2" style="gap:10px;font-size:.9rem;">'
+      +'<div><span style="color:var(--text2);">Huésped:</span> <strong>'+r.nombre+'</strong></div>'
+      +'<div><span style="color:var(--text2);">Teléfono:</span> '+r.tel+'</div>'
+      +'<div><span style="color:var(--text2);">DNI:</span> '+(r.dni||'—')+'</div>'
+      +'<div><span style="color:var(--text2);">Personas:</span> 👥 '+r.personas+'</div>'
+      +'<div><span style="color:var(--text2);">Origen:</span> '+oi+' '+r.origen+'</div>'
+      +'<div><span style="color:var(--text2);">Mascota:</span> '+(r.mascota==='si'?'🐾 Sí':'No')+'</div>'
+      +'</div>'
+      +obsHTML+msgsHTML;
+  }
   // Ocultar WhatsApp si es bloqueo
   const waBtn = document.getElementById('btn-whatsapp-detail');
   if (waBtn) waBtn.style.display = esBloq ? 'none' : '';
