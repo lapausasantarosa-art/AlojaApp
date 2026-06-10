@@ -1943,10 +1943,51 @@ function buildWAMsg(texto, w) {
 }
 
 function formatTelWA(tel) {
+  // Limpiar todo excepto dígitos y + inicial
   let t = tel.replace(/[\s\-\(\)\.]/g,'');
-  if (t.startsWith('0')) t = '54' + t.substring(1);
-  else if (!t.startsWith('54') && t.length <= 12) t = '54' + t;
-  return t;
+  t = t.replace(/[^\d+]/g,'');
+
+  // Si empieza con +, sacar el + (wa.me no lo necesita)
+  if (t.startsWith('+')) t = t.substring(1);
+
+  // Si ya tiene código de país conocido, normalizar según el país
+  // ── ARGENTINA (54) ──
+  if (t.startsWith('54')) {
+    const n = t.substring(2);
+    // Agregar 9 si no está (móvil argentino: 549 + área + número)
+    return !n.startsWith('9') ? '549' + n : t;
+  }
+
+  // ── URUGUAY (598) ──
+  if (t.startsWith('598')) {
+    // Uruguay no necesita 9 extra — formato: 598 + 9 dígitos
+    return t;
+  }
+
+  // ── BRASIL (55) ──
+  if (t.startsWith('55')) {
+    // Brasil móvil: 55 + DDD (2 dígitos) + 9 + número (8 dígitos) = 13 dígitos total
+    const n = t.substring(2);
+    // Si el número local tiene 10 dígitos y no empieza con 9, agregar el 9
+    if (n.length === 10 && !n.substring(2).startsWith('9')) {
+      return '55' + n.substring(0,2) + '9' + n.substring(2);
+    }
+    return t;
+  }
+
+  // ── Sin código de país — inferir por longitud y formato ──
+  // Sacar 0 inicial si existe
+  if (t.startsWith('0')) t = t.substring(1);
+
+  // Uruguay: empieza con 9 y tiene 8 dígitos → +598 9XXXXXXX
+  if (t.startsWith('9') && t.length === 8) return '5989' + t.substring(1);
+
+  // Brasil local: 10-11 dígitos con código de área
+  if (t.length === 11 && t.substring(2).startsWith('9')) return '55' + t;
+  if (t.length === 10) return '55' + t.substring(0,2) + '9' + t.substring(2);
+
+  // Argentina por defecto: agregar 549
+  return '549' + t;
 }
 
 window.abrirSelectorWA = function() {
