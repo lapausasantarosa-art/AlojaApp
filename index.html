@@ -1769,7 +1769,7 @@ window.saveReserva = async function() {
   const entrada =document.getElementById('res-entrada').value;
   const salida  =document.getElementById('res-salida').value;
   const nombre  =document.getElementById('res-nombre').value.trim();
-  const tel     =document.getElementById('res-tel').value.trim();
+  const tel     =limpiarTel(document.getElementById('res-tel').value);
   const dni     =document.getElementById('res-dni').value.trim();
   const personas=parseInt(document.getElementById('res-personas').value)||1;
   const costo   =parseFloat(document.getElementById('res-costo').value)||0;
@@ -1942,33 +1942,39 @@ function buildWAMsg(texto, w) {
     .replace(/{saldo}/g,    w.saldo > 0 ? '$'+Number(w.saldo).toLocaleString('es-AR') : 'Saldo cancelado');
 }
 
-function formatTelWA(tel) {
-  // Limpiar espacios, guiones, paréntesis, puntos
-  let t = tel.replace(/[\s\-\(\)\.]/g,'');
+// ══════════════════════════════════════════
+// WHATSAPP — FORMATEO Y ENVÍO
+// ══════════════════════════════════════════
 
-  // Si empieza con +, sacar el + (wa.me usa solo números)
+function limpiarTel(tel) {
+  if (!tel) return '';
+  // 1. Quitar TODO excepto dígitos y el + inicial
+  let t = String(tel).trim();
+  // Preservar + solo si está al inicio
+  const tienePlus = t.startsWith('+');
+  // Quitar cualquier carácter no numérico
+  t = t.replace(/\D/g, '');
+  if (tienePlus) t = '+' + t;
+  return t;
+}
+
+function formatTelWA(tel) {
+  let t = limpiarTel(tel);
+  if (!t) return '';
+
+  // Quitar el + para wa.me (usa solo dígitos)
   if (t.startsWith('+')) return t.substring(1);
 
-  // Si empieza con 00 (formato internacional europeo), reemplazar por nada
+  // Quitar 00 inicial (formato internacional europeo: 0044...)
   if (t.startsWith('00')) return t.substring(2);
 
-  // Si tiene 13 o más dígitos ya tiene código de país — usar tal cual
-  if (t.length >= 13) return t;
+  // Si tiene 11+ dígitos probablemente ya tiene código de país
+  if (t.length >= 11 && !t.startsWith('0')) return t;
 
-  // Argentina: si empieza con 54 y le falta el 9 de móvil
-  if (t.startsWith('54') && t.length === 12 && !t.substring(2).startsWith('9')) {
-    return '549' + t.substring(2);
-  }
-  if (t.startsWith('54')) return t;
+  // Número argentino local — normalizar
+  if (t.startsWith('0')) t = t.substring(1); // quitar 0 inicial (011... → 11...)
 
-  // Brasil: si empieza con 55 — usar tal cual
-  if (t.startsWith('55')) return t;
-
-  // Uruguay: si empieza con 598 — usar tal cual
-  if (t.startsWith('598')) return t;
-
-  // Número local argentino (sin código de país): agregar 549
-  if (t.startsWith('0')) t = t.substring(1); // quitar 0 inicial
+  // Agregar código Argentina + 9 móvil
   return '549' + t;
 }
 
@@ -1998,10 +2004,22 @@ window.enviarWAPlantilla = async function(plantillaId) {
   const p   = plantillasWA.find(x=>x.id===plantillaId);
   const rid = window._waReservaId;
   if (!w || !p) return;
+
+  // Limpiar y formatear número
+  const telLimpio = limpiarTel(w.tel);
+  const telWA     = formatTelWA(w.tel);
+
+  if (!telWA) {
+    toast('Número de teléfono inválido', 'error');
+    return;
+  }
+
   const msg = buildWAMsg(p.texto, w);
-  const url = `https://wa.me/${formatTelWA(w.tel)}?text=${encodeURIComponent(msg)}`;
+  const url = `https://wa.me/${telWA}?text=${encodeURIComponent(msg)}`;
+
   window.open(url, '_blank');
   closeModal('modal-wa-selector');
+
   // Registrar en la reserva
   if (rid) {
     const r = reservas.find(x=>x.id===rid);
@@ -2220,7 +2238,7 @@ window.openHuespedModal = function(tel=null) {
 window.saveHuesped = async function() {
   const telId =document.getElementById('huesped-tel-id').value;
   const nombre=document.getElementById('huesped-nombre').value.trim();
-  const tel   =document.getElementById('huesped-tel').value.trim();
+  const tel   =limpiarTel(document.getElementById('huesped-tel').value);
   const dni   =document.getElementById('huesped-dni').value.trim();
   const ev    =document.getElementById('huesped-eval').value;
   const obs   =document.getElementById('huesped-obs').value.trim();
