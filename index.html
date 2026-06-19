@@ -520,6 +520,7 @@ tr:hover td{background:#f9f7ff;}
     <div class="nav-item" id="nav-alojamientos" onclick="showPage('alojamientos')"><span class="icon">🏠</span> Alojamientos</div>
     <div class="nav-item" id="nav-reservas" onclick="showPage('reservas')"><span class="icon">📋</span> Reservas</div>
     <div class="nav-item" id="nav-huespedes" onclick="showPage('huespedes')"><span class="icon">👥</span> Huéspedes</div>
+    <div class="nav-item" id="nav-ranking"   onclick="showPage('ranking')"><span class="icon">🏆</span> Ranking</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Finanzas</div>
@@ -599,6 +600,7 @@ tr:hover td{background:#f9f7ff;}
       </div>
       <div id="huespedes-list"></div>
     </div>
+    <div id="page-ranking" class="page"><div id="ranking-content"></div></div>
     <div id="page-finanzas" class="page"><div id="finanzas-content"></div></div>
     <div id="page-anual"   class="page"><div id="anual-content"></div></div>
     <div id="page-usuarios" class="page"><div id="usuarios-content"></div></div>
@@ -1384,7 +1386,7 @@ function applyPermissions() {
   const map={
     'nav-dashboard':'dashboard','nav-calendario':'calendario',
     'nav-alojamientos':'aloj-ver','nav-reservas':'res-ver',
-    'nav-huespedes':'hues-ver','nav-finanzas':'fin-ver','nav-anual':'fin-ver',
+    'nav-huespedes':'hues-ver','nav-ranking':'hues-ver','nav-finanzas':'fin-ver','nav-anual':'fin-ver',
     'nav-usuarios':'admin-ver','nav-mensajes':'admin-ver',
     'nav-exportar':'fin-export'
   };
@@ -1446,7 +1448,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.getElementById('nav-'+page)?.classList.add('active');
-  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',finanzas:'Ingresos & Gastos',anual:'Comparativa Anual',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
+  const titles={dashboard:'Dashboard',calendario:'Calendario',alojamientos:'Alojamientos',reservas:'Reservas',huespedes:'Huéspedes',ranking:'Ranking de Huéspedes',finanzas:'Ingresos & Gastos',anual:'Comparativa Anual',usuarios:'Gestión de Usuarios',mensajes:'Mensajes WhatsApp',exportar:'Exportar Datos'};
   document.getElementById('page-title').textContent=titles[page]||page;
   closeSidebar();
   const actions=document.getElementById('topbar-actions');
@@ -1456,6 +1458,7 @@ window.showPage = function(page) {
   if(page==='alojamientos'){ if(hasPerm('aloj-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openAlojModal()">+ Alojamiento</button>`; renderAlojamientos(); }
   else if(page==='reservas'){  if(hasPerm('res-edit'))  actions.innerHTML+=`<button class="btn btn-primary" onclick="openReservaModal()">+ Reserva</button>`;    updateSelectOptions(); renderReservas(); }
   else if(page==='huespedes'){ if(hasPerm('hues-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;   renderHuespedes(); }
+  else if(page==='ranking')  { renderRanking(); }
   else if(page==='calendario'){renderCalendar();renderCalFilterOptions();}
   else if(page==='dashboard') renderDashboard();
   else if(page==='finanzas'){ renderFinanzas(); }
@@ -2271,6 +2274,93 @@ window.deleteHuesped = async function(tel) {
   await delDoc('huespedes',tel);
   toast('Huésped eliminado','success');
 };
+// ══════════════════════════════════════════
+// RANKING DE HUÉSPEDES
+// ══════════════════════════════════════════
+function renderRanking() {
+  const el = document.getElementById('ranking-content');
+  if (!el) return;
+
+  const search = (document.getElementById('ranking-search')?.value || '').toLowerCase().trim();
+  const orden  = document.getElementById('ranking-orden')?.value || 'estancias';
+  const norm   = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  let lista = huespedes.map(h => {
+    const tel  = h.tel || h.id;
+    const resH = reservas.filter(r => (r.tel===tel||r.tel===h.id) && r.estado!=='cancelada' && r.estado!=='bloqueado');
+    const estancias = resH.length;
+    const dias      = resH.reduce((s,r) => s + Math.max(0, Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)), 0);
+    const resOrd    = [...resH].sort((a,b)=>b.entrada>a.entrada?1:-1);
+    const ultima    = resOrd[0]?.entrada || null;
+    const alojIds   = [...new Set(resH.map(r=>r.alojId))];
+    const ingresos  = resH.reduce((s,r)=>s+(r.costo||0),0);
+    return { ...h, tel, estancias, dias, ultima, alojIds, ingresos };
+  });
+
+  if (search) lista = lista.filter(h =>
+    norm(h.nombre).includes(norm(search)) || h.tel?.includes(search) || norm(h.dni||'').includes(search)
+  );
+
+  if (orden==='dias')    lista.sort((a,b)=>b.dias-a.dias);
+  else if(orden==='ultima') lista.sort((a,b)=>(b.ultima||'')>(a.ultima||'')?1:-1);
+  else                   lista.sort((a,b)=>b.estancias-a.estancias||b.dias-a.dias);
+
+  const maxEst = Math.max(...lista.map(h=>h.estancias),1);
+  const maxDias= Math.max(...lista.map(h=>h.dias),1);
+  const evMap  = {bueno:'⭐',regular:'⚠️',malo:'❌'};
+
+  const filas = lista.map((h,idx) => {
+    const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'<span style="font-size:.82rem;color:var(--text2);font-weight:700;">#'+(idx+1)+'</span>';
+    const alojNombres = h.alojIds.map(id=>(getAloj(id)?.nombre||'?').replace(/departamento/gi,'Dpto.')).join(', ');
+    const pctEst = Math.round(h.estancias/maxEst*100);
+    const pctDias= Math.round(h.dias/maxDias*100);
+    return '<div class="card" style="margin-bottom:10px;cursor:pointer;transition:box-shadow .2s;" onmouseover="this.style.boxShadow=\'var(--shadow-lg)\'" onmouseout="this.style.boxShadow=\'\'" onclick="openHuespedModal(\''+h.tel+'\')">'
+      +'<div style="display:flex;align-items:center;gap:12px;">'
+      +'<div style="font-size:1.6rem;width:36px;text-align:center;flex-shrink:0;">'+medal+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'
+      +'<span style="font-weight:700;font-size:.95rem;">'+h.nombre+'</span>'
+      +'<span>'+( evMap[h.eval||'bueno'])+'</span>'
+      +'</div>'
+      +'<div style="font-size:.78rem;color:var(--text2);margin-bottom:8px;">'
+      +'📞 '+h.tel+(h.dni?' · DNI: '+h.dni:'')
+      +(h.ultima?' · Última visita: <strong>'+fmt(h.ultima)+'</strong>':'')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:80px 1fr 55px;align-items:center;gap:6px;margin-bottom:4px;">'
+      +'<span style="font-size:.75rem;color:var(--text2);">Estancias</span>'
+      +'<div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;"><div style="width:'+pctEst+'%;height:100%;background:var(--accent);border-radius:4px;"></div></div>'
+      +'<span style="font-size:.82rem;font-weight:700;color:var(--accent);text-align:right;">'+h.estancias+'</span>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:80px 1fr 55px;align-items:center;gap:6px;">'
+      +'<span style="font-size:.75rem;color:var(--text2);">Días total</span>'
+      +'<div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;"><div style="width:'+pctDias+'%;height:100%;background:#059669;border-radius:4px;"></div></div>'
+      +'<span style="font-size:.82rem;font-weight:700;color:#059669;text-align:right;">'+h.dias+'</span>'
+      +'</div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0;min-width:90px;">'
+      +(h.ingresos?'<div style="font-size:.8rem;font-weight:700;color:var(--accent3);">'+fmtMoney(h.ingresos)+'</div><div style="font-size:.7rem;color:var(--text2);">ingresos</div>':'')
+      +(alojNombres?'<div style="font-size:.7rem;color:var(--text2);margin-top:4px;">'+alojNombres+'</div>':'')
+      +'</div>'
+      +'</div></div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="card" style="margin-bottom:14px;">'
+    +'<div class="filter-row" style="margin-bottom:0;flex-wrap:wrap;gap:10px;">'
+    +'<div class="search-box" style="flex:1;min-width:180px;margin-bottom:0;"><span class="search-icon">🔍</span>'
+    +'<input type="text" class="form-control" id="ranking-search" placeholder="Buscar huésped..." value="'+search+'" oninput="renderRanking()"></div>'
+    +'<select class="form-control" id="ranking-orden" onchange="renderRanking()" style="width:auto;">'
+    +'<option value="estancias" '+(orden==='estancias'?'selected':'')+'>🏆 Por cantidad de estancias</option>'
+    +'<option value="dias" '+(orden==='dias'?'selected':'')+'>📅 Por cantidad de días</option>'
+    +'<option value="ultima" '+(orden==='ultima'?'selected':'')+'>🕐 Por última visita</option>'
+    +'</select></div>'
+    +'<div style="margin-top:8px;font-size:.8rem;color:var(--text2);">'+lista.length+' huésped'+(lista.length!==1?'es':'')+' encontrado'+(lista.length!==1?'s':'')+'</div>'
+    +'</div>'
+    +(lista.length===0
+      ? '<div class="empty-state"><div class="empty-icon">🏆</div><h3>Sin resultados</h3><p>No hay huéspedes que coincidan</p></div>'
+      : filas);
+}
+
 function renderHuespedes() {
   const search = (document.getElementById('huesped-search')?.value || '').toLowerCase().trim();
   // Normalizar texto quitando tildes para búsqueda más tolerante
