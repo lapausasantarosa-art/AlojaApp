@@ -880,6 +880,45 @@ tr:hover td{background:#f9f7ff;}
   </div>
 </div>
 
+<!-- MODAL UNIFICAR HUÉSPEDES -->
+<div class="modal-overlay" id="modal-merge">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">🔀 Unificar Huéspedes</span>
+      <button class="close-btn" onclick="closeModal('modal-merge')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--text2);margin-bottom:14px;">
+        Seleccioná dos huéspedes para unificar. Las reservas del huésped a eliminar pasarán al huésped principal.
+      </p>
+      <div class="form-row" style="margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">✅ Huésped principal <span style="font-size:.72rem;color:var(--text2);">(se conserva)</span></label>
+          <div style="position:relative;">
+            <input type="text" class="form-control" id="merge-search-a" placeholder="Buscar por nombre o teléfono..." autocomplete="off" oninput="filtrarMerge('a')">
+            <div id="merge-dd-a" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:var(--shadow-lg);z-index:200;max-height:180px;overflow-y:auto;"></div>
+          </div>
+          <div id="merge-sel-a" style="display:none;margin-top:6px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.85rem;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🗑️ Huésped a eliminar <span style="font-size:.72rem;color:var(--text2);">(se borra)</span></label>
+          <div style="position:relative;">
+            <input type="text" class="form-control" id="merge-search-b" placeholder="Buscar por nombre o teléfono..." autocomplete="off" oninput="filtrarMerge('b')">
+            <div id="merge-dd-b" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:var(--shadow-lg);z-index:200;max-height:180px;overflow-y:auto;"></div>
+          </div>
+          <div id="merge-sel-b" style="display:none;margin-top:6px;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:.85rem;"></div>
+        </div>
+      </div>
+      <!-- Preview de lo que se va a unificar -->
+      <div id="merge-preview" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-merge')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-merge-confirm" style="display:none;background:var(--warning);border-color:var(--warning);" onclick="ejecutarMerge()">🔀 Confirmar Unificación</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM -->
 <div id="confirm-overlay">
   <div class="confirm-box">
@@ -1457,7 +1496,11 @@ window.showPage = function(page) {
   actions.innerHTML=gcalHTML+dbHTML;
   if(page==='alojamientos'){ if(hasPerm('aloj-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openAlojModal()">+ Alojamiento</button>`; renderAlojamientos(); }
   else if(page==='reservas'){  if(hasPerm('res-edit'))  actions.innerHTML+=`<button class="btn btn-primary" onclick="openReservaModal()">+ Reserva</button>`;    updateSelectOptions(); renderReservas(); }
-  else if(page==='huespedes'){ if(hasPerm('hues-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;   renderHuespedes(); }
+  else if(page==='huespedes'){
+    if(hasPerm('hues-edit')) actions.innerHTML+=`<button class="btn btn-primary" onclick="openHuespedModal()">+ Huésped</button>`;
+    if(currentUser?.isAdmin) actions.innerHTML+=`<button class="btn btn-ghost" onclick="openMergeModal()" style="border-color:var(--warning);color:var(--warning);">🔀 Unificar</button>`;
+    renderHuespedes();
+  }
   else if(page==='ranking')  { renderRanking(); }
   else if(page==='calendario'){renderCalendar();renderCalFilterOptions();}
   else if(page==='dashboard') renderDashboard();
@@ -2360,6 +2403,137 @@ function renderRanking() {
       ? '<div class="empty-state"><div class="empty-icon">🏆</div><h3>Sin resultados</h3><p>No hay huéspedes que coincidan</p></div>'
       : filas);
 }
+
+// ══════════════════════════════════════════
+// UNIFICAR HUÉSPEDES
+// ══════════════════════════════════════════
+let _mergeA = null; // huésped principal
+let _mergeB = null; // huésped a eliminar
+
+window.openMergeModal = function() {
+  if (!currentUser?.isAdmin) { toast('Solo el administrador puede unificar huéspedes','error'); return; }
+  _mergeA = null; _mergeB = null;
+  ['merge-search-a','merge-search-b'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['merge-sel-a','merge-sel-b','merge-preview'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  ['merge-dd-a','merge-dd-b'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  document.getElementById('btn-merge-confirm').style.display='none';
+  openModal('modal-merge');
+};
+
+window.filtrarMerge = function(lado) {
+  const q   = document.getElementById('merge-search-'+lado).value.toLowerCase().trim();
+  const dd  = document.getElementById('merge-dd-'+lado);
+  const norm= s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if (!q) { dd.style.display='none'; return; }
+  const excluir = lado==='a' ? _mergeB?.tel : _mergeA?.tel;
+  const matches = huespedes
+    .filter(h => (h.tel||h.id) !== excluir)
+    .filter(h => norm(h.nombre).includes(norm(q)) || (h.tel||h.id).includes(q) || norm(h.dni||'').includes(q))
+    .slice(0,8);
+  if (!matches.length) { dd.innerHTML='<div style="padding:10px 14px;font-size:.85rem;color:var(--text2);">Sin resultados</div>'; dd.style.display='block'; return; }
+  const rc = h => reservas.filter(r=>(r.tel===h.tel||r.tel===h.id)&&r.estado!=='cancelada').length;
+  dd.innerHTML = matches.map(h =>
+    '<div onclick="seleccionarMerge(\''+lado+'\',\''+( h.tel||h.id)+'\')" '
+    +'style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;" '
+    +'onmouseover="this.style.background=\'#f5f3ff\'" onmouseout="this.style.background=\'\'">'
+    +'<div style="font-weight:600;font-size:.9rem;">'+h.nombre+'</div>'
+    +'<div style="font-size:.78rem;color:var(--text2);">📞 '+(h.tel||h.id)+(h.dni?' · DNI '+h.dni:'')+' · '+rc(h)+' reserva(s)</div>'
+    +'</div>'
+  ).join('');
+  dd.style.display='block';
+};
+
+window.seleccionarMerge = function(lado, tel) {
+  const h = huespedes.find(h=>(h.tel||h.id)===tel);
+  if (!h) return;
+  if (lado==='a') _mergeA=h; else _mergeB=h;
+  document.getElementById('merge-search-'+lado).value='';
+  document.getElementById('merge-dd-'+lado).style.display='none';
+  // Mostrar chip
+  const resH = reservas.filter(r=>(r.tel===h.tel||r.tel===h.id)&&r.estado!=='cancelada');
+  const chip = document.getElementById('merge-sel-'+lado);
+  chip.innerHTML = '<strong>'+h.nombre+'</strong> · 📞 '+(h.tel||h.id)
+    +(h.dni?' · DNI: '+h.dni:'')
+    +'<br><span style="font-size:.75rem;color:var(--text2);">'+resH.length+' reserva(s) activa(s)</span>'
+    +' <button onclick="limpiarMerge(\''+lado+'\')" style="background:none;border:none;cursor:pointer;float:right;color:var(--text2);">✕</button>';
+  chip.style.display='block';
+  actualizarPreviewMerge();
+};
+
+window.limpiarMerge = function(lado) {
+  if (lado==='a') _mergeA=null; else _mergeB=null;
+  document.getElementById('merge-sel-'+lado).style.display='none';
+  document.getElementById('merge-preview').style.display='none';
+  document.getElementById('btn-merge-confirm').style.display='none';
+};
+
+function actualizarPreviewMerge() {
+  if (!_mergeA || !_mergeB) return;
+  if ((_mergeA.tel||_mergeA.id) === (_mergeB.tel||_mergeB.id)) {
+    toast('No podés unificar un huésped consigo mismo','error');
+    limpiarMerge('b'); return;
+  }
+  const resB = reservas.filter(r=>(r.tel===_mergeB.tel||r.tel===_mergeB.id)&&r.estado!=='cancelada');
+  const resA = reservas.filter(r=>(r.tel===_mergeA.tel||r.tel===_mergeA.id)&&r.estado!=='cancelada');
+  const prev = document.getElementById('merge-preview');
+  prev.style.display='';
+  prev.innerHTML =
+    '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-top:4px;">'
+    +'<div style="font-weight:700;color:#92400e;margin-bottom:10px;">⚠️ Esto es lo que va a pasar:</div>'
+    +'<div style="font-size:.88rem;display:flex;flex-direction:column;gap:8px;">'
+    +'<div>✅ Se conserva: <strong>'+_mergeA.nombre+'</strong> (📞 '+(_mergeA.tel||_mergeA.id)+') con sus <strong>'+resA.length+'</strong> reserva(s)</div>'
+    +'<div>🔀 Las <strong>'+resB.length+'</strong> reserva(s) de <strong>'+_mergeB.nombre+'</strong> pasarán a '+_mergeA.nombre+'</div>'
+    +(resB.length ? '<div style="margin-left:16px;font-size:.8rem;color:var(--text2);">'
+      +resB.map(r=>'· '+fmt(r.entrada)+' → '+fmt(r.salida)+' ('+r.alojId&&getAloj(r.alojId)?.nombre||'?'+')').join('<br>')
+      +'</div>' : '')
+    +'<div>🗑️ El huésped <strong>'+_mergeB.nombre+'</strong> será eliminado</div>'
+    +'</div></div>';
+  document.getElementById('btn-merge-confirm').style.display='';
+}
+
+window.ejecutarMerge = async function() {
+  if (!_mergeA || !_mergeB) { toast('Seleccioná ambos huéspedes','error'); return; }
+  if (!currentUser?.isAdmin) { toast('Sin permiso','error'); return; }
+
+  const telA = _mergeA.tel || _mergeA.id;
+  const telB = _mergeB.tel || _mergeB.id;
+  const resB = reservas.filter(r=>r.tel===telB||r.tel===_mergeB.id);
+
+  const ok = await confirm('Confirmar Unificación',
+    `¿Unificar "${_mergeB.nombre}" (${resB.length} reservas) en "${_mergeA.nombre}"? Esta acción no se puede deshacer.`);
+  if (!ok) return;
+
+  setDbStatus('ing','Unificando…');
+  try {
+    // 1. Actualizar todas las reservas de B para que apunten a A
+    for (const r of resB) {
+      await updateDoc(docRef('reservas', r.id), {
+        tel:    telA,
+        nombre: _mergeA.nombre,
+        dni:    _mergeA.dni || r.dni || ''
+      });
+    }
+    // 2. Eliminar huésped B
+    await delDoc('huespedes', _mergeB.id || telB);
+    setDbStatus('ok','☁️ En línea');
+    toast(`Unificación completada: ${resB.length} reserva(s) transferidas`, 'success');
+    closeModal('modal-merge');
+    renderHuespedes();
+  } catch(e) {
+    setDbStatus('error','Error');
+    toast('Error al unificar: ' + e.message, 'error');
+  }
+};
+
+// Cerrar dropdowns al hacer click fuera del modal
+document.addEventListener('click', e => {
+  if (!e.target.closest('#merge-search-a') && !e.target.closest('#merge-dd-a')) {
+    const dd=document.getElementById('merge-dd-a'); if(dd) dd.style.display='none';
+  }
+  if (!e.target.closest('#merge-search-b') && !e.target.closest('#merge-dd-b')) {
+    const dd=document.getElementById('merge-dd-b'); if(dd) dd.style.display='none';
+  }
+});
 
 function renderHuespedes() {
   const search = (document.getElementById('huesped-search')?.value || '').toLowerCase().trim();
