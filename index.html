@@ -1136,7 +1136,6 @@ window._loadingTimeout = setTimeout(() => {
   if (loading && loading.style.display !== 'none') {
     document.getElementById('loading-msg').textContent = '⚠️ La carga está tardando demasiado. Verificá tu conexión y recargá la página.';
     document.getElementById('loading-msg').style.color = '#dc2626';
-    // Agregar botón de recargar
     const btn = document.createElement('button');
     btn.textContent = '🔄 Recargar';
     btn.style.cssText = 'margin-top:16px;padding:10px 24px;background:#6d40c4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;';
@@ -1144,6 +1143,18 @@ window._loadingTimeout = setTimeout(() => {
     loading.appendChild(btn);
   }
 }, 15000);
+
+// Capturar errores globales no manejados
+window.addEventListener('error', e => {
+  console.error('Error global:', e.message, e.filename, e.lineno);
+  document.getElementById('loading-msg').textContent = '⚠️ Error: ' + e.message + ' (línea ' + e.lineno + ')';
+  document.getElementById('loading-msg').style.color = '#dc2626';
+});
+window.addEventListener('unhandledrejection', e => {
+  console.error('Promise rechazada:', e.reason);
+  document.getElementById('loading-msg').textContent = '⚠️ Error async: ' + (e.reason?.message || e.reason);
+  document.getElementById('loading-msg').style.color = '#dc2626';
+});
 
 // Expose para onclick
 window.signInWithGoogle = async function() {
