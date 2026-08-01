@@ -1627,10 +1627,8 @@ function renderAlojamientos() {
     const rc=reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
     return `<div class="aloj-card" style="--aloj-color:${a.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><div class="color-dot" style="background:${a.color}"></div><div class="aloj-card-name">${a.nombre}</div></div>
-      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}
-        ${a.clave?`<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-${a.id}" style="letter-spacing:2px;">••••</span>
-          <button onclick="toggleClave('${a.id}','${a.clave}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button>
-        </span>`:''}
+      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?'<span>📝 '+a.obs+'</span>':''}
+        ${a.clave?'<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-'+a.id+'" style="letter-spacing:2px;">••••</span><button onclick="toggleClave(\''+a.id+'\',\''+a.clave+'\')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button></span>':''}
       </div>
       <div class="aloj-card-actions">
         ${hasPerm('aloj-edit')?'<button class="btn btn-ghost btn-sm" onclick="openAlojModal(\''+a.id+'\')">✏️ Editar</button>':''}
@@ -1731,7 +1729,7 @@ async function cargarCotizacionDolar() {
     const fecha = data.fechaActualizacion
       ? new Date(data.fechaActualizacion).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : '';
-    el.innerHTML = `Dólar Oficial · Compra: <strong>$${data.compra}</strong> · Venta: <strong>$${data.venta}</strong>${fecha?` <span style="color:#9ca3af;font-size:.72rem;">(${fecha})</span>`:''}`;
+    el.innerHTML = 'Dólar Oficial · Compra: <strong>$'+data.compra+'</strong> · Venta: <strong>$'+data.venta+'</strong>'+(fecha?' <span style="color:#9ca3af;font-size:.72rem;">('+fecha+')</span>':'');
     calcularConversionUSD();
   } catch(e) {
     el.textContent = 'No se pudo cargar la cotización';
@@ -1856,7 +1854,7 @@ window.saveReserva = async function() {
   if(estado!=='cancelada'){
     const conf=checkConflictos(alojId,entrada,salida,id||null);
     if(conf.length){
-      const cn=conf[0].estado==='bloqueado'?`bloqueo (${conf[0].motivo||'sin motivo'})`:`reserva de ${conf[0].nombre}`;
+      const cn=conf[0].estado==='bloqueado'?'bloqueo ('+(conf[0].motivo||'sin motivo')+')':'reserva de '+conf[0].nombre;
       toast(`Conflicto de fechas con ${cn}`,'error');return;
     }
   }
@@ -2305,7 +2303,7 @@ window.openHuespedModal = function(tel=null) {
       <div style="font-size:.78rem;color:var(--text2);">${fmt(r.entrada)} → ${fmt(r.salida)} • 👥${r.personas}${r.mascota==='si'?' 🐾':''}</div></div>
       <div style="text-align:right;"><div style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</div>
       <span class="badge ${r.estado==='confirmada'?'badge-green':'badge-yellow'}">${r.estado}</span></div>
-    </div>`;}).join(''):`<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>`;
+    </div>`;}).join(''):'<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>';
   document.querySelectorAll('#modal-huesped .tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#modal-huesped .tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector('#modal-huesped .tab-btn').classList.add('active');
@@ -2955,7 +2953,7 @@ function renderFinanzas() {
         <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
           <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
           <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?`<div style="font-size:.7rem;color:var(--text2);font-weight:400;">${fmtMoney(a.gasD)} propio + ${fmtMoney(a.gasProrr)} gral.</div>`:''}</td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?'<div style="font-size:.7rem;color:var(--text2);font-weight:400;">'+fmtMoney(a.gasD)+' propio + '+fmtMoney(a.gasProrr)+' gral.</div>':''}</td>
           <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
           <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
           <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
