@@ -765,11 +765,31 @@ tr:hover td{background:#f9f7ff;}
       <div class="form-row">
         <div class="form-group"><label class="form-label">Concepto *</label><input type="text" class="form-control" id="gasto-concepto"></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-control" id="gasto-cat"><option value="mantenimiento">Mantenimiento</option><option value="limpieza">Limpieza</option><option value="servicios">Servicios</option><option value="impuestos">Impuestos</option><option value="reparaciones">Reparaciones</option><option value="otros">Otros</option></select>
+          <select class="form-control" id="gasto-cat">
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="limpieza">Limpieza</option>
+            <option value="insumos">Insumos</option>
+            <option value="ropa_blanca">Ropa Blanca</option>
+            <option value="servicios">Servicios</option>
+            <option value="impuestos">Impuestos</option>
+            <option value="reparaciones">Reparaciones</option>
+            <option value="otros">Otros</option>
+          </select>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Monto $ *</label><input type="number" class="form-control" id="gasto-monto" min="0"></div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="gasto-obs" rows="2"></textarea></div>
+      <!-- Gasto anual -->
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-top:4px;">
+        <label class="toggle" style="flex-shrink:0;margin-top:2px;">
+          <input type="checkbox" id="gasto-anual">
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <div style="font-weight:600;font-size:.88rem;color:#1e40af;">Gasto anual / amortizable</div>
+          <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">Al activar, el monto se distribuye proporcionalmente en los 12 meses de la Comparativa Anual, en lugar de imputarse solo al mes de carga.</div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-gasto')">Cancelar</button><button class="btn btn-primary" onclick="saveGasto()">💾 Guardar</button></div>
   </div>
@@ -2759,6 +2779,7 @@ window.openGastoModal = function(id=null) {
   document.getElementById('gasto-cat').value     =g?.cat||'mantenimiento';
   document.getElementById('gasto-monto').value   =g?.monto||'';
   document.getElementById('gasto-obs').value     =g?.obs||'';
+  document.getElementById('gasto-anual').checked =g?.esAnual||false;
   document.getElementById('modal-gasto-title').textContent=id?'Editar Gasto':'Agregar Gasto';
   openModal('modal-gasto');
 };
@@ -2770,10 +2791,11 @@ window.saveGasto = async function() {
   const cat    =document.getElementById('gasto-cat').value;
   const monto  =parseFloat(document.getElementById('gasto-monto').value)||0;
   const obs    =document.getElementById('gasto-obs').value.trim();
+  const esAnual=document.getElementById('gasto-anual').checked;
   if(!fecha||!concepto||monto<=0){toast('Completá fecha, concepto y monto','error');return;}
   const docId=id||getId();
   setDbStatus('ing','Guardando…');
-  await upsertDoc('gastos',docId,{alojId,fecha,concepto,cat,monto,obs});
+  await upsertDoc('gastos',docId,{alojId,fecha,concepto,cat,monto,obs,esAnual});
   setDbStatus('ok','☁️ En línea');
   toast('Gasto guardado','success');
   closeModal('modal-gasto');
@@ -2986,7 +3008,7 @@ function renderFinanzas() {
         const rows = fg.map(g => {
           const a = g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
           const btns = hasPerm('fin-edit') ? '<button class="btn btn-ghost btn-sm" onclick="openGastoModal(\''+g.id+'\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto(\''+g.id+'\')">🗑️</button>' : '';
-          return '<tr><td>'+fmt(g.fecha)+'</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:'+a.color+'"></div>'+a.nombre+'</div></td><td>'+g.concepto+'</td><td><span class="badge badge-blue">'+g.cat+'</span></td><td style="color:var(--danger);font-weight:600;">'+fmtMoney(g.monto)+'</td><td><div style="display:flex;gap:5px;">'+btns+'</div></td></tr>';
+          return '<tr><td>'+fmt(g.fecha)+'</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:'+a.color+'"></div>'+a.nombre+'</div></td><td>'+g.concepto+'</td><td><span class="badge badge-blue">'+g.cat+'</span>'+(g.esAnual?'<span class="badge badge-purple" style="font-size:.65rem;margin-left:3px;">📅 Anual</span>':'')+'</td><td style="color:var(--danger);font-weight:600;">'+fmtMoney(g.monto)+'</td><td><div style="display:flex;gap:5px;">'+btns+'</div></td></tr>';
         }).join('');
         const totalRow = '<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
           +'<td colspan="4" style="text-align:right;color:var(--text2);">TOTAL GASTOS</td>'
@@ -2995,89 +3017,33 @@ function renderFinanzas() {
       })()}
     </div>
   </div>
-  </div>
-    <!-- Ingresos vs Gastos por mes -->
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">📈 Ingresos vs Gastos por Mes</span></div>
-      ${D.meses.length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin datos</p>':`
-      <div style="overflow-x:auto;">
-        <div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0;min-width:${D.meses.length*80}px;">
-          ${(()=>{
-            const maxV = Math.max(...D.meses.map(m=>Math.max(m.ing,m.gas)),1);
-            return D.meses.map(m=>`
-              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;">
-                <div style="display:flex;align-items:flex-end;gap:3px;height:120px;width:100%;">
-                  <div style="flex:1;background:#059669;border-radius:4px 4px 0 0;height:${Math.round(m.ing/maxV*100)}%;min-height:${m.ing>0?4:0}px;" title="Ing: ${fmtMoney(m.ing)}"></div>
-                  <div style="flex:1;background:#dc2626;border-radius:4px 4px 0 0;height:${Math.round(m.gas/maxV*100)}%;min-height:${m.gas>0?4:0}px;" title="Gas: ${fmtMoney(m.gas)}"></div>
-                </div>
-                <div style="font-size:.65rem;color:var(--text2);text-align:center;">${m.label}</div>
-              </div>`).join('');
-          })()}
-        </div>
-        <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
-          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>
-        </div>
-      </div>`}
-    </div>
 
-    <!-- Ingresos por departamento -->
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">🏠 Ingresos por Departamento</span></div>
-      ${D.byAloj.filter(a=>a.ing>0).length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin ingresos en el período</p>':`
-      <div style="padding:4px 0;">
-        ${D.byAloj.filter(a=>a.ing>0).sort((a,b)=>b.ing-a.ing).map(a=>{
-          const pct=Math.round(a.ing/D.ingTotal*100);
-          return`<div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
-              <span style="font-weight:600;color:#059669;">${fmtMoney(a.ing)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
-            </div>
-            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${a.color};border-radius:5px;"></div>
-            </div>
-          </div>`;}).join('')}
-      </div>`}
-    </div>
-
+  <!-- TAB GRÁFICOS -->
+  <div id="fin-panel-graficos" style="${tab!=='graficos'?'display:none':''}">
     <!-- Gastos por categoría -->
-    <div class="card" style="margin-bottom:14px;">
+    <div class="card">
       <div class="card-header"><span class="card-title">💸 Gastos por Categoría</span></div>
       ${Object.keys(D.catMap).length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>':`
       <div style="padding:4px 0;">
-        ${Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
-          const pct=Math.round(monto/D.gasTotal*100);
-          const catColors={'Mantenimiento':'#f97316','Limpieza':'#06b6d4','Servicios':'#8b5cf6','Impuestos':'#ef4444','Otros':'#6b7280'};
-          const col=catColors[cat]||'#6b7280';
-          return`<div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <span>${cat}</span>
-              <span style="font-weight:600;color:var(--danger);">${fmtMoney(monto)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
-            </div>
-            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${col};border-radius:5px;"></div>
-            </div>
-          </div>`;}).join('')}
+        ${(()=>{
+          const catColors={'mantenimiento':'#f97316','limpieza':'#06b6d4','insumos':'#10b981','ropa_blanca':'#8b5cf6','servicios':'#8b5cf6','impuestos':'#ef4444','reparaciones':'#f59e0b','otros':'#6b7280'};
+          return Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
+            const pct=Math.round(monto/D.gasTotal*100);
+            const col=catColors[cat]||'#6b7280';
+            return '<div style="margin-bottom:10px;">'
+              +'<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">'
+              +'<span>'+cat+'</span>'
+              +'<span style="font-weight:600;color:var(--danger);">'+fmtMoney(monto)+' <span style="color:var(--text2);font-weight:400;">('+pct+'%)</span></span>'
+              +'</div>'
+              +'<div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">'
+              +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:5px;"></div>'
+              +'</div></div>';
+          }).join('');
+        })()}
       </div>`}
     </div>
-
-    <!-- Ocupación por departamento -->
-    <div class="card">
-      <div class="card-header"><span class="card-title">📅 Ocupación por Departamento</span></div>
-      <div style="padding:4px 0;">
-        ${D.byAloj.map(a=>`
-          <div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
-              <span style="font-size:.8rem;"><strong style="color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</strong> · ${a.diasOcup}/${D.diasPeriodo} días</span>
-            </div>
-            <div style="height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;">
-              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:6px;transition:width .5s;"></div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>
   </div>`;
+}
 }
 
 window.switchFinTab = function(tab) {
@@ -3109,7 +3075,11 @@ function renderAnual() {
     const lastD  = new Date(anio, m, 0).getDate();
     const mHasta = mesStr+'-'+String(lastD).padStart(2,'0');
     const resM   = reservas.filter(r=>r.estado!=='cancelada'&&r.entrada<=mHasta&&r.salida>mDesde);
-    const gasM   = gastos.filter(g=>g.fecha?.startsWith(mesStr));
+    // Gastos normales del mes
+    const gasM   = gastos.filter(g=>!g.esAnual&&g.fecha?.startsWith(mesStr));
+    // Gastos anuales del año seleccionado: dividir en 12 partes iguales
+    const gasAnualesAnio = gastos.filter(g=>g.esAnual&&g.fecha?.startsWith(String(anio)));
+    const gasAnualProrr  = gasAnualesAnio.reduce((s,g)=>s+(g.monto||0),0) / 12;
     const ing = resM.reduce((s,r)=>{
       const tot=Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)||1;
       const ini=r.entrada<mDesde?mDesde:r.entrada;
@@ -3117,7 +3087,7 @@ function renderAnual() {
       const dd=Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
       return s+Math.round((r.costo||0)*dd/tot);
     },0);
-    const gas = gasM.reduce((s,g)=>s+(g.monto||0),0);
+    const gas = Math.round(gasM.reduce((s,g)=>s+(g.monto||0),0) + gasAnualProrr);
     totIng+=ing; totGas+=gas;
     filas.push({mes:MONTHS_ES[m-1], ing, gas, gan:ing-gas, resM:resM.length});
   }
