@@ -3023,24 +3023,22 @@ function renderFinanzas() {
     <!-- Gastos por categoría -->
     <div class="card">
       <div class="card-header"><span class="card-title">💸 Gastos por Categoría</span></div>
-      ${Object.keys(D.catMap).length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>':`
-      <div style="padding:4px 0;">
-        ${(()=>{
-          const catColors={'mantenimiento':'#f97316','limpieza':'#06b6d4','insumos':'#10b981','ropa_blanca':'#8b5cf6','servicios':'#8b5cf6','impuestos':'#ef4444','reparaciones':'#f59e0b','otros':'#6b7280'};
-          return Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
-            const pct=Math.round(monto/D.gasTotal*100);
-            const col=catColors[cat]||'#6b7280';
-            return '<div style="margin-bottom:10px;">'
-              +'<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">'
-              +'<span>'+cat+'</span>'
-              +'<span style="font-weight:600;color:var(--danger);">'+fmtMoney(monto)+' <span style="color:var(--text2);font-weight:400;">('+pct+'%)</span></span>'
-              +'</div>'
-              +'<div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">'
-              +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:5px;"></div>'
-              +'</div></div>';
-          }).join('');
-        })()}
-      </div>`}
+      ${(()=>{
+        if(Object.keys(D.catMap).length===0) return '<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>';
+        const catColors={'mantenimiento':'#f97316','limpieza':'#06b6d4','insumos':'#10b981','ropa_blanca':'#8b5cf6','servicios':'#3b82f6','impuestos':'#ef4444','reparaciones':'#f59e0b','otros':'#6b7280'};
+        return '<div style="padding:4px 0;">'+Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
+          const pct=Math.round(monto/D.gasTotal*100);
+          const col=catColors[cat]||'#6b7280';
+          return '<div style="margin-bottom:10px;">'
+            +'<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">'
+            +'<span>'+cat+'</span>'
+            +'<span style="font-weight:600;color:var(--danger);">'+fmtMoney(monto)+' <span style="color:var(--text2);font-weight:400;">('+pct+'%)</span></span>'
+            +'</div>'
+            +'<div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">'
+            +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:5px;"></div>'
+            +'</div></div>';
+        }).join('')+'</div>';
+      })()}
     </div>
   </div>`;
 }
