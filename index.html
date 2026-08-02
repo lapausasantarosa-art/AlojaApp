@@ -144,10 +144,19 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 
 /* ── SIDEBAR ── */
 #sidebar{
-  width:240px;min-height:100vh;background:#fff;
+  width:240px;height:100vh;background:#fff;
   border-right:1px solid var(--border);display:flex;flex-direction:column;
   position:fixed;left:0;top:0;z-index:100;transition:transform .3s ease;
   box-shadow:2px 0 8px rgba(0,0,0,.04);
+  overflow:hidden;
+}
+/* Zona de navegación con scroll */
+#sidebar-nav{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
 }
 .sidebar-logo{padding:22px 20px 16px;font-family:var(--font-head);font-size:1.4rem;font-weight:800;color:var(--accent);border-bottom:1px solid var(--border);letter-spacing:-.5px;}
 .sidebar-logo span{color:var(--accent3);}
@@ -157,7 +166,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .nav-item:hover{color:var(--text);background:var(--surface2);}
 .nav-item.active{color:var(--accent);background:#f0ebfa;border-left-color:var(--accent);font-weight:600;}
 .nav-item .icon{font-size:1.05rem;width:20px;text-align:center;}
-.sidebar-user{margin-top:auto;padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);}
+.sidebar-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);flex-shrink:0;}
 .sidebar-user img,.sidebar-user-av{width:34px;height:34px;border-radius:50%;border:2px solid var(--border);object-fit:cover;flex-shrink:0;}
 .sidebar-user-av{background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#fff;}
 .sidebar-user-info{flex:1;min-width:0;}
@@ -510,29 +519,31 @@ tr:hover td{background:#f9f7ff;}
 <!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo" id="sidebar-logo">Aloj<span>App</span></div>
-  <div class="nav-section">
-    <div class="nav-label">Principal</div>
-    <div class="nav-item" id="nav-dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
-    <div class="nav-item active" id="nav-calendario" onclick="showPage('calendario')"><span class="icon">📅</span> Calendario</div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">Gestión</div>
-    <div class="nav-item" id="nav-alojamientos" onclick="showPage('alojamientos')"><span class="icon">🏠</span> Alojamientos</div>
-    <div class="nav-item" id="nav-reservas" onclick="showPage('reservas')"><span class="icon">📋</span> Reservas</div>
-    <div class="nav-item" id="nav-huespedes" onclick="showPage('huespedes')"><span class="icon">👥</span> Huéspedes</div>
-    <div class="nav-item" id="nav-ranking"   onclick="showPage('ranking')"><span class="icon">🏆</span> Ranking</div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">Finanzas</div>
-    <div class="nav-item" id="nav-finanzas" onclick="showPage('finanzas')"><span class="icon">💰</span> Ingresos & Gastos</div>
-    <div class="nav-item" id="nav-anual" onclick="showPage('anual')"><span class="icon">📅</span> Comparativa Anual</div>
-    <div class="nav-item" onclick="exportToSheets()"><span class="icon">📊</span> Exportar a Sheets</div>
-  </div>
-  <div class="nav-section" id="nav-admin-section" style="display:none;">
-    <div class="nav-label">Administración</div>
-    <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
-    <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
-    <div class="nav-item" id="nav-exportar" onclick="showPage('exportar')"><span class="icon">📥</span> Exportar datos</div>
+  <div id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item" id="nav-dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item active" id="nav-calendario" onclick="showPage('calendario')"><span class="icon">📅</span> Calendario</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Gestión</div>
+      <div class="nav-item" id="nav-alojamientos" onclick="showPage('alojamientos')"><span class="icon">🏠</span> Alojamientos</div>
+      <div class="nav-item" id="nav-reservas" onclick="showPage('reservas')"><span class="icon">📋</span> Reservas</div>
+      <div class="nav-item" id="nav-huespedes" onclick="showPage('huespedes')"><span class="icon">👥</span> Huéspedes</div>
+      <div class="nav-item" id="nav-ranking"   onclick="showPage('ranking')"><span class="icon">🏆</span> Ranking</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Finanzas</div>
+      <div class="nav-item" id="nav-finanzas" onclick="showPage('finanzas')"><span class="icon">💰</span> Ingresos & Gastos</div>
+      <div class="nav-item" id="nav-anual" onclick="showPage('anual')"><span class="icon">📅</span> Comparativa Anual</div>
+      <div class="nav-item" onclick="exportToSheets()"><span class="icon">📊</span> Exportar a Sheets</div>
+    </div>
+    <div class="nav-section" id="nav-admin-section" style="display:none;">
+      <div class="nav-label">Administración</div>
+      <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios')"><span class="icon">🔐</span> Usuarios</div>
+      <div class="nav-item" id="nav-mensajes" onclick="showPage('mensajes')"><span class="icon">💬</span> Mensajes WhatsApp</div>
+      <div class="nav-item" id="nav-exportar" onclick="showPage('exportar')"><span class="icon">📥</span> Exportar datos</div>
+    </div>
   </div>
   <div class="sidebar-user" id="sidebar-user-info">
     <div id="sidebar-avatar" class="sidebar-user-av">?</div>
@@ -2841,7 +2852,7 @@ function calcFinanzasData(fa, fDesde, fHasta) {
   }
 
   const ingTotal = activeRes.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
-  const gasTotal = activeGas.reduce((s,g) => s+(g.monto||0), 0);
+  const gasTotal = activeGas.filter(g => !g.esAnual).reduce((s,g) => s+(g.monto||0), 0);
 
   // Por mes — ingreso y días prorrateados por mes
   const meses = [];
