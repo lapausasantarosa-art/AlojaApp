@@ -765,31 +765,11 @@ tr:hover td{background:#f9f7ff;}
       <div class="form-row">
         <div class="form-group"><label class="form-label">Concepto *</label><input type="text" class="form-control" id="gasto-concepto"></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-control" id="gasto-cat">
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="limpieza">Limpieza</option>
-            <option value="insumos">Insumos</option>
-            <option value="ropa_blanca">Ropa Blanca</option>
-            <option value="servicios">Servicios</option>
-            <option value="impuestos">Impuestos</option>
-            <option value="reparaciones">Reparaciones</option>
-            <option value="otros">Otros</option>
-          </select>
+          <select class="form-control" id="gasto-cat"><option value="mantenimiento">Mantenimiento</option><option value="limpieza">Limpieza</option><option value="servicios">Servicios</option><option value="impuestos">Impuestos</option><option value="reparaciones">Reparaciones</option><option value="otros">Otros</option></select>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Monto $ *</label><input type="number" class="form-control" id="gasto-monto" min="0"></div>
       <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="gasto-obs" rows="2"></textarea></div>
-      <!-- Gasto anual -->
-      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-top:4px;">
-        <label class="toggle" style="flex-shrink:0;margin-top:2px;">
-          <input type="checkbox" id="gasto-anual">
-          <span class="toggle-slider"></span>
-        </label>
-        <div>
-          <div style="font-weight:600;font-size:.88rem;color:#1e40af;">Gasto anual / amortizable</div>
-          <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">Al activar, el monto se distribuye proporcionalmente en los 12 meses de la Comparativa Anual, en lugar de imputarse solo al mes de carga.</div>
-        </div>
-      </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-gasto')">Cancelar</button><button class="btn btn-primary" onclick="saveGasto()">💾 Guardar</button></div>
   </div>
@@ -1136,6 +1116,7 @@ window._loadingTimeout = setTimeout(() => {
   if (loading && loading.style.display !== 'none') {
     document.getElementById('loading-msg').textContent = '⚠️ La carga está tardando demasiado. Verificá tu conexión y recargá la página.';
     document.getElementById('loading-msg').style.color = '#dc2626';
+    // Agregar botón de recargar
     const btn = document.createElement('button');
     btn.textContent = '🔄 Recargar';
     btn.style.cssText = 'margin-top:16px;padding:10px 24px;background:#6d40c4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;';
@@ -1143,18 +1124,6 @@ window._loadingTimeout = setTimeout(() => {
     loading.appendChild(btn);
   }
 }, 15000);
-
-// Capturar errores globales no manejados
-window.addEventListener('error', e => {
-  console.error('Error global:', e.message, e.filename, e.lineno);
-  document.getElementById('loading-msg').textContent = '⚠️ Error: ' + e.message + ' (línea ' + e.lineno + ')';
-  document.getElementById('loading-msg').style.color = '#dc2626';
-});
-window.addEventListener('unhandledrejection', e => {
-  console.error('Promise rechazada:', e.reason);
-  document.getElementById('loading-msg').textContent = '⚠️ Error async: ' + (e.reason?.message || e.reason);
-  document.getElementById('loading-msg').style.color = '#dc2626';
-});
 
 // Expose para onclick
 window.signInWithGoogle = async function() {
@@ -1638,8 +1607,10 @@ function renderAlojamientos() {
     const rc=reservas.filter(r=>r.alojId===a.id&&r.estado!=='cancelada').length;
     return `<div class="aloj-card" style="--aloj-color:${a.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><div class="color-dot" style="background:${a.color}"></div><div class="aloj-card-name">${a.nombre}</div></div>
-      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?'<span>📝 '+a.obs+'</span>':''}
-        ${a.clave?'<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-'+a.id+'" style="letter-spacing:2px;">••••</span><button onclick="toggleClave(\''+a.id+'\',\''+a.clave+'\')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button></span>':''}
+      <div class="aloj-card-meta"><span>👥 Máx. ${a.maxHuespedes} personas</span><span>📋 ${rc} reserva(s) activa(s)</span>${a.obs?`<span>📝 ${a.obs}</span>`:''}
+        ${a.clave?`<span style="display:flex;align-items:center;gap:5px;">🔐 Clave: <span id="clave-${a.id}" style="letter-spacing:2px;">••••</span>
+          <button onclick="toggleClave('${a.id}','${a.clave}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--text2);padding:0 2px;" title="Mostrar/ocultar clave">👁</button>
+        </span>`:''}
       </div>
       <div class="aloj-card-actions">
         ${hasPerm('aloj-edit')?'<button class="btn btn-ghost btn-sm" onclick="openAlojModal(\''+a.id+'\')">✏️ Editar</button>':''}
@@ -1740,7 +1711,7 @@ async function cargarCotizacionDolar() {
     const fecha = data.fechaActualizacion
       ? new Date(data.fechaActualizacion).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : '';
-    el.innerHTML = 'Dólar Oficial · Compra: <strong>$'+data.compra+'</strong> · Venta: <strong>$'+data.venta+'</strong>'+(fecha?' <span style="color:#9ca3af;font-size:.72rem;">('+fecha+')</span>':'');
+    el.innerHTML = `Dólar Oficial · Compra: <strong>$${data.compra}</strong> · Venta: <strong>$${data.venta}</strong>${fecha?` <span style="color:#9ca3af;font-size:.72rem;">(${fecha})</span>`:''}`;
     calcularConversionUSD();
   } catch(e) {
     el.textContent = 'No se pudo cargar la cotización';
@@ -1865,7 +1836,7 @@ window.saveReserva = async function() {
   if(estado!=='cancelada'){
     const conf=checkConflictos(alojId,entrada,salida,id||null);
     if(conf.length){
-      const cn=conf[0].estado==='bloqueado'?'bloqueo ('+(conf[0].motivo||'sin motivo')+')':'reserva de '+conf[0].nombre;
+      const cn=conf[0].estado==='bloqueado'?`bloqueo (${conf[0].motivo||'sin motivo'})`:`reserva de ${conf[0].nombre}`;
       toast(`Conflicto de fechas con ${cn}`,'error');return;
     }
   }
@@ -2314,7 +2285,7 @@ window.openHuespedModal = function(tel=null) {
       <div style="font-size:.78rem;color:var(--text2);">${fmt(r.entrada)} → ${fmt(r.salida)} • 👥${r.personas}${r.mascota==='si'?' 🐾':''}</div></div>
       <div style="text-align:right;"><div style="color:var(--accent3);font-weight:600;">${fmtMoney(r.costo)}</div>
       <span class="badge ${r.estado==='confirmada'?'badge-green':'badge-yellow'}">${r.estado}</span></div>
-    </div>`;}).join(''):'<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>';
+    </div>`;}).join(''):`<div class="empty-state" style="padding:30px;"><p>Sin historial</p></div>`;
   document.querySelectorAll('#modal-huesped .tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#modal-huesped .tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector('#modal-huesped .tab-btn').classList.add('active');
@@ -2788,7 +2759,6 @@ window.openGastoModal = function(id=null) {
   document.getElementById('gasto-cat').value     =g?.cat||'mantenimiento';
   document.getElementById('gasto-monto').value   =g?.monto||'';
   document.getElementById('gasto-obs').value     =g?.obs||'';
-  document.getElementById('gasto-anual').checked =g?.esAnual||false;
   document.getElementById('modal-gasto-title').textContent=id?'Editar Gasto':'Agregar Gasto';
   openModal('modal-gasto');
 };
@@ -2800,11 +2770,10 @@ window.saveGasto = async function() {
   const cat    =document.getElementById('gasto-cat').value;
   const monto  =parseFloat(document.getElementById('gasto-monto').value)||0;
   const obs    =document.getElementById('gasto-obs').value.trim();
-  const esAnual=document.getElementById('gasto-anual').checked;
   if(!fecha||!concepto||monto<=0){toast('Completá fecha, concepto y monto','error');return;}
   const docId=id||getId();
   setDbStatus('ing','Guardando…');
-  await upsertDoc('gastos',docId,{alojId,fecha,concepto,cat,monto,obs,esAnual});
+  await upsertDoc('gastos',docId,{alojId,fecha,concepto,cat,monto,obs});
   setDbStatus('ok','☁️ En línea');
   toast('Gasto guardado','success');
   closeModal('modal-gasto');
@@ -2964,7 +2933,7 @@ function renderFinanzas() {
         <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
           <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
           <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?'<div style="font-size:.7rem;color:var(--text2);font-weight:400;">'+fmtMoney(a.gasD)+' propio + '+fmtMoney(a.gasProrr)+' gral.</div>':''}</td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?`<div style="font-size:.7rem;color:var(--text2);font-weight:400;">${fmtMoney(a.gasD)} propio + ${fmtMoney(a.gasProrr)} gral.</div>`:''}</td>
           <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
           <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
           <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
@@ -3017,7 +2986,7 @@ function renderFinanzas() {
         const rows = fg.map(g => {
           const a = g.alojId==='general'?{nombre:'General',color:'#888'}:getAloj(g.alojId)||{nombre:'?',color:'#888'};
           const btns = hasPerm('fin-edit') ? '<button class="btn btn-ghost btn-sm" onclick="openGastoModal(\''+g.id+'\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGasto(\''+g.id+'\')">🗑️</button>' : '';
-          return '<tr><td>'+fmt(g.fecha)+'</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:'+a.color+'"></div>'+a.nombre+'</div></td><td>'+g.concepto+'</td><td><span class="badge badge-blue">'+g.cat+'</span>'+(g.esAnual?'<span class="badge badge-purple" style="font-size:.65rem;margin-left:3px;">📅 Anual</span>':'')+'</td><td style="color:var(--danger);font-weight:600;">'+fmtMoney(g.monto)+'</td><td><div style="display:flex;gap:5px;">'+btns+'</div></td></tr>';
+          return '<tr><td>'+fmt(g.fecha)+'</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:'+a.color+'"></div>'+a.nombre+'</div></td><td>'+g.concepto+'</td><td><span class="badge badge-blue">'+g.cat+'</span></td><td style="color:var(--danger);font-weight:600;">'+fmtMoney(g.monto)+'</td><td><div style="display:flex;gap:5px;">'+btns+'</div></td></tr>';
         }).join('');
         const totalRow = '<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
           +'<td colspan="4" style="text-align:right;color:var(--text2);">TOTAL GASTOS</td>'
@@ -3026,31 +2995,89 @@ function renderFinanzas() {
       })()}
     </div>
   </div>
+  </div>
+    <!-- Ingresos vs Gastos por mes -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">📈 Ingresos vs Gastos por Mes</span></div>
+      ${D.meses.length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin datos</p>':`
+      <div style="overflow-x:auto;">
+        <div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0;min-width:${D.meses.length*80}px;">
+          ${(()=>{
+            const maxV = Math.max(...D.meses.map(m=>Math.max(m.ing,m.gas)),1);
+            return D.meses.map(m=>`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;">
+                <div style="display:flex;align-items:flex-end;gap:3px;height:120px;width:100%;">
+                  <div style="flex:1;background:#059669;border-radius:4px 4px 0 0;height:${Math.round(m.ing/maxV*100)}%;min-height:${m.ing>0?4:0}px;" title="Ing: ${fmtMoney(m.ing)}"></div>
+                  <div style="flex:1;background:#dc2626;border-radius:4px 4px 0 0;height:${Math.round(m.gas/maxV*100)}%;min-height:${m.gas>0?4:0}px;" title="Gas: ${fmtMoney(m.gas)}"></div>
+                </div>
+                <div style="font-size:.65rem;color:var(--text2);text-align:center;">${m.label}</div>
+              </div>`).join('');
+          })()}
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#059669;border-radius:2px;"></div>Ingresos</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;"><div style="width:10px;height:10px;background:#dc2626;border-radius:2px;"></div>Gastos</div>
+        </div>
+      </div>`}
+    </div>
 
-  <!-- TAB GRÁFICOS -->
-  <div id="fin-panel-graficos" style="${tab!=='graficos'?'display:none':''}">
+    <!-- Ingresos por departamento -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">🏠 Ingresos por Departamento</span></div>
+      ${D.byAloj.filter(a=>a.ing>0).length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin ingresos en el período</p>':`
+      <div style="padding:4px 0;">
+        ${D.byAloj.filter(a=>a.ing>0).sort((a,b)=>b.ing-a.ing).map(a=>{
+          const pct=Math.round(a.ing/D.ingTotal*100);
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
+              <span style="font-weight:600;color:#059669;">${fmtMoney(a.ing)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
+            </div>
+            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${a.color};border-radius:5px;"></div>
+            </div>
+          </div>`;}).join('')}
+      </div>`}
+    </div>
+
     <!-- Gastos por categoría -->
-    <div class="card">
+    <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">💸 Gastos por Categoría</span></div>
-      ${(()=>{
-        if(Object.keys(D.catMap).length===0) return '<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>';
-        const catColors={'mantenimiento':'#f97316','limpieza':'#06b6d4','insumos':'#10b981','ropa_blanca':'#8b5cf6','servicios':'#3b82f6','impuestos':'#ef4444','reparaciones':'#f59e0b','otros':'#6b7280'};
-        return '<div style="padding:4px 0;">'+Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
+      ${Object.keys(D.catMap).length===0?'<p style="color:var(--text2);text-align:center;padding:20px;">Sin gastos en el período</p>':`
+      <div style="padding:4px 0;">
+        ${Object.entries(D.catMap).sort((a,b)=>b[1]-a[1]).map(([cat,monto])=>{
           const pct=Math.round(monto/D.gasTotal*100);
+          const catColors={'Mantenimiento':'#f97316','Limpieza':'#06b6d4','Servicios':'#8b5cf6','Impuestos':'#ef4444','Otros':'#6b7280'};
           const col=catColors[cat]||'#6b7280';
-          return '<div style="margin-bottom:10px;">'
-            +'<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">'
-            +'<span>'+cat+'</span>'
-            +'<span style="font-weight:600;color:var(--danger);">'+fmtMoney(monto)+' <span style="color:var(--text2);font-weight:400;">('+pct+'%)</span></span>'
-            +'</div>'
-            +'<div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">'
-            +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:5px;"></div>'
-            +'</div></div>';
-        }).join('')+'</div>';
-      })()}
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <span>${cat}</span>
+              <span style="font-weight:600;color:var(--danger);">${fmtMoney(monto)} <span style="color:var(--text2);font-weight:400;">(${pct}%)</span></span>
+            </div>
+            <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${col};border-radius:5px;"></div>
+            </div>
+          </div>`;}).join('')}
+      </div>`}
+    </div>
+
+    <!-- Ocupación por departamento -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">📅 Ocupación por Departamento</span></div>
+      <div style="padding:4px 0;">
+        ${D.byAloj.map(a=>`
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:6px;"><div class="color-dot" style="background:${a.color}"></div><span>${a.nombre.replace(/departamento/gi,'Dpto.')}</span></div>
+              <span style="font-size:.8rem;"><strong style="color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</strong> · ${a.diasOcup}/${D.diasPeriodo} días</span>
+            </div>
+            <div style="height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;">
+              <div style="width:${a.pctOcup}%;height:100%;background:${a.color};border-radius:6px;transition:width .5s;"></div>
+            </div>
+          </div>`).join('')}
+      </div>
     </div>
   </div>`;
-}
 }
 
 window.switchFinTab = function(tab) {
@@ -3082,11 +3109,7 @@ function renderAnual() {
     const lastD  = new Date(anio, m, 0).getDate();
     const mHasta = mesStr+'-'+String(lastD).padStart(2,'0');
     const resM   = reservas.filter(r=>r.estado!=='cancelada'&&r.entrada<=mHasta&&r.salida>mDesde);
-    // Gastos normales del mes
-    const gasM   = gastos.filter(g=>!g.esAnual&&g.fecha?.startsWith(mesStr));
-    // Gastos anuales del año seleccionado: dividir en 12 partes iguales
-    const gasAnualesAnio = gastos.filter(g=>g.esAnual&&g.fecha?.startsWith(String(anio)));
-    const gasAnualProrr  = gasAnualesAnio.reduce((s,g)=>s+(g.monto||0),0) / 12;
+    const gasM   = gastos.filter(g=>g.fecha?.startsWith(mesStr));
     const ing = resM.reduce((s,r)=>{
       const tot=Math.round((new Date(r.salida)-new Date(r.entrada))/86400000)||1;
       const ini=r.entrada<mDesde?mDesde:r.entrada;
@@ -3094,7 +3117,7 @@ function renderAnual() {
       const dd=Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
       return s+Math.round((r.costo||0)*dd/tot);
     },0);
-    const gas = Math.round(gasM.reduce((s,g)=>s+(g.monto||0),0) + gasAnualProrr);
+    const gas = gasM.reduce((s,g)=>s+(g.monto||0),0);
     totIng+=ing; totGas+=gas;
     filas.push({mes:MONTHS_ES[m-1], ing, gas, gan:ing-gas, resM:resM.length});
   }
@@ -3586,20 +3609,57 @@ loadScript('https://apis.google.com/js/api.js', () => {
 });
 </script>
 
-<!-- PWA Service Worker -->
+<!-- PWA Service Worker — generado inline, sin archivo externo -->
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) await r.unregister();
-    } catch(e) {}
-    try {
-      const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
-      navigator.serviceWorker.register(base + 'sw.js')
-        .then(r => console.log('SW ok'))
-        .catch(() => {});
-    } catch(e) {}
+  window.addEventListener('load', () => {
+    const swCode = `
+const CACHE = 'alojapp-v2';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (
+    url.includes('firestore.googleapis.com') ||
+    url.includes('firebase') ||
+    url.includes('googleapis.com') ||
+    url.includes('accounts.google.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('gstatic.com')
+  ) return;
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});`;
+    const blob = new Blob([swCode], {type: 'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, {scope: './'})
+      .then(r => console.log('SW ok', r.scope))
+      .catch(e => {
+        // Fallback: intentar con archivo externo si existe
+        const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
+        navigator.serviceWorker.register(base + 'sw.js')
+          .then(r2 => console.log('SW externo ok', r2.scope))
+          .catch(e2 => console.log('SW no disponible'));
+      });
   });
 }
 </script>
