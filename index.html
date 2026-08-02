@@ -2864,13 +2864,15 @@ function calcFinanzasData(fa, fDesde, fHasta) {
   activeGas.forEach(g => { catMap[g.cat||'Otros'] = (catMap[g.cat||'Otros']||0) + (g.monto||0); });
 
   // Por alojamiento — ingresos y días prorrateados, gastos directos + generales prorrateados
-  const gasGenerales = activeGas.filter(g => g.alojId === 'general');
+  // Los gastos anuales (esAnual) NO se incluyen — van solo a Comparativa Anual
+  const gasNoAnual   = activeGas.filter(g => !g.esAnual);
+  const gasGenerales = gasNoAnual.filter(g => g.alojId === 'general');
   const gasGenTotal  = gasGenerales.reduce((s,g) => s+(g.monto||0), 0);
   const cantAloj     = alojamientos.length || 1;
 
   const byAloj = alojamientos.map(a => {
     const resA    = activeRes.filter(r => r.alojId === a.id);
-    const gasDir  = activeGas.filter(g => g.alojId === a.id);
+    const gasDir  = gasNoAnual.filter(g => g.alojId === a.id);
     const ing     = resA.reduce((s,r) => s + ingEnRango(r, fechaDesde, fechaHasta), 0);
     const gasD    = gasDir.reduce((s,g) => s+(g.monto||0), 0);
     // Gastos generales prorrateados en partes iguales entre departamentos
