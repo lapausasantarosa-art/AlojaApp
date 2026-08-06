@@ -2890,7 +2890,9 @@ function calcFinanzasData(fa, fDesde, fHasta) {
     const gasProrr= Math.round(gasGenTotal / cantAloj);
     const gas     = gasD + gasProrr;
     const diasOcup = resA.reduce((s,r) => s + diasEnRango(r.entrada, r.salida, fechaDesde, fechaHasta), 0);
-    return { ...a, ing, gas, gasD, gasProrr, gan: ing-gas, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
+    const gan      = ing - gas;
+    const ganPorNoche = diasOcup > 0 ? Math.round(gan / diasOcup) : 0;
+    return { ...a, ing, gas, gasD, gasProrr, gan, ganPorNoche, diasOcup, pctOcup: diasPeriodo>0?Math.min(100,Math.round(diasOcup/diasPeriodo*100)):0 };
   });
 
   // Orígenes — días prorrateados dentro del período
@@ -2963,11 +2965,11 @@ function renderFinanzas() {
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">📊 Resumen por Departamento</span></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Días ocup.</th><th>Ocupación</th></tr></thead>
+        <thead><tr><th>Departamento</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Días ocup.</th><th>Ocupación</th><th title="Ganancia dividida los días ocupados">$ / Noche</th></tr></thead>
         <tbody>${D.byAloj.map(a=>`<tr style="${fa===a.id?'background:#f5f3ff;':''}">
           <td><div style="display:flex;align-items:center;gap:7px;"><div class="color-dot" style="background:${a.color}"></div><strong>${a.nombre.replace(/departamento/gi,'Dpto.')}</strong></div></td>
           <td style="color:#059669;font-weight:600;">${fmtMoney(a.ing)}</td>
-          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?`<div style="font-size:.7rem;color:var(--text2);font-weight:400;">${fmtMoney(a.gasD)} propio + ${fmtMoney(a.gasProrr)} gral.</div>`:''}</td>
+          <td style="color:var(--danger);font-weight:600;">${fmtMoney(a.gas)}${a.gasProrr>0?'<div style="font-size:.7rem;color:var(--text2);font-weight:400;">'+fmtMoney(a.gasD)+' propio + '+fmtMoney(a.gasProrr)+' gral.</div>':''}</td>
           <td style="font-weight:700;color:${a.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(a.gan)}</td>
           <td>${a.diasOcup} / ${D.diasPeriodo} días</td>
           <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;">
@@ -2976,6 +2978,7 @@ function renderFinanzas() {
             </div>
             <span style="font-size:.8rem;font-weight:700;color:${a.pctOcup>=70?'#059669':a.pctOcup>=40?'#d97706':'var(--text2)'};">${a.pctOcup}%</span>
           </div></td>
+          <td style="font-weight:700;color:${a.ganPorNoche>=0?'#059669':'var(--danger)'};">${a.diasOcup>0?fmtMoney(a.ganPorNoche):'—'}</td>
         </tr>`).join('')}
         <tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">
           <td>TOTAL</td>
@@ -2983,6 +2986,7 @@ function renderFinanzas() {
           <td style="color:var(--danger);">${fmtMoney(D.gasTotal)}</td>
           <td style="color:${D.gan>=0?'#059669':'var(--danger)'};">${fmtMoney(D.gan)}</td>
           <td colspan="2"></td>
+          <td style="font-weight:700;color:${(()=>{const td=D.byAloj.reduce((s,a)=>s+a.diasOcup,0);return td>0?(D.gan/td>=0?'#059669':'var(--danger)'):'var(--text2)'})()};">${(()=>{const td=D.byAloj.reduce((s,a)=>s+a.diasOcup,0);return td>0?fmtMoney(Math.round(D.gan/td)):'—'})()}</td>
         </tr>
         </tbody>
       </table></div>
@@ -3074,8 +3078,15 @@ function renderAnual() {
       return s+Math.round((r.costo||0)*dd/tot);
     },0);
     const gas = Math.round(gasM.reduce((s,g)=>s+(g.monto||0),0) + gasAnualProrr);
+    const diasOcupM = resM.reduce((s,r)=>{
+      const ini=r.entrada<mDesde?mDesde:r.entrada;
+      const fin=r.salida>mHasta?mHasta:r.salida;
+      return s+Math.max(0,Math.round((new Date(fin)-new Date(ini))/86400000));
+    },0);
+    const gan = ing - gas;
+    const ganPorNoche = diasOcupM > 0 ? Math.round(gan / diasOcupM) : null;
     totIng+=ing; totGas+=gas;
-    filas.push({mes:MONTHS_ES[m-1], ing, gas, gan:ing-gas, resM:resM.length});
+    filas.push({mes:MONTHS_ES[m-1], ing, gas, gan, resM:resM.length, diasOcupM, ganPorNoche});
   }
   const maxV = Math.max(...filas.map(f=>Math.max(f.ing,f.gas)),1);
 
@@ -3118,11 +3129,12 @@ function renderAnual() {
     +'<div class="card">'
     +'<div class="card-header"><span class="card-title">🗓️ Detalle Mensual '+anio+'</span></div>'
     +'<div class="table-wrap"><table>'
-    +'<thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Reservas</th><th>% Margen</th></tr></thead>'
+    +'<thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Reservas</th><th>% Margen</th><th title="Ganancia / días ocupados">$ / Noche</th></tr></thead>'
     +'<tbody>'
     +filas.map((f,i)=>{
       const margen = f.ing>0?Math.round(f.gan/f.ing*100):0;
       const mc     = f.gan>=0?'#059669':'var(--danger)';
+      const gnColor= f.ganPorNoche!==null?(f.ganPorNoche>=0?'#059669':'var(--danger)'):'var(--text2)';
       return '<tr style="'+(i%2===0?'':'background:#fafafa;')+'">'
         +'<td style="font-weight:600;">'+f.mes+'</td>'
         +'<td style="color:#059669;font-weight:600;">'+fmtMoney(f.ing)+'</td>'
@@ -3135,7 +3147,9 @@ function renderAnual() {
            +'<div style="width:'+Math.min(100,Math.abs(margen))+'%;height:100%;background:'+mc+';border-radius:4px;"></div>'
            +'</div><span style="font-size:.8rem;font-weight:600;color:'+mc+';">'+margen+'%</span>'
           :'<span style="font-size:.78rem;color:var(--text2);">—</span>')
-        +'</div></td></tr>';
+        +'</div></td>'
+        +'<td style="font-weight:700;color:'+gnColor+';">'+(f.ganPorNoche!==null?fmtMoney(f.ganPorNoche):'—')+'</td>'
+        +'</tr>';
     }).join('')
     +'<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border);">'
     +'<td>TOTAL '+anio+'</td>'
@@ -3144,6 +3158,11 @@ function renderAnual() {
     +'<td style="color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+fmtMoney(totIng-totGas)+'</td>'
     +'<td style="color:var(--text2);">'+filas.reduce((s,f)=>s+f.resM,0)+' res.</td>'
     +'<td>'+(totIng>0?'<span style="font-weight:700;color:'+(totIng-totGas>=0?'#059669':'var(--danger)')+';">'+Math.round((totIng-totGas)/totIng*100)+'%</span>':'—')+'</td>'
+    +'<td>'+(()=>{
+      const totDias=filas.reduce((s,f)=>s+(f.diasOcupM||0),0);
+      const ganAnual=totIng-totGas;
+      return totDias>0?'<span style="font-weight:700;color:'+(ganAnual>=0?'#059669':'var(--danger)')+';">'+fmtMoney(Math.round(ganAnual/totDias))+'</span>':'—';
+    })()+'</td>'
     +'</tr>'
     +'</tbody></table></div></div>';
 }
