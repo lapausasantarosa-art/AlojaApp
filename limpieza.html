@@ -450,12 +450,16 @@ async function checkUsuario(email) {
     // Admin directo
     if (email === 'lapausa.santarosa@gmail.com') return true;
 
+    // El index guarda usuarios con el email como ID del documento y campo approved:true
+    const uDoc = await getDoc(doc(db, 'usuarios', email));
+    if (uDoc.exists() && uDoc.data().approved === true) return true;
+
+    // Fallback: buscar por campo email en cualquier documento
     const snap = await getDocs(collection(db, 'usuarios'));
     for (const d of snap.docs) {
       const data = d.data();
-      // Buscar por email (puede estar en id del doc o campo email)
-      const docEmail = data.email || d.id;
-      if (docEmail === email && data.estado === 'activo') return true;
+      const docEmail = (data.email || d.id || '').toLowerCase();
+      if (docEmail === email.toLowerCase() && data.approved === true) return true;
     }
     return false;
   } catch(e) {
