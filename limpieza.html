@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limpieza del Día — La Pausa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f4f5f7;
+    --card-bg:   #ffffff;
+    --border:    #e3e5ea;
+    --text:      #1a1d23;
+    --text2:     #6b7280;
+    --accent:    #6d40c4;
+    --accent-lt: #ede9fb;
+    --green:     #16a34a;
+    --green-lt:  #dcfce7;
+    --yellow:    #d97706;
+    --yellow-lt: #fef3c7;
+    --red:       #dc2626;
+    --red-lt:    #fee2e2;
+    --blue:      #2563eb;
+    --blue-lt:   #dbeafe;
+    --radius:    14px;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    gap: 24px;
+  }
+  .login-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    border: 1px solid var(--border);
+  }
+  .login-logo {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+  .login-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .login-subtitle {
+    font-size: .9rem;
+    color: var(--text2);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+  .btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-google:hover { opacity: .88; }
+  .btn-google svg { flex-shrink: 0; }
+
+  /* ── ACCESS DENIED ── */
+  #denied-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .denied-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    border: 2px solid var(--red);
+  }
+  .denied-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .denied-title { font-size: 1.2rem; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+  .denied-msg { font-size: .9rem; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+  .btn-logout {
+    padding: 10px 20px;
+    background: var(--red-lt);
+    color: var(--red);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── LOADING ── */
+  #loading-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 12px;
+    color: var(--text2);
+    font-size: .9rem;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN APP ── */
+  #app { display: none; }
+
+  .app-header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .app-header-left { display: flex; align-items: center; gap: 10px; }
+  .app-header-icon { font-size: 1.4rem; }
+  .app-header-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .app-header-date { font-size: .8rem; color: var(--text2); margin-top: 1px; }
+  .app-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent-lt);
+  }
+  .user-name { font-size: .82rem; font-weight: 600; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-signout {
+    font-size: .75rem;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text2);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .app-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 0 auto; }
+
+  /* ── CARDS ── */
+  .aloj-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .aloj-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .aloj-color-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .aloj-nombre { font-size: 1rem; font-weight: 700; flex: 1; }
+  .aloj-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* Status badges */
+  .status-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .status-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .status-text { font-size: .92rem; line-height: 1.45; font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: .3px;
+  }
+  .badge-limpiar   { background: var(--yellow-lt); color: var(--yellow); }
+  .badge-preparar  { background: var(--blue-lt);   color: var(--blue);   }
+  .badge-nada      { background: var(--green-lt);  color: var(--green);  }
+  .badge-airbnb    { background: #ff585f22; color: #c0392b; }
+  .badge-booking   { background: #003580; color: #fff; }
+
+  .tag-obs {
+    background: var(--accent-lt);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .85rem;
+    color: var(--accent);
+    line-height: 1.4;
+  }
+  .tag-pet {
+    background: var(--yellow-lt);
+    border-left: 3px solid var(--yellow);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .85rem;
+    color: var(--yellow);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tag-plataforma {
+    background: #fff8ed;
+    border-left: 3px solid var(--yellow);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .85rem;
+    color: var(--yellow);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── EMPTY / ERROR ── */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: .9rem;
+  }
+  .empty-state .big { font-size: 2rem; margin-bottom: 8px; }
+
+  /* Refresh btn */
+  .btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--accent-lt);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .app-body { padding: 10px; gap: 10px; }
+    .aloj-card-header { padding: 12px 14px; }
+    .aloj-card-body { padding: 12px 14px; }
+    .user-name { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🧹</div>
+    <div class="login-title">Limpieza del Día</div>
+    <div class="login-subtitle">Iniciá sesión con tu cuenta de Google para ver qué hay que preparar hoy.</div>
+    <button class="btn-google" id="btn-login">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#fff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#ffffffcc" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#ffffffaa" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#ffffffdd" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Iniciar sesión con Google
+    </button>
+  </div>
+</div>
+
+<!-- ACCESO DENEGADO -->
+<div id="denied-screen">
+  <div class="denied-card">
+    <div class="denied-icon">🚫</div>
+    <div class="denied-title">Acceso Denegado</div>
+    <div class="denied-msg" id="denied-msg">Tu cuenta no está habilitada para acceder a este panel. Contactá al administrador.</div>
+    <button class="btn-logout" id="btn-denied-logout">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- CARGANDO -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <span id="loading-msg">Verificando acceso…</span>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="app-header-icon">🧹</div>
+      <div>
+        <div class="app-header-title">Limpieza del Día</div>
+        <div class="app-header-date" id="header-date"></div>
+      </div>
+    </div>
+    <div class="app-user">
+      <img class="user-avatar" id="user-avatar" src="" alt="">
+      <span class="user-name" id="user-name"></span>
+      <button class="btn-signout" id="btn-signout">Salir</button>
+    </div>
+  </div>
+  <div class="app-body" id="app-body">
+    <div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>
+  </div>
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════════════════
+const FB = {
+  apiKey:            "AIzaSyBe0h2TWO5oBS4WxeJVoC37PKbyz1jmJiU",
+  authDomain:        "alojaapp-8ed45.firebaseapp.com",
+  projectId:         "alojaapp-8ed45",
+  storageBucket:     "alojaapp-8ed45.firebasestorage.app",
+  messagingSenderId: "763636738474",
+  appId:             "1:763636738474:web:661dd264664b468c2ae3d3"
+};
+
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, getDocs, doc, getDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const fireApp = initializeApp(FB, 'limpieza');
+const db      = getFirestore(fireApp);
+const auth    = getAuth(fireApp);
+const provider = new GoogleAuthProvider();
+
+// ── Screens ──
+const S = {
+  login:   document.getElementById('login-screen'),
+  denied:  document.getElementById('denied-screen'),
+  loading: document.getElementById('loading-screen'),
+  app:     document.getElementById('app')
+};
+
+function show(name) {
+  ['login','denied','loading','app'].forEach(k => {
+    S[k].style.display = k === name ? (k === 'app' ? 'block' : 'flex') : 'none';
+  });
+}
+
+// ── Buttons ──
+document.getElementById('btn-login').addEventListener('click', async () => {
+  try {
+    show('loading');
+    document.getElementById('loading-msg').textContent = 'Iniciando sesión…';
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    show('login');
+    alert('Error al iniciar sesión: ' + e.message);
+  }
+});
+
+document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
+document.getElementById('btn-denied-logout').addEventListener('click', () => signOut(auth));
+
+// ── Auth state ──
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    show('login');
+    return;
+  }
+
+  show('loading');
+  document.getElementById('loading-msg').textContent = 'Verificando acceso…';
+
+  // Verificar usuario en colección 'usuarios'
+  const isEnabled = await checkUsuario(user.email);
+  if (!isEnabled) {
+    document.getElementById('denied-msg').textContent =
+      'Tu cuenta (' + user.email + ') no está habilitada. Contactá al administrador.';
+    show('denied');
+    return;
+  }
+
+  // Completar header de usuario
+  document.getElementById('user-avatar').src = user.photoURL || '';
+  document.getElementById('user-name').textContent = user.displayName || user.email;
+
+  // Fecha en header
+  const ahora = new Date();
+  const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  document.getElementById('header-date').textContent =
+    ahora.toLocaleDateString('es-AR', opts);
+
+  show('app');
+  document.getElementById('loading-msg').textContent = 'Cargando datos…';
+  await cargarYRenderizar();
+});
+
+// ── Verificar usuario habilitado ──
+async function checkUsuario(email) {
+  try {
+    // Admin directo
+    if (email === 'lapausa.santarosa@gmail.com') return true;
+
+    const snap = await getDocs(collection(db, 'usuarios'));
+    for (const d of snap.docs) {
+      const data = d.data();
+      // Buscar por email (puede estar en id del doc o campo email)
+      const docEmail = data.email || d.id;
+      if (docEmail === email && data.estado === 'activo') return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('Error verificando usuario:', e);
+    return false;
+  }
+}
+
+// ── Cargar datos y renderizar ──
+async function cargarYRenderizar() {
+  try {
+    const [snapAloj, snapRes] = await Promise.all([
+      getDocs(collection(db, 'alojamientos')),
+      getDocs(collection(db, 'reservas'))
+    ]);
+
+    const alojamientos = snapAloj.docs.map(d => ({ id: d.id, ...d.data() }));
+    const reservas     = snapRes.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    renderCards(alojamientos, reservas);
+  } catch(e) {
+    console.error('Error cargando datos:', e);
+    document.getElementById('app-body').innerHTML =
+      '<div class="empty-state"><div class="big">⚠️</div>Error al cargar datos. Recargá la página.</div>';
+  }
+}
+
+// ── Render principal ──
+function renderCards(alojamientos, reservas) {
+  const body = document.getElementById('app-body');
+
+  // Fechas clave
+  const ahora   = new Date();
+  const hoy     = isoFecha(ahora);
+  const ayerDate = new Date(ahora);
+  ayerDate.setDate(ayerDate.getDate() - 1);
+  const ayer    = isoFecha(ayerDate);
+
+  // Solo reservas activas
+  const activas = reservas.filter(r => r.estado !== 'cancelada' && r.estado !== 'bloqueado');
+
+  // Ordenar alojamientos por nombre
+  const ordenados = [...alojamientos].sort((a, b) =>
+    (a.nombre || '').localeCompare(b.nombre || '', 'es')
+  );
+
+  if (ordenados.length === 0) {
+    body.innerHTML = '<div class="empty-state"><div class="big">🏠</div>No hay alojamientos cargados.</div>';
+    return;
+  }
+
+  const html = ordenados.map(aloj => buildCard(aloj, activas, hoy, ayer)).join('');
+
+  body.innerHTML = html + buildRefreshBtn();
+}
+
+function buildCard(aloj, activas, hoy, ayer) {
+  const id = aloj.id;
+  const nombre = aloj.nombre || id;
+  const color  = aloj.color  || '#6d40c4';
+  const maxHuespedes = aloj.maxHuespedes || aloj.capacidad || '?';
+
+  // Reserva de AYER: entrada <= ayer < salida
+  const resAyer = activas.filter(r =>
+    r.alojId === id && r.entrada <= ayer && r.salida > ayer
+  );
+  const ocupadoAyer = resAyer.length > 0;
+  const mascotaAyer = resAyer.some(r => r.mascota === 'si' || r.mascota === true);
+
+  // Reserva de HOY: entrada <= hoy < salida
+  const resHoy = activas.filter(r =>
+    r.alojId === id && r.entrada <= hoy && r.salida > hoy
+  );
+  const tieneReservaHoy = resHoy.length > 0;
+  const resHoyObj = tieneReservaHoy ? resHoy[0] : null;
+
+  // Personas de hoy
+  const personasHoy = resHoyObj
+    ? (resHoyObj.adultos || 0) + (resHoyObj.menores || 0) || resHoyObj.personas || '?'
+    : null;
+
+  // Construir mensajes
+  let statusIcon = '';
+  let statusText = '';
+  let badgeClass = '';
+  let badgeLabel = '';
+
+  if (ocupadoAyer && tieneReservaHoy) {
+    statusIcon = '🧹';
+    statusText = 'Limpiar y preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
+    badgeClass = 'badge-limpiar';
+    badgeLabel = 'LIMPIAR Y PREPARAR';
+  } else if (ocupadoAyer && !tieneReservaHoy) {
+    statusIcon = '🧹';
+    statusText = 'Limpiar y preparar para máxima capacidad (' + maxHuespedes + ' personas)';
+    badgeClass = 'badge-limpiar';
+    badgeLabel = 'LIMPIAR';
+  } else if (!ocupadoAyer && tieneReservaHoy) {
+    statusIcon = '🛏️';
+    statusText = 'No hay que limpiar pero preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
+    badgeClass = 'badge-preparar';
+    badgeLabel = 'SOLO PREPARAR';
+  } else {
+    statusIcon = '✅';
+    statusText = 'Sin nada para hacer en este alojamiento';
+    badgeClass = 'badge-nada';
+    badgeLabel = 'LIBRE';
+  }
+
+  // Plataforma — alerta si Airbnb o Booking
+  let plataformaHtml = '';
+  if (resHoyObj) {
+    const origen = (resHoyObj.origen || resHoyObj.plataforma || '').toLowerCase();
+    if (origen.includes('airbnb')) {
+      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span> Reserva de Airbnb — revisar evaluación pendiente</div>';
+    } else if (origen.includes('booking')) {
+      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span> Reserva de Booking — revisar evaluación pendiente</div>';
+    }
+  }
+
+  // Observaciones de la reserva de hoy
+  let obsHtml = '';
+  if (resHoyObj && resHoyObj.observaciones && resHoyObj.observaciones.trim()) {
+    obsHtml = '<div class="tag-obs">📝 ' + escHtml(resHoyObj.observaciones.trim()) + '</div>';
+  }
+
+  // Mascota ayer
+  let mascotaHtml = '';
+  if (mascotaAyer) {
+    mascotaHtml = '<div class="tag-pet"><span>🐾</span> Ayer hubo mascota en este alojamiento</div>';
+  }
+
+  // Entrada hoy
+  let entradaHtml = '';
+  if (resHoyObj && resHoyObj.entrada === isoFecha(new Date())) {
+    const huespNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
+    if (huespNombre) {
+      entradaHtml = '<div class="status-row"><span class="status-icon">👤</span><span class="status-text">Huésped: ' + escHtml(huespNombre) + '</span></div>';
+    }
+  }
+
+  return (
+    '<div class="aloj-card">' +
+      '<div class="aloj-card-header">' +
+        '<div class="aloj-color-dot" style="background:' + color + '"></div>' +
+        '<div class="aloj-nombre">' + escHtml(nombre) + '</div>' +
+        '<span class="badge ' + badgeClass + '">' + badgeLabel + '</span>' +
+      '</div>' +
+      '<div class="aloj-card-body">' +
+        '<div class="status-row">' +
+          '<span class="status-icon">' + statusIcon + '</span>' +
+          '<span class="status-text">' + statusText + '</span>' +
+        '</div>' +
+        entradaHtml +
+        plataformaHtml +
+        obsHtml +
+        mascotaHtml +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function buildRefreshBtn() {
+  return (
+    '<div style="display:flex;justify-content:center;padding:8px 0 16px;">' +
+      '<button class="btn-refresh" onclick="location.reload()">' +
+        '🔄 Actualizar' +
+      '</button>' +
+    '</div>'
+  );
+}
+
+// ── Helpers ──
+function isoFecha(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
