@@ -52,19 +52,33 @@
     border-radius: var(--radius);
     padding: 36px 32px;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
     box-shadow: 0 2px 16px rgba(0,0,0,.08);
     border: 1px solid var(--border);
   }
-  .login-logo {
-    font-size: 2.5rem;
-    margin-bottom: 12px;
+  .login-logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
   }
+  .login-logo-icon {
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+  .login-logo-text { text-align: left; }
+  .login-logo-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .login-logo-sub   { font-size: .8rem; color: var(--text2); }
   .login-title {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--text);
     margin-bottom: 6px;
   }
   .login-subtitle {
@@ -79,7 +93,7 @@
     justify-content: center;
     gap: 10px;
     width: 100%;
-    padding: 12px 20px;
+    padding: 13px 20px;
     background: var(--accent);
     color: #fff;
     border: none;
@@ -91,7 +105,6 @@
     transition: opacity .2s;
   }
   .btn-google:hover { opacity: .88; }
-  .btn-google svg { flex-shrink: 0; }
 
   /* ── ACCESS DENIED ── */
   #denied-screen {
@@ -112,9 +125,9 @@
     box-shadow: 0 2px 16px rgba(0,0,0,.08);
     border: 2px solid var(--red);
   }
-  .denied-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .denied-icon  { font-size: 2.5rem; margin-bottom: 12px; }
   .denied-title { font-size: 1.2rem; font-weight: 700; color: var(--red); margin-bottom: 8px; }
-  .denied-msg { font-size: .9rem; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+  .denied-msg   { font-size: .9rem; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
   .btn-logout {
     padding: 10px 20px;
     background: var(--red-lt);
@@ -150,36 +163,158 @@
   /* ── MAIN APP ── */
   #app { display: none; }
 
+  /* HEADER */
   .app-header {
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: 14px 20px;
     position: sticky;
     top: 0;
     z-index: 10;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
   }
-  .app-header-left { display: flex; align-items: center; gap: 10px; }
-  .app-header-icon { font-size: 1.4rem; }
-  .app-header-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-  .app-header-date { font-size: .8rem; color: var(--text2); margin-top: 1px; }
-  .app-user {
+  .app-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .app-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .header-logo-box {
+    width: 46px; height: 46px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .header-brand-info { min-width: 0; }
+  .header-brand-name  { font-size: 1rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .header-brand-title { font-size: .78rem; color: var(--text2); line-height: 1.2; }
+
+  /* Fecha grande centrada */
+  .header-date-bar {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .header-date-main {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: capitalize;
+  }
+  .header-date-sub {
+    font-size: .8rem;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+
+  /* Nav de fecha */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .btn-nav {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    flex-shrink: 0;
+  }
+  .btn-nav:hover { background: var(--accent-lt); border-color: var(--accent); }
+  .btn-nav:disabled { opacity: .35; cursor: default; }
+  .date-nav-label {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 140px;
+    text-align: center;
+    text-transform: capitalize;
+  }
+  .date-badge-hoy {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: #fff;
+    padding: 1px 7px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: .3px;
+  }
+  .date-badge-pasado {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 700;
+    background: var(--yellow-lt);
+    color: var(--yellow);
+    padding: 1px 7px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .date-badge-futuro {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 700;
+    background: var(--blue-lt);
+    color: var(--blue);
+    padding: 1px 7px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* Botones de acción del header */
+  .header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
   }
+  .btn-widget {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    background: var(--accent-lt);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s;
+  }
+  .btn-widget:hover { background: #ddd5f7; }
   .user-avatar {
-    width: 32px; height: 32px;
+    width: 34px; height: 34px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--accent-lt);
+    flex-shrink: 0;
   }
-  .user-name { font-size: .82rem; font-weight: 600; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .btn-signout {
     font-size: .75rem;
-    padding: 4px 10px;
+    padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: transparent;
@@ -188,6 +323,7 @@
     cursor: pointer;
   }
 
+  /* ── BODY ── */
   .app-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 0 auto; }
 
   /* ── CARDS ── */
@@ -202,39 +338,29 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 13px 16px;
     border-bottom: 1px solid var(--border);
   }
-  .aloj-color-dot {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .aloj-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
   .aloj-nombre { font-size: 1rem; font-weight: 700; flex: 1; }
-  .aloj-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
-
-  /* Status badges */
-  .status-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .status-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-  .status-text { font-size: .92rem; line-height: 1.45; font-weight: 500; }
+  .aloj-card-body { padding: 13px 16px; display: flex; flex-direction: column; gap: 8px; }
 
   .badge {
     display: inline-block;
-    font-size: .72rem;
+    font-size: .7rem;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 20px;
     letter-spacing: .3px;
+    white-space: nowrap;
   }
-  .badge-limpiar   { background: var(--yellow-lt); color: var(--yellow); }
-  .badge-preparar  { background: var(--blue-lt);   color: var(--blue);   }
-  .badge-nada      { background: var(--green-lt);  color: var(--green);  }
-  .badge-airbnb    { background: #ff585f22; color: #c0392b; }
-  .badge-booking   { background: #003580; color: #fff; }
+  .badge-limpiar  { background: var(--yellow-lt); color: var(--yellow); }
+  .badge-preparar { background: var(--blue-lt);   color: var(--blue);   }
+  .badge-nada     { background: var(--green-lt);  color: var(--green);  }
+
+  .status-row { display: flex; align-items: flex-start; gap: 8px; }
+  .status-icon { font-size: 1.05rem; flex-shrink: 0; margin-top: 2px; }
+  .status-text { font-size: .92rem; line-height: 1.45; font-weight: 500; }
 
   .tag-obs {
     background: var(--accent-lt);
@@ -253,9 +379,7 @@
     font-size: .85rem;
     color: var(--yellow);
     font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    display: flex; align-items: center; gap: 6px;
   }
   .tag-plataforma {
     background: #fff8ed;
@@ -265,26 +389,21 @@
     font-size: .85rem;
     color: var(--yellow);
     font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    line-height: 1.35;
+  }
+
+  /* Botón de abajo */
+  .footer-btns {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 0 20px;
+    flex-wrap: wrap;
   }
-
-  /* ── EMPTY / ERROR ── */
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text2);
-    font-size: .9rem;
-  }
-  .empty-state .big { font-size: 2rem; margin-bottom: 8px; }
-
-  /* Refresh btn */
   .btn-refresh {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px;
     background: var(--accent-lt);
     color: var(--accent);
     border: 1px solid var(--accent);
@@ -294,13 +413,26 @@
     font-weight: 600;
     cursor: pointer;
   }
+  .btn-cal-footer {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px;
+    background: var(--card-bg);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
 
   /* ── RESPONSIVE ── */
   @media (max-width: 480px) {
     .app-body { padding: 10px; gap: 10px; }
-    .aloj-card-header { padding: 12px 14px; }
-    .aloj-card-body { padding: 12px 14px; }
-    .user-name { display: none; }
+    .header-date-main { font-size: 1rem; }
+    .date-nav-label { min-width: 110px; font-size: .82rem; }
+    .btn-widget span { display: none; }
   }
 </style>
 </head>
@@ -309,9 +441,15 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo">🧹</div>
-    <div class="login-title">Limpieza del Día</div>
-    <div class="login-subtitle">Iniciá sesión con tu cuenta de Google para ver qué hay que preparar hoy.</div>
+    <div class="login-logo-wrap">
+      <div class="login-logo-icon">🧹</div>
+      <div class="login-logo-text">
+        <div class="login-logo-brand">La Pausa</div>
+        <div class="login-logo-sub">Alojamientos Temporarios</div>
+      </div>
+    </div>
+    <div class="login-title">Panel de Limpieza</div>
+    <div class="login-subtitle">Iniciá sesión con tu cuenta de Google para ver qué hay que limpiar y preparar cada día.</div>
     <button class="btn-google" id="btn-login">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#fff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#ffffffcc" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#ffffffaa" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#ffffffdd" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
       Iniciar sesión con Google
@@ -324,7 +462,7 @@
   <div class="denied-card">
     <div class="denied-icon">🚫</div>
     <div class="denied-title">Acceso Denegado</div>
-    <div class="denied-msg" id="denied-msg">Tu cuenta no está habilitada para acceder a este panel. Contactá al administrador.</div>
+    <div class="denied-msg" id="denied-msg">Tu cuenta no está habilitada. Contactá al administrador.</div>
     <button class="btn-logout" id="btn-denied-logout">Cerrar sesión</button>
   </div>
 </div>
@@ -337,22 +475,44 @@
 
 <!-- APP -->
 <div id="app">
+
+  <!-- HEADER -->
   <div class="app-header">
-    <div class="app-header-left">
-      <div class="app-header-icon">🧹</div>
-      <div>
-        <div class="app-header-title">Limpieza del Día</div>
-        <div class="app-header-date" id="header-date"></div>
+    <div class="app-header-top">
+      <div class="app-header-brand">
+        <div class="header-logo-box">🧹</div>
+        <div class="header-brand-info">
+          <div class="header-brand-name">La Pausa</div>
+          <div class="header-brand-title">Panel de Limpieza</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="widget.html" class="btn-widget" title="Ver Calendario">
+          📅 <span>Calendario</span>
+        </a>
+        <img class="user-avatar" id="user-avatar" src="" alt="">
+        <button class="btn-signout" id="btn-signout">Salir</button>
       </div>
     </div>
-    <div class="app-user">
-      <img class="user-avatar" id="user-avatar" src="" alt="">
-      <span class="user-name" id="user-name"></span>
-      <button class="btn-signout" id="btn-signout">Salir</button>
+
+    <!-- Fecha grande -->
+    <div class="header-date-bar">
+      <div class="header-date-main" id="header-date-main"></div>
+      <div class="header-date-sub" id="header-date-sub"></div>
+    </div>
+
+    <!-- Navegación de días -->
+    <div class="date-nav">
+      <button class="btn-nav" id="btn-prev" title="Día anterior">&#8592;</button>
+      <div class="date-nav-label" id="date-nav-label">Hoy</div>
+      <button class="btn-nav" id="btn-next" title="Día siguiente">&#8594;</button>
     </div>
   </div>
+
   <div class="app-body" id="app-body">
-    <div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>
+    <div style="display:flex;justify-content:center;padding:40px 0;">
+      <div class="spinner"></div>
+    </div>
   </div>
 </div>
 
@@ -376,10 +536,18 @@ import { getFirestore, collection, getDocs, doc, getDoc }
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const fireApp = initializeApp(FB, 'limpieza');
-const db      = getFirestore(fireApp);
-const auth    = getAuth(fireApp);
+const fireApp  = initializeApp(FB, 'limpieza');
+const db       = getFirestore(fireApp);
+const auth     = getAuth(fireApp);
 const provider = new GoogleAuthProvider();
+
+// ── Datos en memoria ──
+let alojamientosData = [];
+let reservasData     = [];
+let dataCargada      = false;
+
+// ── Offset de días (0 = hoy, -1 = ayer, +1 = mañana, …) ──
+let offsetDias = 0;
 
 // ── Screens ──
 const S = {
@@ -395,7 +563,7 @@ function show(name) {
   });
 }
 
-// ── Buttons ──
+// ── Buttons login/logout ──
 document.getElementById('btn-login').addEventListener('click', async () => {
   try {
     show('loading');
@@ -406,21 +574,28 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     alert('Error al iniciar sesión: ' + e.message);
   }
 });
-
 document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
 document.getElementById('btn-denied-logout').addEventListener('click', () => signOut(auth));
 
+// ── Navegación de días ──
+document.getElementById('btn-prev').addEventListener('click', () => {
+  offsetDias--;
+  actualizarHeaderFecha();
+  renderCards(alojamientosData, reservasData);
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  offsetDias++;
+  actualizarHeaderFecha();
+  renderCards(alojamientosData, reservasData);
+});
+
 // ── Auth state ──
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    show('login');
-    return;
-  }
+  if (!user) { show('login'); return; }
 
   show('loading');
   document.getElementById('loading-msg').textContent = 'Verificando acceso…';
 
-  // Verificar usuario en colección 'usuarios'
   const isEnabled = await checkUsuario(user.email);
   if (!isEnabled) {
     document.getElementById('denied-msg').textContent =
@@ -429,32 +604,18 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Completar header de usuario
   document.getElementById('user-avatar').src = user.photoURL || '';
-  document.getElementById('user-name').textContent = user.displayName || user.email;
-
-  // Fecha en header
-  const ahora = new Date();
-  const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  document.getElementById('header-date').textContent =
-    ahora.toLocaleDateString('es-AR', opts);
-
+  actualizarHeaderFecha();
   show('app');
-  document.getElementById('loading-msg').textContent = 'Cargando datos…';
-  await cargarYRenderizar();
+  await cargarDatos();
 });
 
 // ── Verificar usuario habilitado ──
 async function checkUsuario(email) {
   try {
-    // Admin directo
     if (email === 'lapausa.santarosa@gmail.com') return true;
-
-    // El index guarda usuarios con el email como ID del documento y campo approved:true
     const uDoc = await getDoc(doc(db, 'usuarios', email));
     if (uDoc.exists() && uDoc.data().approved === true) return true;
-
-    // Fallback: buscar por campo email en cualquier documento
     const snap = await getDocs(collection(db, 'usuarios'));
     for (const d of snap.docs) {
       const data = d.data();
@@ -468,22 +629,55 @@ async function checkUsuario(email) {
   }
 }
 
-// ── Cargar datos y renderizar ──
-async function cargarYRenderizar() {
+// ── Header fecha ──
+function actualizarHeaderFecha() {
+  const fecha = fechaConOffset(offsetDias);
+  const hoyReal = isoFecha(new Date());
+  const esFechaHoy = isoFecha(fecha) === hoyReal;
+  const esPasado   = isoFecha(fecha) < hoyReal;
+
+  const optsLargo = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  const fechaStr  = fecha.toLocaleDateString('es-AR', optsLargo);
+  // Capitalizar primera letra
+  const fechaCap  = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1);
+
+  document.getElementById('header-date-main').textContent = fechaCap;
+
+  let subText = '';
+  if (offsetDias === 0) subText = 'Hoy';
+  else if (offsetDias === -1) subText = 'Ayer';
+  else if (offsetDias === 1) subText = 'Mañana';
+  else if (esPasado) subText = Math.abs(offsetDias) + ' días atrás';
+  else subText = 'En ' + offsetDias + ' días';
+  document.getElementById('header-date-sub').textContent = subText;
+
+  // Etiqueta en el nav
+  let navLabel = '';
+  if (offsetDias === 0) {
+    navLabel = 'Hoy <span class="date-badge-hoy">HOY</span>';
+  } else if (esPasado) {
+    navLabel = fechaCap.split(',')[0] + ' <span class="date-badge-pasado">PASADO</span>';
+  } else {
+    navLabel = fechaCap.split(',')[0] + ' <span class="date-badge-futuro">FUTURO</span>';
+  }
+  document.getElementById('date-nav-label').innerHTML = navLabel;
+}
+
+// ── Cargar datos (una sola vez) ──
+async function cargarDatos() {
   try {
     const [snapAloj, snapRes] = await Promise.all([
       getDocs(collection(db, 'alojamientos')),
       getDocs(collection(db, 'reservas'))
     ]);
-
-    const alojamientos = snapAloj.docs.map(d => ({ id: d.id, ...d.data() }));
-    const reservas     = snapRes.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    renderCards(alojamientos, reservas);
+    alojamientosData = snapAloj.docs.map(d => ({ id: d.id, ...d.data() }));
+    reservasData     = snapRes.docs.map(d => ({ id: d.id, ...d.data() }));
+    dataCargada = true;
+    renderCards(alojamientosData, reservasData);
   } catch(e) {
     console.error('Error cargando datos:', e);
     document.getElementById('app-body').innerHTML =
-      '<div class="empty-state"><div class="big">⚠️</div>Error al cargar datos. Recargá la página.</div>';
+      '<div style="text-align:center;padding:40px;color:#6b7280;">⚠️ Error al cargar datos. <button onclick="location.reload()" style="color:#6d40c4;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600;">Reintentá</button></div>';
   }
 }
 
@@ -491,12 +685,14 @@ async function cargarYRenderizar() {
 function renderCards(alojamientos, reservas) {
   const body = document.getElementById('app-body');
 
-  // Fechas clave
-  const ahora   = new Date();
-  const hoy     = isoFecha(ahora);
-  const ayerDate = new Date(ahora);
+  // Fecha visualizada
+  const fechaVista = fechaConOffset(offsetDias);
+  const hoyStr     = isoFecha(fechaVista);
+
+  // "Ayer" relativo a la fecha vista
+  const ayerDate = new Date(fechaVista);
   ayerDate.setDate(ayerDate.getDate() - 1);
-  const ayer    = isoFecha(ayerDate);
+  const ayerStr = isoFecha(ayerDate);
 
   // Solo reservas activas
   const activas = reservas.filter(r => r.estado !== 'cancelada' && r.estado !== 'bloqueado');
@@ -507,41 +703,38 @@ function renderCards(alojamientos, reservas) {
   );
 
   if (ordenados.length === 0) {
-    body.innerHTML = '<div class="empty-state"><div class="big">🏠</div>No hay alojamientos cargados.</div>';
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;"><div style="font-size:2rem;margin-bottom:8px;">🏠</div>No hay alojamientos cargados.</div>';
     return;
   }
 
-  const html = ordenados.map(aloj => buildCard(aloj, activas, hoy, ayer)).join('');
+  const cardsHtml = ordenados.map(aloj => buildCard(aloj, activas, hoyStr, ayerStr)).join('');
 
-  body.innerHTML = html + buildRefreshBtn();
+  body.innerHTML = cardsHtml + buildFooterBtns();
 }
 
+// ── Card por alojamiento ──
 function buildCard(aloj, activas, hoy, ayer) {
-  const id = aloj.id;
-  const nombre = aloj.nombre || id;
-  const color  = aloj.color  || '#6d40c4';
+  const id           = aloj.id;
+  const nombre       = aloj.nombre || id;
+  const color        = aloj.color  || '#6d40c4';
   const maxHuespedes = aloj.maxHuespedes || aloj.capacidad || '?';
 
-  // Reserva de AYER: entrada <= ayer < salida
-  const resAyer = activas.filter(r =>
-    r.alojId === id && r.entrada <= ayer && r.salida > ayer
-  );
+  // Reserva de "ayer" (día anterior a la fecha vista)
+  const resAyer    = activas.filter(r => r.alojId === id && r.entrada <= ayer && r.salida > ayer);
   const ocupadoAyer = resAyer.length > 0;
   const mascotaAyer = resAyer.some(r => r.mascota === 'si' || r.mascota === true);
 
-  // Reserva de HOY: entrada <= hoy < salida
-  const resHoy = activas.filter(r =>
-    r.alojId === id && r.entrada <= hoy && r.salida > hoy
-  );
+  // Reserva del día visto
+  const resHoy          = activas.filter(r => r.alojId === id && r.entrada <= hoy && r.salida > hoy);
   const tieneReservaHoy = resHoy.length > 0;
-  const resHoyObj = tieneReservaHoy ? resHoy[0] : null;
+  const resHoyObj       = tieneReservaHoy ? resHoy[0] : null;
 
-  // Personas de hoy
+  // Personas
   const personasHoy = resHoyObj
-    ? (resHoyObj.adultos || 0) + (resHoyObj.menores || 0) || resHoyObj.personas || '?'
+    ? ((resHoyObj.adultos || 0) + (resHoyObj.menores || 0)) || resHoyObj.personas || '?'
     : null;
 
-  // Construir mensajes
+  // Lógica de estado
   let statusIcon = '';
   let statusText = '';
   let badgeClass = '';
@@ -559,7 +752,7 @@ function buildCard(aloj, activas, hoy, ayer) {
     badgeLabel = 'LIMPIAR';
   } else if (!ocupadoAyer && tieneReservaHoy) {
     statusIcon = '🛏️';
-    statusText = 'No hay que limpiar pero preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
+    statusText = 'No hay que limpiar, pero preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
     badgeClass = 'badge-preparar';
     badgeLabel = 'SOLO PREPARAR';
   } else {
@@ -569,35 +762,41 @@ function buildCard(aloj, activas, hoy, ayer) {
     badgeLabel = 'LIBRE';
   }
 
-  // Plataforma — alerta si Airbnb o Booking
+  // Plataforma
   let plataformaHtml = '';
   if (resHoyObj) {
     const origen = (resHoyObj.origen || resHoyObj.plataforma || '').toLowerCase();
+    const msg = 'Tener en cuenta los detalles para la futura evaluación';
     if (origen.includes('airbnb')) {
-      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span> Reserva de Airbnb — revisar evaluación pendiente</div>';
+      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span><span>Airbnb — ' + msg + '</span></div>';
     } else if (origen.includes('booking')) {
-      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span> Reserva de Booking — revisar evaluación pendiente</div>';
+      plataformaHtml = '<div class="tag-plataforma"><span>⭐</span><span>Booking — ' + msg + '</span></div>';
     }
   }
 
-  // Observaciones de la reserva de hoy
+  // Observaciones
   let obsHtml = '';
   if (resHoyObj && resHoyObj.observaciones && resHoyObj.observaciones.trim()) {
     obsHtml = '<div class="tag-obs">📝 ' + escHtml(resHoyObj.observaciones.trim()) + '</div>';
   }
 
-  // Mascota ayer
+  // Mascota ayer (relativo a día visto)
   let mascotaHtml = '';
   if (mascotaAyer) {
-    mascotaHtml = '<div class="tag-pet"><span>🐾</span> Ayer hubo mascota en este alojamiento</div>';
+    mascotaHtml = '<div class="tag-pet"><span>🐾</span> El día anterior hubo mascota en este alojamiento</div>';
   }
 
-  // Entrada hoy
+  // Huésped que entra hoy
   let entradaHtml = '';
-  if (resHoyObj && resHoyObj.entrada === isoFecha(new Date())) {
+  if (resHoyObj && resHoyObj.entrada === hoy) {
     const huespNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
     if (huespNombre) {
-      entradaHtml = '<div class="status-row"><span class="status-icon">👤</span><span class="status-text">Huésped: ' + escHtml(huespNombre) + '</span></div>';
+      entradaHtml = (
+        '<div class="status-row">' +
+          '<span class="status-icon">👤</span>' +
+          '<span class="status-text">Huésped: ' + escHtml(huespNombre) + '</span>' +
+        '</div>'
+      );
     }
   }
 
@@ -622,20 +821,33 @@ function buildCard(aloj, activas, hoy, ayer) {
   );
 }
 
-function buildRefreshBtn() {
+function buildFooterBtns() {
   return (
-    '<div style="display:flex;justify-content:center;padding:8px 0 16px;">' +
-      '<button class="btn-refresh" onclick="location.reload()">' +
-        '🔄 Actualizar' +
-      '</button>' +
+    '<div class="footer-btns">' +
+      '<button class="btn-refresh" onclick="recargar()">🔄 Actualizar datos</button>' +
+      '<a href="widget.html" class="btn-cal-footer">📅 Ver Calendario</a>' +
     '</div>'
   );
 }
 
+// Recarga datos sin recargar la página
+async function recargar() {
+  document.getElementById('app-body').innerHTML =
+    '<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>';
+  await cargarDatos();
+}
+window.recargar = recargar;
+
 // ── Helpers ──
+function fechaConOffset(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d;
+}
+
 function isoFecha(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const y   = d.getFullYear();
+  const m   = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return y + '-' + m + '-' + day;
 }
