@@ -1970,6 +1970,19 @@ window.showReservaDetail = function(id) {
     const seniaHTML = r.senia ? '<div><div style="color:var(--text2);font-size:.78rem;">SEÑA</div><div style="font-weight:600;color:var(--info);">'+fmtMoney(r.senia)+' <span style="font-size:.72rem;color:var(--text2);">(resta '+fmtMoney((r.costo||0)-(r.senia||0))+')</span></div></div>' : '';
     const gcalHTML  = r.gcalEventId ? '<span class="gcal-badge btn-sm"><span class="gcal-dot"></span>En GCal</span>' : '';
     const obsHTML   = r.obs ? '<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.85rem;">📝 '+r.obs+'</div>' : '';
+    const obsLimpHTML = (r.observacionesLimpieza && r.observacionesLimpieza.length)
+      ? '<div style="margin-top:14px;">'
+        +'<div style="font-size:.78rem;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">🧹 Observaciones del personal de limpieza</div>'
+        + r.observacionesLimpieza.map(function(ob) {
+            const texto = typeof ob === 'string' ? ob : (ob.texto || '');
+            const meta  = typeof ob === 'object' ? [ob.fecha, ob.autor].filter(Boolean).join(' · ') : '';
+            return '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:4px;font-size:.83rem;">'
+              +'<span style="color:#16a34a;flex-shrink:0;">•</span>'
+              +'<span style="flex:1;color:#1a1d23;">'+texto+(meta?'<span style="color:#6b7280;font-size:.72rem;"> ('+meta+')</span>':'')+'</span>'
+              +'</div>';
+          }).join('')
+        +'</div>'
+      : '';
     const msgsHTML  = (r.mensajesEnviados&&r.mensajesEnviados.length)
       ? '<div style="margin-top:14px;"><div style="font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📨 Mensajes enviados</div>'
         + r.mensajesEnviados.map(m =>
@@ -2000,7 +2013,7 @@ window.showReservaDetail = function(id) {
       +'<div><span style="color:var(--text2);">Origen:</span> '+oi+' '+r.origen+'</div>'
       +'<div><span style="color:var(--text2);">Mascota:</span> '+(r.mascota==='si'?'🐾 Sí':'No')+'</div>'
       +'</div>'
-      +obsHTML+msgsHTML;
+      +obsHTML+obsLimpHTML+msgsHTML;
   }
   // Botón editar — visible solo si tiene permiso res-edit
   const editBtn = document.getElementById('btn-edit-detail');
