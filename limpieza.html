@@ -427,6 +427,110 @@
     text-decoration: none;
   }
 
+  /* ── SIGUE OCUPADO ── */
+  .tag-continua {
+    background: #ecfdf5;
+    border-left: 3px solid var(--green);
+    border-radius: 6px;
+    padding: 10px 13px;
+    font-size: .88rem;
+    color: var(--green);
+    font-weight: 700;
+    display: flex; align-items: center; gap: 7px;
+    line-height: 1.35;
+  }
+
+  /* ── OBSERVACIONES DE RESERVA ── */
+  .tag-obs-reserva {
+    background: var(--accent-lt);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .85rem;
+    line-height: 1.4;
+  }
+  .tag-obs-reserva-label {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+  .tag-obs-reserva-text { color: var(--text); }
+
+  /* ── OBSERVACIONES LIMPIEZA CARGADAS ── */
+  .tag-obs-limp-list {
+    background: #f0fdf4;
+    border-left: 3px solid var(--green);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .83rem;
+    line-height: 1.4;
+  }
+  .tag-obs-limp-label {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--green);
+    margin-bottom: 4px;
+  }
+  .obs-limp-item { color: var(--text); margin-bottom: 3px; display: flex; gap: 6px; }
+  .obs-limp-meta { font-size: .72rem; color: var(--text2); white-space: nowrap; }
+
+  /* ── PANEL CARGA OBSERVACIÓN ── */
+  .obs-panel {
+    border-top: 1px solid var(--border);
+    padding: 10px 16px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .obs-panel-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .obs-textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: .87rem;
+    color: var(--text);
+    resize: vertical;
+    min-height: 64px;
+    background: var(--bg);
+    transition: border-color .15s;
+    line-height: 1.45;
+  }
+  .obs-textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .obs-btn-row { display: flex; justify-content: flex-end; }
+  .btn-obs-guardar {
+    padding: 7px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-obs-guardar:hover { opacity: .88; }
+  .btn-obs-guardar:disabled { opacity: .5; cursor: default; }
+  .obs-feedback {
+    font-size: .78rem;
+    color: var(--green);
+    font-weight: 600;
+    display: none;
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 480px) {
     .app-body { padding: 10px; gap: 10px; }
@@ -531,7 +635,7 @@ const FB = {
 
 import { initializeApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc }
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -720,14 +824,18 @@ function buildCard(aloj, activas, hoy, ayer) {
   const maxHuespedes = aloj.maxHuespedes || aloj.capacidad || '?';
 
   // Reserva de "ayer" (día anterior a la fecha vista)
-  const resAyer    = activas.filter(r => r.alojId === id && r.entrada <= ayer && r.salida > ayer);
+  const resAyer     = activas.filter(r => r.alojId === id && r.entrada <= ayer && r.salida > ayer);
   const ocupadoAyer = resAyer.length > 0;
+  const resAyerObj  = ocupadoAyer ? resAyer[0] : null;
   const mascotaAyer = resAyer.some(r => r.mascota === 'si' || r.mascota === true);
 
   // Reserva del día visto
   const resHoy          = activas.filter(r => r.alojId === id && r.entrada <= hoy && r.salida > hoy);
   const tieneReservaHoy = resHoy.length > 0;
   const resHoyObj       = tieneReservaHoy ? resHoy[0] : null;
+
+  // ¿Es la misma reserva que ayer? (huésped sigue)
+  const mismareserva = ocupadoAyer && tieneReservaHoy && resAyerObj && resHoyObj && resAyerObj.id === resHoyObj.id;
 
   // Personas
   const personasHoy = resHoyObj
@@ -740,7 +848,15 @@ function buildCard(aloj, activas, hoy, ayer) {
   let badgeClass = '';
   let badgeLabel = '';
 
-  if (ocupadoAyer && tieneReservaHoy) {
+  if (mismareserva) {
+    // Misma reserva: sigue ocupado, NO limpiar
+    statusIcon = '🛌';
+    const salida = resHoyObj.salida || '';
+    statusText = 'La reserva continúa — alojamiento en uso';
+    if (salida) statusText += ' (sale el ' + formatFechaCorta(salida) + ')';
+    badgeClass = 'badge-nada';
+    badgeLabel = 'EN CURSO';
+  } else if (ocupadoAyer && tieneReservaHoy) {
     statusIcon = '🧹';
     statusText = 'Limpiar y preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
     badgeClass = 'badge-limpiar';
@@ -762,6 +878,31 @@ function buildCard(aloj, activas, hoy, ayer) {
     badgeLabel = 'LIBRE';
   }
 
+  // Aviso reserva en curso
+  let continuaHtml = '';
+  if (mismareserva) {
+    const hNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
+    continuaHtml = (
+      '<div class="tag-continua">' +
+        '<span>🚫</span>' +
+        '<span>No limpiar — el alojamiento sigue ocupado' + (hNombre ? ' por ' + escHtml(hNombre) : '') + '</span>' +
+      '</div>'
+    );
+  }
+
+  // Observaciones de la reserva (del administrador/sistema)
+  // Mostrar las de resHoyObj o resAyerObj (si hay que limpiar por salida de ayer)
+  const resConObs = resHoyObj || resAyerObj;
+  let obsReservaHtml = '';
+  if (resConObs && resConObs.observaciones && String(resConObs.observaciones).trim()) {
+    obsReservaHtml = (
+      '<div class="tag-obs-reserva">' +
+        '<div class="tag-obs-reserva-label">📋 Observaciones de la reserva</div>' +
+        '<div class="tag-obs-reserva-text">' + escHtml(String(resConObs.observaciones).trim()) + '</div>' +
+      '</div>'
+    );
+  }
+
   // Plataforma
   let plataformaHtml = '';
   if (resHoyObj) {
@@ -774,21 +915,15 @@ function buildCard(aloj, activas, hoy, ayer) {
     }
   }
 
-  // Observaciones
-  let obsHtml = '';
-  if (resHoyObj && resHoyObj.observaciones && resHoyObj.observaciones.trim()) {
-    obsHtml = '<div class="tag-obs">📝 ' + escHtml(resHoyObj.observaciones.trim()) + '</div>';
-  }
-
   // Mascota ayer (relativo a día visto)
   let mascotaHtml = '';
-  if (mascotaAyer) {
+  if (mascotaAyer && !mismareserva) {
     mascotaHtml = '<div class="tag-pet"><span>🐾</span> El día anterior hubo mascota en este alojamiento</div>';
   }
 
   // Huésped que entra hoy
   let entradaHtml = '';
-  if (resHoyObj && resHoyObj.entrada === hoy) {
+  if (resHoyObj && resHoyObj.entrada === hoy && !mismareserva) {
     const huespNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
     if (huespNombre) {
       entradaHtml = (
@@ -798,6 +933,48 @@ function buildCard(aloj, activas, hoy, ayer) {
         '</div>'
       );
     }
+  }
+
+  // Observaciones de limpieza ya cargadas (array en Firestore)
+  const resParaObs = resHoyObj || resAyerObj;
+  let obsLimpiezaHtml = '';
+  if (resParaObs && resParaObs.observacionesLimpieza && resParaObs.observacionesLimpieza.length) {
+    const items = resParaObs.observacionesLimpieza.map(function(ob) {
+      const texto = typeof ob === 'string' ? ob : (ob.texto || '');
+      const fecha = (ob.fecha || '');
+      const autor = (ob.autor || '');
+      const meta  = [fecha, autor].filter(Boolean).join(' · ');
+      return (
+        '<div class="obs-limp-item">' +
+          '<span>•</span>' +
+          '<span>' + escHtml(texto) + (meta ? ' <span class="obs-limp-meta">(' + escHtml(meta) + ')</span>' : '') + '</span>' +
+        '</div>'
+      );
+    }).join('');
+    obsLimpiezaHtml = (
+      '<div class="tag-obs-limp-list">' +
+        '<div class="tag-obs-limp-label">🧹 Observaciones del personal</div>' +
+        items +
+      '</div>'
+    );
+  }
+
+  // Panel de carga de nueva observación (solo cuando hay reserva activa)
+  let obsPanelHtml = '';
+  if (resParaObs) {
+    const obsId = 'obs-' + id;
+    const btnId = 'btn-obs-' + id;
+    const fbId  = 'fb-' + id;
+    obsPanelHtml = (
+      '<div class="obs-panel">' +
+        '<div class="obs-panel-label">✏️ Agregar observación de limpieza</div>' +
+        '<textarea id="' + obsId + '" class="obs-textarea" rows="2" placeholder="Ej: Se rompió una silla, falta papel higiénico, mancha en la pared…"></textarea>' +
+        '<div class="obs-btn-row">' +
+          '<span class="obs-feedback" id="' + fbId + '">✅ Guardado</span>' +
+          '<button class="btn-obs-guardar" id="' + btnId + '" onclick="guardarObs(\'' + escHtml(resParaObs.id) + '\',\'' + obsId + '\',\'' + btnId + '\',\'' + fbId + '\')">Guardar</button>' +
+        '</div>' +
+      '</div>'
+    );
   }
 
   return (
@@ -812,11 +989,14 @@ function buildCard(aloj, activas, hoy, ayer) {
           '<span class="status-icon">' + statusIcon + '</span>' +
           '<span class="status-text">' + statusText + '</span>' +
         '</div>' +
+        continuaHtml +
         entradaHtml +
+        obsReservaHtml +
         plataformaHtml +
-        obsHtml +
+        obsLimpiezaHtml +
         mascotaHtml +
       '</div>' +
+      obsPanelHtml +
     '</div>'
   );
 }
@@ -859,6 +1039,59 @@ function escHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+function formatFechaCorta(isoStr) {
+  if (!isoStr) return '';
+  const parts = isoStr.split('-');
+  if (parts.length < 3) return isoStr;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+// ── Guardar observación de limpieza en Firestore ──
+async function guardarObs(reservaId, textareaId, btnId, feedbackId) {
+  const textarea = document.getElementById(textareaId);
+  const btn      = document.getElementById(btnId);
+  const feedback = document.getElementById(feedbackId);
+  if (!textarea) return;
+  const texto = textarea.value.trim();
+  if (!texto) { textarea.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  try {
+    const user  = auth.currentUser;
+    const autor = user ? (user.displayName || user.email || '') : '';
+    const fecha = isoFecha(new Date());
+    const nuevaObs = { texto: texto, fecha: fecha, autor: autor };
+
+    await updateDoc(doc(db, 'reservas', reservaId), {
+      observacionesLimpieza: arrayUnion(nuevaObs)
+    });
+
+    // Actualizar datos en memoria para que se muestre sin recargar
+    const idx = reservasData.findIndex(r => r.id === reservaId);
+    if (idx >= 0) {
+      if (!reservasData[idx].observacionesLimpieza) reservasData[idx].observacionesLimpieza = [];
+      reservasData[idx].observacionesLimpieza.push(nuevaObs);
+    }
+
+    textarea.value = '';
+    feedback.style.display = 'inline';
+    btn.textContent = 'Guardar';
+    btn.disabled = false;
+
+    // Rerenderizar cards para mostrar la nueva obs
+    renderCards(alojamientosData, reservasData);
+
+  } catch(e) {
+    console.error('Error guardando observación:', e);
+    btn.textContent = 'Guardar';
+    btn.disabled = false;
+    alert('Error al guardar: ' + e.message);
+  }
+}
+window.guardarObs = guardarObs;
 </script>
 </body>
 </html>
