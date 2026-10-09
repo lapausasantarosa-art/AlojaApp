@@ -39,123 +39,61 @@
 
   /* ── LOGIN SCREEN ── */
   #login-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 24px;
-    gap: 24px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; padding: 24px; gap: 24px;
   }
   .login-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 36px 32px;
-    width: 100%;
-    max-width: 420px;
-    text-align: center;
-    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    background: var(--card-bg); border-radius: var(--radius);
+    padding: 36px 32px; width: 100%; max-width: 420px;
+    text-align: center; box-shadow: 0 2px 16px rgba(0,0,0,.08);
     border: 1px solid var(--border);
   }
-  .login-logo-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
+  .login-logo-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
   .login-logo-icon {
-    width: 56px; height: 56px;
-    background: var(--accent);
-    border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem;
-    flex-shrink: 0;
+    width: 56px; height: 56px; background: var(--accent); border-radius: 16px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;
   }
   .login-logo-text { text-align: left; }
   .login-logo-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
   .login-logo-sub   { font-size: .8rem; color: var(--text2); }
-  .login-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 6px;
-  }
-  .login-subtitle {
-    font-size: .9rem;
-    color: var(--text2);
-    margin-bottom: 28px;
-    line-height: 1.5;
-  }
+  .login-title { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .login-subtitle { font-size: .9rem; color: var(--text2); margin-bottom: 28px; line-height: 1.5; }
   .btn-google {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 13px 20px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: opacity .2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 13px 20px; background: var(--accent); color: #fff;
+    border: none; border-radius: 10px; font-size: 1rem; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: opacity .2s;
   }
   .btn-google:hover { opacity: .88; }
 
   /* ── ACCESS DENIED ── */
   #denied-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 24px;
+    display: none; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; padding: 24px;
   }
   .denied-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 36px 32px;
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 2px 16px rgba(0,0,0,.08);
-    border: 2px solid var(--red);
+    background: var(--card-bg); border-radius: var(--radius); padding: 36px 32px;
+    width: 100%; max-width: 400px; text-align: center;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08); border: 2px solid var(--red);
   }
   .denied-icon  { font-size: 2.5rem; margin-bottom: 12px; }
   .denied-title { font-size: 1.2rem; font-weight: 700; color: var(--red); margin-bottom: 8px; }
   .denied-msg   { font-size: .9rem; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
   .btn-logout {
-    padding: 10px 20px;
-    background: var(--red-lt);
-    color: var(--red);
-    border: 1px solid var(--red);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: .9rem;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 10px 20px; background: var(--red-lt); color: var(--red);
+    border: 1px solid var(--red); border-radius: 8px; font-family: inherit;
+    font-size: .9rem; font-weight: 600; cursor: pointer;
   }
 
   /* ── LOADING ── */
   #loading-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    gap: 12px;
-    color: var(--text2);
-    font-size: .9rem;
+    display: none; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; gap: 12px;
+    color: var(--text2); font-size: .9rem;
   }
   .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
     animation: spin .7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -165,194 +103,99 @@
 
   /* HEADER */
   .app-header {
-    background: var(--card-bg);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    background: var(--card-bg); border-bottom: 1px solid var(--border);
+    padding: 14px 20px; position: sticky; top: 0; z-index: 10;
     box-shadow: 0 1px 6px rgba(0,0,0,.06);
   }
-  .app-header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .app-header-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
-  }
+  .app-header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .app-header-brand { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
   .header-logo-box {
-    width: 46px; height: 46px;
-    background: var(--accent);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
+    width: 46px; height: 46px; background: var(--accent); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
   }
   .header-brand-info { min-width: 0; }
   .header-brand-name  { font-size: 1rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
   .header-brand-title { font-size: .78rem; color: var(--text2); line-height: 1.2; }
 
   /* Fecha grande centrada */
-  .header-date-bar {
-    text-align: center;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .header-date-main {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text);
-    text-transform: capitalize;
-  }
-  .header-date-sub {
-    font-size: .8rem;
-    color: var(--text2);
-    margin-top: 1px;
-  }
+  .header-date-bar { text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .header-date-main { font-size: 1.15rem; font-weight: 700; color: var(--text); text-transform: capitalize; }
+  .header-date-sub  { font-size: .8rem; color: var(--text2); margin-top: 1px; }
 
   /* Nav de fecha */
-  .date-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 8px;
-  }
+  .date-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
   .btn-nav {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--accent);
-    font-size: 1.1rem;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: background .15s, border-color .15s;
-    flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--bg); color: var(--accent); font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background .15s, border-color .15s; flex-shrink: 0;
   }
   .btn-nav:hover { background: var(--accent-lt); border-color: var(--accent); }
   .btn-nav:disabled { opacity: .35; cursor: default; }
   .date-nav-label {
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--text);
-    min-width: 140px;
-    text-align: center;
-    text-transform: capitalize;
+    font-size: .88rem; font-weight: 600; color: var(--text);
+    min-width: 140px; text-align: center; text-transform: capitalize;
   }
   .date-badge-hoy {
-    display: inline-block;
-    font-size: .65rem;
-    font-weight: 700;
-    background: var(--accent);
-    color: #fff;
-    padding: 1px 7px;
-    border-radius: 20px;
-    margin-left: 6px;
-    vertical-align: middle;
-    letter-spacing: .3px;
+    display: inline-block; font-size: .65rem; font-weight: 700;
+    background: var(--accent); color: #fff; padding: 1px 7px;
+    border-radius: 20px; margin-left: 6px; vertical-align: middle; letter-spacing: .3px;
   }
   .date-badge-pasado {
-    display: inline-block;
-    font-size: .65rem;
-    font-weight: 700;
-    background: var(--yellow-lt);
-    color: var(--yellow);
-    padding: 1px 7px;
-    border-radius: 20px;
-    margin-left: 6px;
-    vertical-align: middle;
+    display: inline-block; font-size: .65rem; font-weight: 700;
+    background: var(--yellow-lt); color: var(--yellow);
+    padding: 1px 7px; border-radius: 20px; margin-left: 6px; vertical-align: middle;
   }
   .date-badge-futuro {
-    display: inline-block;
-    font-size: .65rem;
-    font-weight: 700;
-    background: var(--blue-lt);
-    color: var(--blue);
-    padding: 1px 7px;
-    border-radius: 20px;
-    margin-left: 6px;
-    vertical-align: middle;
+    display: inline-block; font-size: .65rem; font-weight: 700;
+    background: var(--blue-lt); color: var(--blue);
+    padding: 1px 7px; border-radius: 20px; margin-left: 6px; vertical-align: middle;
   }
 
   /* Botones de acción del header */
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .btn-hdr {
+    display: flex; align-items: center; gap: 5px; padding: 7px 12px;
+    background: var(--accent-lt); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 8px; font-family: inherit;
+    font-size: .8rem; font-weight: 700; cursor: pointer; text-decoration: none;
+    transition: background .15s; white-space: nowrap;
   }
-  .btn-widget {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 12px;
-    background: var(--accent-lt);
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: .8rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .15s;
+  .btn-hdr:hover { background: #ddd5f7; }
+  .btn-hdr-volver {
+    display: none; align-items: center; gap: 5px; padding: 7px 12px;
+    background: var(--bg); color: var(--text2);
+    border: 1px solid var(--border); border-radius: 8px; font-family: inherit;
+    font-size: .8rem; font-weight: 700; cursor: pointer;
   }
-  .btn-widget:hover { background: #ddd5f7; }
+  .btn-hdr-volver:hover { background: var(--border); }
   .user-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--accent-lt);
-    flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--accent-lt); flex-shrink: 0;
   }
   .btn-signout {
-    font-size: .75rem;
-    padding: 5px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text2);
-    font-family: inherit;
-    cursor: pointer;
+    font-size: .75rem; padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: 6px; background: transparent; color: var(--text2);
+    font-family: inherit; cursor: pointer;
   }
 
   /* ── BODY ── */
   .app-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 0 auto; }
 
-  /* ── CARDS ── */
+  /* ── CARDS LIMPIEZA ── */
   .aloj-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    overflow: hidden;
+    background: var(--card-bg); border-radius: var(--radius);
+    border: 1px solid var(--border); overflow: hidden;
     box-shadow: 0 1px 4px rgba(0,0,0,.05);
   }
-  .aloj-card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 13px 16px;
-    border-bottom: 1px solid var(--border);
-  }
+  .aloj-card-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--border); }
   .aloj-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
   .aloj-nombre { font-size: 1rem; font-weight: 700; flex: 1; }
   .aloj-card-body { padding: 13px 16px; display: flex; flex-direction: column; gap: 8px; }
 
   .badge {
-    display: inline-block;
-    font-size: .7rem;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 20px;
-    letter-spacing: .3px;
-    white-space: nowrap;
+    display: inline-block; font-size: .7rem; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px; letter-spacing: .3px; white-space: nowrap;
   }
   .badge-limpiar  { background: var(--yellow-lt); color: var(--yellow); }
   .badge-preparar { background: var(--blue-lt);   color: var(--blue);   }
@@ -362,181 +205,182 @@
   .status-icon { font-size: 1.05rem; flex-shrink: 0; margin-top: 2px; }
   .status-text { font-size: .92rem; line-height: 1.45; font-weight: 500; }
 
-  .tag-obs {
-    background: var(--accent-lt);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: .85rem;
-    color: var(--accent);
-    line-height: 1.4;
-  }
   .tag-pet {
-    background: var(--yellow-lt);
-    border-left: 3px solid var(--yellow);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: .85rem;
-    color: var(--yellow);
-    font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
+    background: var(--yellow-lt); border-left: 3px solid var(--yellow);
+    border-radius: 6px; padding: 8px 12px; font-size: .85rem; color: var(--yellow);
+    font-weight: 600; display: flex; align-items: center; gap: 6px;
   }
   .tag-plataforma {
-    background: #fff8ed;
-    border-left: 3px solid var(--yellow);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: .85rem;
-    color: var(--yellow);
-    font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
-    line-height: 1.35;
+    background: #fff8ed; border-left: 3px solid var(--yellow); border-radius: 6px;
+    padding: 8px 12px; font-size: .85rem; color: var(--yellow);
+    font-weight: 600; display: flex; align-items: center; gap: 6px; line-height: 1.35;
   }
-
-  /* Botón de abajo */
   .footer-btns {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 0 20px;
-    flex-wrap: wrap;
+    display: flex; justify-content: center; gap: 10px; padding: 8px 0 20px; flex-wrap: wrap;
   }
   .btn-refresh {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 16px;
-    background: var(--accent-lt);
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: .85rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-cal-footer {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 16px;
-    background: var(--card-bg);
-    color: var(--text2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: .85rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
+    display: flex; align-items: center; gap: 6px; padding: 9px 16px;
+    background: var(--accent-lt); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 8px; font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
   }
 
   /* ── SIGUE OCUPADO ── */
   .tag-continua {
-    background: #ecfdf5;
-    border-left: 3px solid var(--green);
-    border-radius: 6px;
-    padding: 10px 13px;
-    font-size: .88rem;
-    color: var(--green);
-    font-weight: 700;
-    display: flex; align-items: center; gap: 7px;
-    line-height: 1.35;
+    background: #ecfdf5; border-left: 3px solid var(--green); border-radius: 6px;
+    padding: 10px 13px; font-size: .88rem; color: var(--green); font-weight: 700;
+    display: flex; align-items: center; gap: 7px; line-height: 1.35;
   }
 
   /* ── OBSERVACIONES DE RESERVA ── */
   .tag-obs-reserva {
-    background: var(--accent-lt);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: .85rem;
-    line-height: 1.4;
+    background: var(--accent-lt); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 8px 12px; font-size: .85rem; line-height: 1.4;
   }
   .tag-obs-reserva-label {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-    color: var(--accent);
-    margin-bottom: 3px;
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--accent); margin-bottom: 3px;
   }
   .tag-obs-reserva-text { color: var(--text); }
 
   /* ── OBSERVACIONES LIMPIEZA CARGADAS ── */
   .tag-obs-limp-list {
-    background: #f0fdf4;
-    border-left: 3px solid var(--green);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: .83rem;
-    line-height: 1.4;
+    background: #f0fdf4; border-left: 3px solid var(--green);
+    border-radius: 6px; padding: 8px 12px; font-size: .83rem; line-height: 1.4;
   }
   .tag-obs-limp-label {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-    color: var(--green);
-    margin-bottom: 4px;
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--green); margin-bottom: 4px;
   }
   .obs-limp-item { color: var(--text); margin-bottom: 3px; display: flex; gap: 6px; }
   .obs-limp-meta { font-size: .72rem; color: var(--text2); white-space: nowrap; }
 
   /* ── PANEL CARGA OBSERVACIÓN ── */
   .obs-panel {
-    border-top: 1px solid var(--border);
-    padding: 10px 16px 13px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
+    border-top: 1px solid var(--border); padding: 10px 16px 13px;
+    display: flex; flex-direction: column; gap: 7px;
   }
-  .obs-panel-label {
-    font-size: .72rem;
-    font-weight: 700;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: .4px;
-  }
+  .obs-panel-label { font-size: .72rem; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
   .obs-textarea {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    font-family: inherit;
-    font-size: .87rem;
-    color: var(--text);
-    resize: vertical;
-    min-height: 64px;
-    background: var(--bg);
-    transition: border-color .15s;
-    line-height: 1.45;
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px;
+    font-family: inherit; font-size: .87rem; color: var(--text); resize: vertical;
+    min-height: 64px; background: var(--bg); transition: border-color .15s; line-height: 1.45;
   }
   .obs-textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
-  .obs-btn-row { display: flex; justify-content: flex-end; }
+  .obs-btn-row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
   .btn-obs-guardar {
-    padding: 7px 16px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    font-family: inherit;
-    font-size: .85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity .2s;
+    padding: 7px 16px; background: var(--accent); color: #fff; border: none;
+    border-radius: 7px; font-family: inherit; font-size: .85rem; font-weight: 700;
+    cursor: pointer; transition: opacity .2s;
   }
   .btn-obs-guardar:hover { opacity: .88; }
   .btn-obs-guardar:disabled { opacity: .5; cursor: default; }
-  .obs-feedback {
-    font-size: .78rem;
-    color: var(--green);
-    font-weight: 600;
-    display: none;
+  .obs-feedback { font-size: .78rem; color: var(--green); font-weight: 600; display: none; }
+
+  /* ══════════════════════════════════════
+     ── VISTA CALENDARIO ──
+  ══════════════════════════════════════ */
+  #vista-calendario { display: none; }
+  .cal-wrap { padding: 16px; max-width: 900px; margin: 0 auto; }
+  .cal-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 8px;
   }
+  .cal-mes-label { font-size: 1.1rem; font-weight: 700; color: var(--text); text-transform: capitalize; }
+  .btn-cal-nav {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--accent); font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-cal-nav:hover { background: var(--accent-lt); }
+
+  .cal-leyenda {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+  }
+  .cal-ley-item {
+    display: flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--text2);
+  }
+  .cal-ley-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .cal-grid-header {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 2px; margin-bottom: 4px;
+  }
+  .cal-dia-nombre {
+    text-align: center; font-size: .7rem; font-weight: 700;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .3px; padding: 4px 0;
+  }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+  }
+  .cal-celda {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 4px 4px; min-height: 72px; position: relative;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .cal-celda.otro-mes { background: #fafafa; }
+  .cal-celda.hoy { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .cal-num {
+    font-size: .78rem; font-weight: 700; color: var(--text2);
+    line-height: 1; margin-bottom: 2px; text-align: right; padding-right: 2px;
+  }
+  .cal-celda.hoy .cal-num { color: var(--accent); }
+  .cal-celda.otro-mes .cal-num { color: #d1d5db; }
+  .cal-evento {
+    font-size: .65rem; font-weight: 600; padding: 2px 4px; border-radius: 4px;
+    color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .cal-evento.entrada { border-left: 3px solid rgba(0,0,0,.2); }
+  .cal-evento.salida  { opacity: .75; }
+  .cal-evento.medio   { border-radius: 0 4px 4px 0; }
+
+  /* ══════════════════════════════════════
+     ── VISTA CLAVES ──
+  ══════════════════════════════════════ */
+  #vista-claves { display: none; }
+  .claves-wrap { padding: 16px; max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .claves-titulo {
+    font-size: .78rem; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;
+  }
+  .clave-card {
+    background: var(--card-bg); border-radius: var(--radius);
+    border: 1px solid var(--border); overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .clave-card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .clave-card-body { padding: 13px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .clave-campo-label {
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--text2); margin-bottom: 3px;
+  }
+  .clave-valor {
+    font-size: 1.05rem; font-weight: 700; color: var(--accent);
+    background: var(--accent-lt); border-radius: 8px; padding: 10px 14px;
+    letter-spacing: .5px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: background .15s; user-select: all;
+  }
+  .clave-valor:hover { background: #ddd5f7; }
+  .clave-valor-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .clave-texto-libre {
+    font-size: .88rem; color: var(--text); line-height: 1.5;
+    background: var(--bg); border-radius: 8px; padding: 10px 14px;
+    white-space: pre-wrap;
+  }
+  .clave-sin-dato { font-size: .88rem; color: var(--text2); font-style: italic; }
 
   /* ── RESPONSIVE ── */
   @media (max-width: 480px) {
     .app-body { padding: 10px; gap: 10px; }
     .header-date-main { font-size: 1rem; }
     .date-nav-label { min-width: 110px; font-size: .82rem; }
-    .btn-widget span { display: none; }
+    .btn-hdr span { display: none; }
+    .cal-celda { min-height: 56px; }
+    .cal-evento { font-size: .6rem; }
   }
 </style>
 </head>
@@ -580,68 +424,85 @@
 <!-- APP -->
 <div id="app">
 
-  <!-- HEADER -->
+  <!-- HEADER (compartido por las 3 vistas) -->
   <div class="app-header">
     <div class="app-header-top">
       <div class="app-header-brand">
-        <div class="header-logo-box">🧹</div>
+        <div class="header-logo-box" id="header-logo-icon">🧹</div>
         <div class="header-brand-info">
           <div class="header-brand-name">La Pausa</div>
-          <div class="header-brand-title">Panel de Limpieza</div>
+          <div class="header-brand-title" id="header-subtitulo">Panel de Limpieza</div>
         </div>
       </div>
       <div class="header-actions">
-        <a href="widget.html" class="btn-widget" title="Ver Calendario">
-          📅 <span>Calendario</span>
-        </a>
+        <button class="btn-hdr-volver" id="btn-volver" onclick="irALimpieza()">&#8592; Volver</button>
+        <button class="btn-hdr" id="btn-hdr-cal" onclick="irACalendario()">📅 <span>Calendario</span></button>
+        <button class="btn-hdr" id="btn-hdr-claves" onclick="irAClaves()">🔑 <span>Claves</span></button>
         <img class="user-avatar" id="user-avatar" src="" alt="">
         <button class="btn-signout" id="btn-signout">Salir</button>
       </div>
     </div>
 
-    <!-- Fecha grande -->
-    <div class="header-date-bar">
-      <div class="header-date-main" id="header-date-main"></div>
-      <div class="header-date-sub" id="header-date-sub"></div>
+    <!-- Fecha grande (solo en vista limpieza) -->
+    <div id="header-date-zone">
+      <div class="header-date-bar">
+        <div class="header-date-main" id="header-date-main"></div>
+        <div class="header-date-sub" id="header-date-sub"></div>
+      </div>
+      <div class="date-nav">
+        <button class="btn-nav" id="btn-prev" title="Día anterior">&#8592;</button>
+        <div class="date-nav-label" id="date-nav-label">Hoy</div>
+        <button class="btn-nav" id="btn-next" title="Día siguiente">&#8594;</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Navegación de días -->
-    <div class="date-nav">
-      <button class="btn-nav" id="btn-prev" title="Día anterior">&#8592;</button>
-      <div class="date-nav-label" id="date-nav-label">Hoy</div>
-      <button class="btn-nav" id="btn-next" title="Día siguiente">&#8594;</button>
+  <!-- VISTA: LIMPIEZA -->
+  <div id="vista-limpieza">
+    <div class="app-body" id="app-body">
+      <div style="display:flex;justify-content:center;padding:40px 0;">
+        <div class="spinner"></div>
+      </div>
     </div>
   </div>
 
-  <div class="app-body" id="app-body">
-    <div style="display:flex;justify-content:center;padding:40px 0;">
-      <div class="spinner"></div>
+  <!-- VISTA: CALENDARIO -->
+  <div id="vista-calendario">
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="btn-cal-nav" id="cal-prev">&#8592;</button>
+        <div class="cal-mes-label" id="cal-mes-label"></div>
+        <button class="btn-cal-nav" id="cal-next">&#8594;</button>
+      </div>
+      <div class="cal-leyenda" id="cal-leyenda"></div>
+      <div class="cal-grid-header">
+        <div class="cal-dia-nombre">Dom</div>
+        <div class="cal-dia-nombre">Lun</div>
+        <div class="cal-dia-nombre">Mar</div>
+        <div class="cal-dia-nombre">Mié</div>
+        <div class="cal-dia-nombre">Jue</div>
+        <div class="cal-dia-nombre">Vie</div>
+        <div class="cal-dia-nombre">Sáb</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
   </div>
+
+  <!-- VISTA: CLAVES -->
+  <div id="vista-claves">
+    <div class="claves-wrap" id="claves-wrap">
+      <div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-  // ── EmailJS config ──────────────────────────────────────────
-  // 1. Crear cuenta gratis en https://www.emailjs.com
-  // 2. Agregar servicio Gmail: Email Services → Add Service → Gmail
-  //    Conectar con lapausa.santarosa@gmail.com → copiar el Service ID
-  // 3. Crear template: Email Templates → Create New Template
-  //    Campos usados: {{alojamiento}}, {{observacion}}, {{autor}}, {{fecha}}, {{reserva_id}}
-  //    To email: lapausa.santarosa@gmail.com
-  //    Subject: 🧹 Observación de limpieza — {{alojamiento}}
-  //    Body: Se registró una observación del personal de limpieza:
-  //          Alojamiento: {{alojamiento}}
-  //          Observación: {{observacion}}
-  //          Registrado por: {{autor}}
-  //          Fecha: {{fecha}}
-  //    → copiar el Template ID
-  // 4. Public Key: Account → General → Public Key
-  // 5. Reemplazar los tres valores de abajo:
-  const EMAILJS_PUBLIC_KEY  = 'Ci27FFy0iI45Id-Tk';   // ej: 'abc123XYZ'
-  const EMAILJS_SERVICE_ID  = 'service_m1l1twn';   // ej: 'service_abc123'
-  const EMAILJS_TEMPLATE_ID = 'template_dv5hpdt';  // ej: 'template_abc123'
+  const EMAILJS_PUBLIC_KEY  = 'Ci27FFy0iI45Id-Tk';
+  const EMAILJS_SERVICE_ID  = 'service_m1l1twn';
+  const EMAILJS_TEMPLATE_ID = 'template_dv5hpdt';
   emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 </script>
 <script type="module">
@@ -659,7 +520,7 @@ const FB = {
 
 import { initializeApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion, serverTimestamp }
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -674,10 +535,63 @@ let alojamientosData = [];
 let reservasData     = [];
 let dataCargada      = false;
 
-// ── Offset de días (0 = hoy, -1 = ayer, +1 = mañana, …) ──
-let offsetDias = 0;
+// ── Offset de días y mes del calendario ──
+let offsetDias   = 0;
+let calAnio      = new Date().getFullYear();
+let calMes       = new Date().getMonth(); // 0-11
 
-// ── Screens ──
+// ── Sistema de vistas ──
+// 'limpieza' | 'calendario' | 'claves'
+let vistaActual = 'limpieza';
+
+const EL = {
+  vLimpieza:   document.getElementById('vista-limpieza'),
+  vCalendario: document.getElementById('vista-calendario'),
+  vClaves:     document.getElementById('vista-claves'),
+  dateZone:    document.getElementById('header-date-zone'),
+  subtitulo:   document.getElementById('header-subtitulo'),
+  logoIcon:    document.getElementById('header-logo-icon'),
+  btnVolver:   document.getElementById('btn-volver'),
+  btnCal:      document.getElementById('btn-hdr-cal'),
+  btnClaves:   document.getElementById('btn-hdr-claves')
+};
+
+function mostrarVista(nombre) {
+  vistaActual = nombre;
+  EL.vLimpieza.style.display   = nombre === 'limpieza'   ? 'block' : 'none';
+  EL.vCalendario.style.display = nombre === 'calendario' ? 'block' : 'none';
+  EL.vClaves.style.display     = nombre === 'claves'     ? 'block' : 'none';
+  EL.dateZone.style.display    = nombre === 'limpieza'   ? 'block' : 'none';
+  EL.btnVolver.style.display   = nombre === 'limpieza'   ? 'none'  : 'flex';
+  EL.btnCal.style.display      = nombre === 'calendario' ? 'none'  : 'flex';
+  EL.btnClaves.style.display   = nombre === 'claves'     ? 'none'  : 'flex';
+
+  if (nombre === 'limpieza') {
+    EL.subtitulo.textContent = 'Panel de Limpieza';
+    EL.logoIcon.textContent  = '🧹';
+  } else if (nombre === 'calendario') {
+    EL.subtitulo.textContent = 'Calendario';
+    EL.logoIcon.textContent  = '📅';
+  } else {
+    EL.subtitulo.textContent = 'Claves de Acceso';
+    EL.logoIcon.textContent  = '🔑';
+  }
+}
+
+function irALimpieza() { mostrarVista('limpieza'); }
+function irACalendario() {
+  mostrarVista('calendario');
+  renderCalendario();
+}
+function irAClaves() {
+  mostrarVista('claves');
+  renderClaves();
+}
+window.irALimpieza   = irALimpieza;
+window.irACalendario = irACalendario;
+window.irAClaves     = irAClaves;
+
+// ── Screens de auth ──
 const S = {
   login:   document.getElementById('login-screen'),
   denied:  document.getElementById('denied-screen'),
@@ -717,6 +631,18 @@ document.getElementById('btn-next').addEventListener('click', () => {
   renderCards(alojamientosData, reservasData);
 });
 
+// ── Navegación del calendario ──
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMes--;
+  if (calMes < 0) { calMes = 11; calAnio--; }
+  renderCalendario();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMes++;
+  if (calMes > 11) { calMes = 0; calAnio++; }
+  renderCalendario();
+});
+
 // ── Auth state ──
 onAuthStateChanged(auth, async (user) => {
   if (!user) { show('login'); return; }
@@ -734,6 +660,7 @@ onAuthStateChanged(auth, async (user) => {
 
   document.getElementById('user-avatar').src = user.photoURL || '';
   actualizarHeaderFecha();
+  mostrarVista('limpieza');
   show('app');
   await cargarDatos();
 });
@@ -761,12 +688,10 @@ async function checkUsuario(email) {
 function actualizarHeaderFecha() {
   const fecha = fechaConOffset(offsetDias);
   const hoyReal = isoFecha(new Date());
-  const esFechaHoy = isoFecha(fecha) === hoyReal;
-  const esPasado   = isoFecha(fecha) < hoyReal;
+  const esPasado = isoFecha(fecha) < hoyReal;
 
   const optsLargo = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
   const fechaStr  = fecha.toLocaleDateString('es-AR', optsLargo);
-  // Capitalizar primera letra
   const fechaCap  = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1);
 
   document.getElementById('header-date-main').textContent = fechaCap;
@@ -779,7 +704,6 @@ function actualizarHeaderFecha() {
   else subText = 'En ' + offsetDias + ' días';
   document.getElementById('header-date-sub').textContent = subText;
 
-  // Etiqueta en el nav
   let navLabel = '';
   if (offsetDias === 0) {
     navLabel = 'Hoy <span class="date-badge-hoy">HOY</span>';
@@ -809,23 +733,18 @@ async function cargarDatos() {
   }
 }
 
-// ── Render principal ──
+// ════════════════════════════════════════
+// VISTA: LIMPIEZA
+// ════════════════════════════════════════
 function renderCards(alojamientos, reservas) {
   const body = document.getElementById('app-body');
-
-  // Fecha visualizada
   const fechaVista = fechaConOffset(offsetDias);
   const hoyStr     = isoFecha(fechaVista);
-
-  // "Ayer" relativo a la fecha vista
-  const ayerDate = new Date(fechaVista);
+  const ayerDate   = new Date(fechaVista);
   ayerDate.setDate(ayerDate.getDate() - 1);
-  const ayerStr = isoFecha(ayerDate);
+  const ayerStr    = isoFecha(ayerDate);
 
-  // Solo reservas activas
-  const activas = reservas.filter(r => r.estado !== 'cancelada' && r.estado !== 'bloqueado');
-
-  // Ordenar alojamientos por nombre
+  const activas  = reservas.filter(r => r.estado !== 'cancelada' && r.estado !== 'bloqueado');
   const ordenados = [...alojamientos].sort((a, b) =>
     (a.nombre || '').localeCompare(b.nombre || '', 'es')
   );
@@ -836,73 +755,56 @@ function renderCards(alojamientos, reservas) {
   }
 
   const cardsHtml = ordenados.map(aloj => buildCard(aloj, activas, hoyStr, ayerStr)).join('');
-
   body.innerHTML = cardsHtml + buildFooterBtns();
 }
 
-// ── Card por alojamiento ──
 function buildCard(aloj, activas, hoy, ayer) {
   const id           = aloj.id;
   const nombre       = aloj.nombre || id;
   const color        = aloj.color  || '#6d40c4';
   const maxHuespedes = aloj.maxHuespedes || aloj.capacidad || '?';
 
-  // Reserva de "ayer" (día anterior a la fecha vista)
   const resAyer     = activas.filter(r => r.alojId === id && r.entrada <= ayer && r.salida > ayer);
   const ocupadoAyer = resAyer.length > 0;
   const resAyerObj  = ocupadoAyer ? resAyer[0] : null;
   const mascotaAyer = resAyer.some(r => r.mascota === 'si' || r.mascota === true);
 
-  // Reserva del día visto
   const resHoy          = activas.filter(r => r.alojId === id && r.entrada <= hoy && r.salida > hoy);
   const tieneReservaHoy = resHoy.length > 0;
   const resHoyObj       = tieneReservaHoy ? resHoy[0] : null;
 
-  // ¿Es la misma reserva que ayer? (huésped sigue)
   const mismareserva = ocupadoAyer && tieneReservaHoy && resAyerObj && resHoyObj && resAyerObj.id === resHoyObj.id;
 
-  // Personas
   const personasHoy = resHoyObj
     ? ((resHoyObj.adultos || 0) + (resHoyObj.menores || 0)) || resHoyObj.personas || '?'
     : null;
 
-  // Lógica de estado
-  let statusIcon = '';
-  let statusText = '';
-  let badgeClass = '';
-  let badgeLabel = '';
+  let statusIcon = '', statusText = '', badgeClass = '', badgeLabel = '';
 
   if (mismareserva) {
-    // Misma reserva: sigue ocupado, NO limpiar
     statusIcon = '🛌';
     const salida = resHoyObj.salida || '';
     statusText = 'La reserva continúa — alojamiento en uso';
     if (salida) statusText += ' (sale el ' + formatFechaCorta(salida) + ')';
-    badgeClass = 'badge-nada';
-    badgeLabel = 'EN CURSO';
+    badgeClass = 'badge-nada'; badgeLabel = 'EN CURSO';
   } else if (ocupadoAyer && tieneReservaHoy) {
     statusIcon = '🧹';
     statusText = 'Limpiar y preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
-    badgeClass = 'badge-limpiar';
-    badgeLabel = 'LIMPIAR Y PREPARAR';
+    badgeClass = 'badge-limpiar'; badgeLabel = 'LIMPIAR Y PREPARAR';
   } else if (ocupadoAyer && !tieneReservaHoy) {
     statusIcon = '🧹';
     statusText = 'Limpiar y preparar para máxima capacidad (' + maxHuespedes + ' personas)';
-    badgeClass = 'badge-limpiar';
-    badgeLabel = 'LIMPIAR';
+    badgeClass = 'badge-limpiar'; badgeLabel = 'LIMPIAR';
   } else if (!ocupadoAyer && tieneReservaHoy) {
     statusIcon = '🛏️';
     statusText = 'No hay que limpiar, pero preparar para ' + personasHoy + ' persona' + (personasHoy !== 1 ? 's' : '');
-    badgeClass = 'badge-preparar';
-    badgeLabel = 'SOLO PREPARAR';
+    badgeClass = 'badge-preparar'; badgeLabel = 'SOLO PREPARAR';
   } else {
     statusIcon = '✅';
     statusText = 'Sin nada para hacer en este alojamiento';
-    badgeClass = 'badge-nada';
-    badgeLabel = 'LIBRE';
+    badgeClass = 'badge-nada'; badgeLabel = 'LIBRE';
   }
 
-  // Aviso reserva en curso
   let continuaHtml = '';
   if (mismareserva) {
     const hNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
@@ -914,15 +816,9 @@ function buildCard(aloj, activas, hoy, ayer) {
     );
   }
 
-  // Observaciones de la reserva (del administrador/sistema)
-  // El campo en Firestore se llama "obs" (guardado desde index.html)
-  // Se muestran las instrucciones del huésped que SE FUE (resAyerObj).
-  // Si no hubo nadie ayer, se muestran las del que entra hoy (para preparar).
   const resConObs = resAyerObj || resHoyObj;
   let obsReservaHtml = '';
-  const textoObs = resConObs
-    ? String(resConObs.obs || resConObs.observaciones || '').trim()
-    : '';
+  const textoObs = resConObs ? String(resConObs.obs || resConObs.observaciones || '').trim() : '';
   if (textoObs) {
     obsReservaHtml = (
       '<div class="tag-obs-reserva">' +
@@ -932,7 +828,6 @@ function buildCard(aloj, activas, hoy, ayer) {
     );
   }
 
-  // Plataforma
   let plataformaHtml = '';
   if (resHoyObj) {
     const origen = (resHoyObj.origen || resHoyObj.plataforma || '').toLowerCase();
@@ -944,13 +839,11 @@ function buildCard(aloj, activas, hoy, ayer) {
     }
   }
 
-  // Mascota ayer (relativo a día visto)
   let mascotaHtml = '';
   if (mascotaAyer && !mismareserva) {
     mascotaHtml = '<div class="tag-pet"><span>🐾</span> El día anterior hubo mascota en este alojamiento</div>';
   }
 
-  // Huésped que entra hoy
   let entradaHtml = '';
   if (resHoyObj && resHoyObj.entrada === hoy && !mismareserva) {
     const huespNombre = resHoyObj.huespedNombre || resHoyObj.nombre || '';
@@ -964,10 +857,6 @@ function buildCard(aloj, activas, hoy, ayer) {
     }
   }
 
-  // Observaciones de limpieza ya cargadas y panel de carga.
-  // La observación corresponde al huésped que SE FUE (resAyerObj):
-  // el personal limpia lo que dejó el de ayer y anota sobre esa reserva.
-  // Si la reserva continúa (mismareserva) no hay limpieza → no se muestra panel.
   const resParaObs = mismareserva ? null : (resAyerObj || null);
 
   let obsLimpiezaHtml = '';
@@ -992,7 +881,6 @@ function buildCard(aloj, activas, hoy, ayer) {
     );
   }
 
-  // Panel de carga: solo cuando hubo huésped ayer (hay que limpiar lo que dejó)
   let obsPanelHtml = '';
   if (resParaObs) {
     const obsId = 'obs-' + id;
@@ -1022,12 +910,8 @@ function buildCard(aloj, activas, hoy, ayer) {
           '<span class="status-icon">' + statusIcon + '</span>' +
           '<span class="status-text">' + statusText + '</span>' +
         '</div>' +
-        continuaHtml +
-        entradaHtml +
-        obsReservaHtml +
-        plataformaHtml +
-        obsLimpiezaHtml +
-        mascotaHtml +
+        continuaHtml + entradaHtml + obsReservaHtml +
+        plataformaHtml + obsLimpiezaHtml + mascotaHtml +
       '</div>' +
       obsPanelHtml +
     '</div>'
@@ -1038,12 +922,10 @@ function buildFooterBtns() {
   return (
     '<div class="footer-btns">' +
       '<button class="btn-refresh" onclick="recargar()">🔄 Actualizar datos</button>' +
-      '<a href="widget.html" class="btn-cal-footer">📅 Ver Calendario</a>' +
     '</div>'
   );
 }
 
-// Recarga datos sin recargar la página
 async function recargar() {
   document.getElementById('app-body').innerHTML =
     '<div style="display:flex;justify-content:center;padding:40px 0;"><div class="spinner"></div></div>';
@@ -1051,7 +933,164 @@ async function recargar() {
 }
 window.recargar = recargar;
 
-// ── Helpers ──
+// ════════════════════════════════════════
+// VISTA: CALENDARIO
+// ════════════════════════════════════════
+function renderCalendario() {
+  const hoyStr  = isoFecha(new Date());
+  const activas = reservasData.filter(r => r.estado !== 'cancelada' && r.estado !== 'bloqueado');
+  const alojOrdenados = [...alojamientosData].sort((a, b) =>
+    (a.nombre || '').localeCompare(b.nombre || '', 'es')
+  );
+
+  // Título del mes
+  const nombreMes = new Date(calAnio, calMes, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  document.getElementById('cal-mes-label').textContent =
+    nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+
+  // Leyenda de alojamientos
+  const leyendaEl = document.getElementById('cal-leyenda');
+  leyendaEl.innerHTML = alojOrdenados.map(function(a) {
+    return (
+      '<div class="cal-ley-item">' +
+        '<div class="cal-ley-dot" style="background:' + (a.color || '#6d40c4') + '"></div>' +
+        '<span>' + escHtml(a.nombre || a.id) + '</span>' +
+      '</div>'
+    );
+  }).join('');
+
+  // Primer día del mes y cantidad de días
+  const primerDia    = new Date(calAnio, calMes, 1).getDay(); // 0=Dom
+  const diasEnMes    = new Date(calAnio, calMes + 1, 0).getDate();
+  const mesPrevDias  = new Date(calAnio, calMes, 0).getDate();
+
+  // Celdas: completar semana inicial con días del mes anterior
+  const celdas = [];
+  for (var p = primerDia - 1; p >= 0; p--) {
+    celdas.push({ dia: mesPrevDias - p, esMes: false });
+  }
+  for (var d = 1; d <= diasEnMes; d++) {
+    celdas.push({ dia: d, esMes: true });
+  }
+  // Completar hasta múltiplo de 7
+  var resto = celdas.length % 7;
+  if (resto !== 0) {
+    for (var s = 1; s <= 7 - resto; s++) {
+      celdas.push({ dia: s, esMes: false });
+    }
+  }
+
+  // Construir HTML
+  const gridEl = document.getElementById('cal-grid');
+  var html = '';
+  celdas.forEach(function(celda) {
+    var mesReal  = celda.esMes ? calMes : (celda.dia > 20 ? calMes - 1 : calMes + 1);
+    var anioReal = calAnio;
+    if (mesReal < 0)  { mesReal = 11; anioReal--; }
+    if (mesReal > 11) { mesReal = 0;  anioReal++; }
+
+    var isoD = anioReal + '-' + String(mesReal + 1).padStart(2,'0') + '-' + String(celda.dia).padStart(2,'0');
+    var esHoy = isoD === hoyStr;
+    var clsCelda = 'cal-celda' + (celda.esMes ? '' : ' otro-mes') + (esHoy ? ' hoy' : '');
+
+    // Reservas que incluyen este día
+    var eventosHtml = '';
+    alojOrdenados.forEach(function(aloj) {
+      activas.forEach(function(res) {
+        if (res.alojId !== aloj.id) return;
+        if (!res.entrada || !res.salida) return;
+        if (isoD < res.entrada || isoD >= res.salida) return;
+        var color = aloj.color || '#6d40c4';
+        var esEntrada = isoD === res.entrada;
+        var esSalida  = isoD === isoFechaMenos1(res.salida); // último día ocupado
+        var cls = 'cal-evento' + (esEntrada ? ' entrada' : (esSalida ? ' salida' : ' medio'));
+        var label = esEntrada ? ('↘ ' + escHtml(aloj.nombre || aloj.id)) : (esSalida ? ('↗ ' + escHtml(aloj.nombre || aloj.id)) : escHtml(aloj.nombre || aloj.id));
+        eventosHtml += '<div class="' + cls + '" style="background:' + color + '" title="' + escHtml(aloj.nombre || aloj.id) + '">' + label + '</div>';
+      });
+    });
+
+    html += '<div class="' + clsCelda + '"><div class="cal-num">' + celda.dia + '</div>' + eventosHtml + '</div>';
+  });
+
+  gridEl.innerHTML = html;
+}
+
+// Devuelve la iso del día anterior a una iso dada
+function isoFechaMenos1(isoStr) {
+  if (!isoStr) return '';
+  var d = new Date(isoStr + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  return isoFecha(d);
+}
+
+// ════════════════════════════════════════
+// VISTA: CLAVES
+// ════════════════════════════════════════
+function renderClaves() {
+  const wrap = document.getElementById('claves-wrap');
+  const ordenados = [...alojamientosData].sort((a, b) =>
+    (a.nombre || '').localeCompare(b.nombre || '', 'es')
+  );
+
+  if (ordenados.length === 0) {
+    wrap.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;">No hay alojamientos cargados.</div>';
+    return;
+  }
+
+  var html = '<div class="claves-titulo">🔑 Claves y accesos por alojamiento</div>';
+
+  ordenados.forEach(function(aloj) {
+    var nombre = aloj.nombre || aloj.id;
+    var color  = aloj.color  || '#6d40c4';
+
+    // Buscar el campo de clave — puede llamarse de varias formas
+    var clave = aloj.clave || aloj.codigoAcceso || aloj.codigo || aloj.acceso || aloj.password || aloj.pin || '';
+    var instrucciones = aloj.instruccionesAcceso || aloj.instrucciones || aloj.notasAcceso || aloj.notas || '';
+
+    var bodyHtml = '';
+
+    if (clave) {
+      bodyHtml += (
+        '<div>' +
+          '<div class="clave-campo-label">Código / Clave</div>' +
+          '<div class="clave-valor" title="Tocar para seleccionar">' +
+            '<span class="clave-valor-icon">🔐</span>' +
+            '<span>' + escHtml(String(clave)) + '</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    if (instrucciones) {
+      bodyHtml += (
+        '<div>' +
+          '<div class="clave-campo-label">Instrucciones de acceso</div>' +
+          '<div class="clave-texto-libre">' + escHtml(String(instrucciones)) + '</div>' +
+        '</div>'
+      );
+    }
+
+    if (!clave && !instrucciones) {
+      bodyHtml += '<div class="clave-sin-dato">No hay clave ni instrucciones de acceso cargadas para este alojamiento.</div>';
+    }
+
+    html += (
+      '<div class="clave-card">' +
+        '<div class="clave-card-header">' +
+          '<div class="aloj-color-dot" style="background:' + color + '"></div>' +
+          '<div class="aloj-nombre">' + escHtml(nombre) + '</div>' +
+        '</div>' +
+        '<div class="clave-card-body">' + bodyHtml + '</div>' +
+      '</div>'
+    );
+  });
+
+  wrap.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
 function fechaConOffset(offset) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
@@ -1080,7 +1119,9 @@ function formatFechaCorta(isoStr) {
   return parts[2] + '/' + parts[1] + '/' + parts[0];
 }
 
-// ── Guardar observación de limpieza en Firestore ──
+// ════════════════════════════════════════
+// GUARDAR OBSERVACIÓN DE LIMPIEZA
+// ════════════════════════════════════════
 async function guardarObs(reservaId, textareaId, btnId, feedbackId) {
   const textarea = document.getElementById(textareaId);
   const btn      = document.getElementById(btnId);
@@ -1102,7 +1143,6 @@ async function guardarObs(reservaId, textareaId, btnId, feedbackId) {
       observacionesLimpieza: arrayUnion(nuevaObs)
     });
 
-    // Actualizar datos en memoria para que se muestre sin recargar
     const idx = reservasData.findIndex(r => r.id === reservaId);
     if (idx >= 0) {
       if (!reservasData[idx].observacionesLimpieza) reservasData[idx].observacionesLimpieza = [];
@@ -1114,23 +1154,20 @@ async function guardarObs(reservaId, textareaId, btnId, feedbackId) {
     btn.textContent = 'Guardar';
     btn.disabled = false;
 
-    // Rerenderizar cards para mostrar la nueva obs
     renderCards(alojamientosData, reservasData);
 
-    // Notificar por mail (no bloquea si falla)
     try {
-      const res = reservasData.find(r => r.id === reservaId);
+      const res  = reservasData.find(r => r.id === reservaId);
       const aloj = alojamientosData.find(a => a.id === (res && res.alojId));
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        alojamiento:  (aloj && aloj.nombre) ? aloj.nombre : reservaId,
-        observacion:  texto,
-        autor:        autor || 'Personal de limpieza',
-        fecha:        fecha,
-        reserva_id:   reservaId
+        alojamiento: (aloj && aloj.nombre) ? aloj.nombre : reservaId,
+        observacion: texto,
+        autor:       autor || 'Personal de limpieza',
+        fecha:       fecha,
+        reserva_id:  reservaId
       });
     } catch(mailErr) {
       console.warn('Mail no enviado:', mailErr);
-      // No alerta al usuario — el guardado ya fue exitoso
     }
 
   } catch(e) {
