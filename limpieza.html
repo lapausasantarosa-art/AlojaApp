@@ -916,8 +916,9 @@ function buildCard(aloj, activas, hoy, ayer) {
 
   // Observaciones de la reserva (del administrador/sistema)
   // El campo en Firestore se llama "obs" (guardado desde index.html)
-  // Mostrar las de resHoyObj o resAyerObj (si hay que limpiar por salida de ayer)
-  const resConObs = resHoyObj || resAyerObj;
+  // Se muestran las instrucciones del huésped que SE FUE (resAyerObj).
+  // Si no hubo nadie ayer, se muestran las del que entra hoy (para preparar).
+  const resConObs = resAyerObj || resHoyObj;
   let obsReservaHtml = '';
   const textoObs = resConObs
     ? String(resConObs.obs || resConObs.observaciones || '').trim()
@@ -963,8 +964,12 @@ function buildCard(aloj, activas, hoy, ayer) {
     }
   }
 
-  // Observaciones de limpieza ya cargadas (array en Firestore)
-  const resParaObs = resHoyObj || resAyerObj;
+  // Observaciones de limpieza ya cargadas y panel de carga.
+  // La observación corresponde al huésped que SE FUE (resAyerObj):
+  // el personal limpia lo que dejó el de ayer y anota sobre esa reserva.
+  // Si la reserva continúa (mismareserva) no hay limpieza → no se muestra panel.
+  const resParaObs = mismareserva ? null : (resAyerObj || null);
+
   let obsLimpiezaHtml = '';
   if (resParaObs && resParaObs.observacionesLimpieza && resParaObs.observacionesLimpieza.length) {
     const items = resParaObs.observacionesLimpieza.map(function(ob) {
@@ -987,7 +992,7 @@ function buildCard(aloj, activas, hoy, ayer) {
     );
   }
 
-  // Panel de carga de nueva observación (solo cuando hay reserva activa)
+  // Panel de carga: solo cuando hubo huésped ayer (hay que limpiar lo que dejó)
   let obsPanelHtml = '';
   if (resParaObs) {
     const obsId = 'obs-' + id;
