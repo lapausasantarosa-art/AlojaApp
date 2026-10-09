@@ -620,6 +620,30 @@
   </div>
 </div>
 
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // ── EmailJS config ──────────────────────────────────────────
+  // 1. Crear cuenta gratis en https://www.emailjs.com
+  // 2. Agregar servicio Gmail: Email Services → Add Service → Gmail
+  //    Conectar con lapausa.santarosa@gmail.com → copiar el Service ID
+  // 3. Crear template: Email Templates → Create New Template
+  //    Campos usados: {{alojamiento}}, {{observacion}}, {{autor}}, {{fecha}}, {{reserva_id}}
+  //    To email: lapausa.santarosa@gmail.com
+  //    Subject: 🧹 Observación de limpieza — {{alojamiento}}
+  //    Body: Se registró una observación del personal de limpieza:
+  //          Alojamiento: {{alojamiento}}
+  //          Observación: {{observacion}}
+  //          Registrado por: {{autor}}
+  //          Fecha: {{fecha}}
+  //    → copiar el Template ID
+  // 4. Public Key: Account → General → Public Key
+  // 5. Reemplazar los tres valores de abajo:
+  const EMAILJS_PUBLIC_KEY  = 'Ci27FFy0iI45Id-Tk';   // ej: 'abc123XYZ'
+  const EMAILJS_SERVICE_ID  = 'service_m1l1twn';   // ej: 'service_abc123'
+  const EMAILJS_TEMPLATE_ID = 'service_m1l1twn';  // ej: 'template_abc123'
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+</script>
 <script type="module">
 // ═══════════════════════════════════════════════════
 // FIREBASE CONFIG
@@ -1087,6 +1111,22 @@ async function guardarObs(reservaId, textareaId, btnId, feedbackId) {
 
     // Rerenderizar cards para mostrar la nueva obs
     renderCards(alojamientosData, reservasData);
+
+    // Notificar por mail (no bloquea si falla)
+    try {
+      const res = reservasData.find(r => r.id === reservaId);
+      const aloj = alojamientosData.find(a => a.id === (res && res.alojId));
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        alojamiento:  (aloj && aloj.nombre) ? aloj.nombre : reservaId,
+        observacion:  texto,
+        autor:        autor || 'Personal de limpieza',
+        fecha:        fecha,
+        reserva_id:   reservaId
+      });
+    } catch(mailErr) {
+      console.warn('Mail no enviado:', mailErr);
+      // No alerta al usuario — el guardado ya fue exitoso
+    }
 
   } catch(e) {
     console.error('Error guardando observación:', e);
