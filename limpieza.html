@@ -816,13 +816,18 @@ function buildCard(aloj, activas, hoy, ayer) {
     );
   }
 
-  const resConObs = resAyerObj || resHoyObj;
+  // Observaciones de reserva: mostrar las del huésped de HOY (pedidos especiales del que llega)
+  // Si no hay reserva hoy, mostrar las de ayer como referencia
+  const resConObs = resHoyObj || resAyerObj;
   let obsReservaHtml = '';
   const textoObs = resConObs ? String(resConObs.obs || resConObs.observaciones || '').trim() : '';
   if (textoObs) {
+    const labelObs = resHoyObj
+      ? '📋 Observaciones del huésped que llega hoy'
+      : '📋 Observaciones de la reserva anterior';
     obsReservaHtml = (
       '<div class="tag-obs-reserva">' +
-        '<div class="tag-obs-reserva-label">📋 Observaciones de la reserva</div>' +
+        '<div class="tag-obs-reserva-label">' + labelObs + '</div>' +
         '<div class="tag-obs-reserva-text">' + escHtml(textoObs) + '</div>' +
       '</div>'
     );
